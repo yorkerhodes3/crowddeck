@@ -15,6 +15,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+          cache: npm
+
+      # There are no runtime dependencies and there never will be, but the test
+      # suite uses one dev-only oracle: jsQR, which decodes the QR codes
+      # clients/lib/qr.js produces. Without this step that import fails and the
+      # whole clients/ test file errors out — which is exactly how CI broke the
+      # first time it started running the full suite.
+      - name: Install dev dependencies
+        run: npm ci
 
       # ADR-001 puts a licence boundary between the Apache-2.0 core and the GPL
       # engine plane. A two-licence repository only stays clean if the boundary

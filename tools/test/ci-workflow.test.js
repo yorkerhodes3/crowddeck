@@ -19,7 +19,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -74,4 +74,40 @@ test("npm run check covers lint, tests and conformance", () => {
 test("the artifact check is wired into npm scripts", () => {
   assert.ok(pkg.scripts["lint:artifacts"], "lint:artifacts script must exist");
   assert.match(pkg.scripts["lint:artifacts"], /check-artifacts/);
+});
+
+test("CI installs dependencies whenever any are declared", () => {
+  // The project has zero *runtime* dependencies, so CI historically needed no
+  // install step at all. Adding a single dev-only dependency (jsQR, the oracle
+  // that proves the QR encoder actually produces scannable codes) silently broke
+  // that assumption: the import failed and the whole clients/ test file errored.
+  const declared =
+    Object.keys(pkg.dependencies ?? {}).length + Object.keys(pkg.devDependencies ?? {}).length;
+
+  if (declared > 0) {
+    assert.match(
+      ci,
+      /npm ci/,
+      `package.json declares ${declared} dependency/dependencies but CI never installs them, ` +
+        `so any test importing one will fail with ERR_MODULE_NOT_FOUND`
+    );
+  }
+});
+
+test("a lockfile exists so npm ci is reproducible", () => {
+  assert.ok(
+    existsSync(join(root, "package-lock.json")),
+    "npm ci requires package-lock.json"
+  );
+});
+
+test("runtime dependencies stay at zero", () => {
+  // The dev-only oracle is a deliberate exception. A *runtime* dependency would
+  // break the appliance promise: a venue box that needs a package registry to
+  // boot is one more thing to fail on a Friday night.
+  assert.deepEqual(
+    Object.keys(pkg.dependencies ?? {}),
+    [],
+    "runtime dependencies must stay empty — dev-only tooling is fine"
+  );
 });
