@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>305 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>317 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -742,6 +742,26 @@
       acceptance with a cheap remedy, not a clearance, and it should not be read as one.
       <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/legal/REVIEW-PACK.md">The review pack</a>
       stays ready with seven precise questions should that change.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--hot);">
+      <strong>CI was green while 76 tests were not running.</strong> The workflow inlined its own copy of the
+      test glob list instead of calling <span class="mono">npm test</span>. Three directories were added to
+      <span class="mono">package.json</span> over time and the workflow never caught up, so every
+      persistence test, every QR test and every licence-lint test ran locally and <em>never executed in
+      CI</em> — 229 running where 305 should have.
+      <br><br>
+      That is the worst shape this failure can take: the signal was not merely absent, it was actively
+      reassuring. The fix is not to update the list but to delete it — CI now calls npm scripts only, and
+      <span class="mono">ci-workflow.test.js</span> fails if the duplication comes back. A second source of
+      truth that nothing reconciles will always drift eventually.
+      <br><br>
+      Alongside it, <span class="mono">REQ-LIC-8</span> stopped being a sentence and became a check:
+      <span class="mono">release.json</span> declares the two artifacts and
+      <span class="mono">check-artifacts.mjs</span> fails if either contains both planes, reusing the
+      licence-lint prefixes so the two cannot disagree about where the boundary is. A DCO job covers
+      <span class="mono">REQ-LIC-9</span>. Both were verified by reintroducing the exact mistake they exist
+      to catch.
     </div>
 
     <div data-render="backlog"></div>

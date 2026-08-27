@@ -18,3 +18,8 @@ desktop.ini
 .env
 .env.*
 !.env.example
+
+# Probe artefacts written by tools/test/licence-lint.test.js. Present only if a
+# run was interrupted; the suite clears them on its next start.
+_lint_probe.*
+_lint_sandbox/

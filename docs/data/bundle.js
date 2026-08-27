@@ -3481,8 +3481,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-LIC-8",
               "REQ-LIC-9"
             ],
-            "status": "todo",
-            "detail": "ADR-006's whole position rests on never shipping a combined installer. The realistic way that is lost is not a court but a well-meaning convenience build. Add a release-time check that no artifact contains both the Apache-2.0 venue layer and the GPL engine, plus a DCO check on pull requests."
+            "status": "done",
+            "detail": "ADR-006 rests on never shipping a combined installer, and the realistic way that is lost is a well-meaning convenience build, not a court. DONE — release.json declares the two artifacts, tools/check-artifacts.mjs fails if any artifact contains both planes (reusing licence-lint prefixes so the two cannot disagree), and a DCO job checks Signed-off-by on every PR commit (REQ-LIC-9). While wiring this up, CI was found to be running a hardcoded test-glob list that had drifted behind package.json — 76 tests, every data/, clients/ and tools/ test, had never run in CI while it reported green. CI now calls npm scripts only, and tools/test/ci-workflow.test.js fails if the duplication returns."
           }
         ]
       },

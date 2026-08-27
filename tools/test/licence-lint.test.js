@@ -42,6 +42,23 @@ function runLint() {
   }
 }
 
+/**
+ * Remove probe artefacts from a previous run.
+ *
+ * These tests deliberately write files that make licence-lint fail. If a run is
+ * interrupted between writing one and its cleanup hook, the next run starts with a
+ * repository that fails lint for a reason that has nothing to do with the change
+ * being tested — a confusing false alarm. Cleaning up on the way in as well as on
+ * the way out makes that self-healing.
+ */
+function clearProbes() {
+  rmSync(join(root, "core", "src", "_lint_probe.js"), { force: true });
+  rmSync(join(root, "engine", "_lint_probe.cpp"), { force: true });
+  rmSync(join(root, "_lint_sandbox"), { recursive: true, force: true });
+}
+
+clearProbes();
+
 test("the repository is currently clean", () => {
   const { code, out } = runLint();
   assert.equal(code, 0, out);

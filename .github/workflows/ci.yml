@@ -19,25 +19,25 @@ jobs:
       # ADR-001 puts a licence boundary between the Apache-2.0 core and the GPL
       # engine plane. A two-licence repository only stays clean if the boundary
       # is enforced mechanically, so this runs first and fails hard (AC-16).
-      - name: Licence lint
-        run: node tools/licence-lint.mjs
-
-      - name: Unit and integration tests
-        run: node --test "protocol/test/**/*.test.js" "engine-stub/test/**/*.test.js" "core/test/**/*.test.js" "api/test/**/*.test.js" "interconnect/test/**/*.test.js"
-
-      # Any conforming engine must pass this. Today only the stub exists; when
-      # the Mixxx-derived engine lands it runs against that too (REQ-CDEP-17,
-      # AC-17), which is what makes "the engine is replaceable" testable.
-      - name: CDEP conformance — engine-stub
-        run: node conformance/bin/cdep-conformance.js --engine engine-stub
+      #
+      # Everything below calls an npm script rather than repeating its command.
+      # This step used to inline the test globs, drifted behind package.json, and
+      # quietly stopped running three whole directories — 76 tests were passing
+      # locally and never executing in CI. `tools/test/ci-workflow.test.js` now
+      # fails if that duplication comes back.
+      - name: Licence lint, tests and CDEP conformance
+        run: npm run check
 
       # Regenerates requirements from SPECIFICATION.md and validates that every
       # backlog story cites a requirement that actually exists.
       - name: Requirements and backlog traceability
-        run: |
-          node tools/extract-requirements.mjs
-          node tools/build-backlog.mjs
-          node tools/build-data.mjs
+        run: npm run build:data
+
+      # ADR-006 / REQ-LIC-8: the Apache-2.0 layer and the GPL engine must never
+      # ship as one artifact. The realistic way that protection is lost is a
+      # well-meaning convenience installer, so it is checked rather than trusted.
+      - name: Release artifact separation
+        run: npm run lint:artifacts
 
       - name: Verify generated files are committed
         run: |
@@ -46,3 +46,37 @@ jobs:
             git diff --stat -- docs/data/ BACKLOG.md
             exit 1
           fi
+
+  # ADR-006 / REQ-LIC-9. The single-GPL fallback in ADR-006 is only exercisable if
+  # every contribution came in under inbound=outbound terms. A DCO sign-off is the
+  # lightest way to establish that — no CLA paperwork, but a durable record.
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Every commit carries a Signed-off-by
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          missing=0
+          while read -r sha; do
+            [ -z "$sha" ] && continue
+            if ! git log -1 --format='%B' "$sha" | grep -qiE '^Signed-off-by: .+ <.+@.+>'; then
+              echo "::error::commit $sha has no Signed-off-by line"
+              git log -1 --format='  %h %s' "$sha"
+              missing=1
+            fi
+          done < <(git rev-list "$base..$head")
+
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "Sign commits with 'git commit -s'. See CONTRIBUTING.md."
+            echo "This keeps the ADR-006 single-GPL fallback exercisable without"
+            echo "having to trace and re-license every past contribution."
+            exit 1
+          fi
+          echo "All commits are signed off (REQ-LIC-9)."

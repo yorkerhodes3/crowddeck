@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 37 of 61 stories complete · 1 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 38 of 61 stories complete · 1 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 61 stories · 120 of 120 requirements covered**
@@ -72,7 +72,7 @@ The split licence is only real if it is mechanically enforced. Contributor confu
 | ✅ **REPO-1** | **Plane layout and SPDX headers**<br>Directory structure per SPECIFICATION §1.2, SPDX header on every file. | S | build | `REQ-LIC-1` |
 | ✅ **REPO-2** | **CI licence-lint gate**<br>Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16. | M | build | `REQ-LIC-2` `REQ-LIC-3` |
 | **REPO-3** | **LGPL-only FFmpeg build with component audit**<br>A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact. | M | `ADOPT` | `REQ-LIC-6` `REQ-LIC-7` |
-| **REPO-4** | **Assert release artifacts stay separate**<br>ADR-006's whole position rests on never shipping a combined installer. The realistic way that is lost is not a court but a well-meaning convenience build. Add a release-time check that no artifact contains both the Apache-2.0 venue layer and the GPL engine, plus a DCO check on pull requests. | S | build | `REQ-LIC-8` `REQ-LIC-9` |
+| ✅ **REPO-4** | **Assert release artifacts stay separate**<br>ADR-006 rests on never shipping a combined installer, and the realistic way that is lost is a well-meaning convenience build, not a court. DONE — release.json declares the two artifacts, tools/check-artifacts.mjs fails if any artifact contains both planes (reusing licence-lint prefixes so the two cannot disagree), and a DCO job checks Signed-off-by on every PR commit (REQ-LIC-9). While wiring this up, CI was found to be running a hardcoded test-glob list that had drifted behind package.json — 76 tests, every data/, clients/ and tools/ test, had never run in CI while it reported green. CI now calls npm scripts only, and tools/test/ci-workflow.test.js fails if the duplication returns. | S | build | `REQ-LIC-8` `REQ-LIC-9` |
 
 ---
 

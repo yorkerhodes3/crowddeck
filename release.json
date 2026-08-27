@@ -1,0 +1,28 @@
+{
+  "$comment": "Release layout — ADR-006 / REQ-LIC-8. The two planes MUST ship as separate downloads. tools/check-artifacts.mjs verifies this, and CI runs it on every push.",
+  "artifacts": [
+    {
+      "name": "crowddeck-venue",
+      "licence": "Apache-2.0",
+      "summary": "The venue layer: scheduler, persistence, API, clients, MIDI interconnect, and a conformant stub engine. Independently useful with any CDEP engine.",
+      "include": [
+        "protocol",
+        "core",
+        "data",
+        "api",
+        "clients",
+        "interconnect",
+        "conformance",
+        "engine-stub"
+      ]
+    },
+    {
+      "name": "crowddeck-engine",
+      "licence": "GPL-2.0-or-later",
+      "summary": "The Mixxx-derived headless audio engine and its CDEP server. A standalone executable, independently runnable, and replaceable by any conforming engine (REQ-LIC-4, REQ-LIC-5).",
+      "include": [
+        "engine"
+      ]
+    }
+  ]
+}

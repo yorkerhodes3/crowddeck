@@ -50,7 +50,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**305 tests · 20 conformance checks · zero runtime dependencies.**
+**317 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
@@ -75,7 +75,7 @@ as a test — [`core/test/day-in-the-life.test.js`](core/test/day-in-the-life.te
 Every other test checks one component. That one checks they compose.
 
 ```bash
-npm run check      # licence lint + tests + conformance
+npm run check      # licence lint + artifact separation + tests + conformance
 ```
 
 ### The five ratified decisions

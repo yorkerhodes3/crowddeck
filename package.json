@@ -14,7 +14,8 @@
     "conformance": "node conformance/bin/cdep-conformance.js --engine engine-stub",
     "lint:licence": "node tools/licence-lint.mjs",
     "build:data": "node tools/extract-requirements.mjs && node tools/build-backlog.mjs && node tools/build-data.mjs",
-    "check": "npm run lint:licence && npm test && npm run conformance"
+    "check": "npm run lint:licence && npm run lint:artifacts && npm test && npm run conformance",
+    "lint:artifacts": "node tools/check-artifacts.mjs"
   },
   "devDependencies": {
     "jsqr": "^1.4.0"
