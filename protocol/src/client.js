@@ -180,6 +180,24 @@ export class CdepClient extends EventEmitter {
   }
 
   /**
+   * Write a control in normalised parameter space (0..1).
+   *
+   * Preferred over `set` for anything driven by a physical control. The engine
+   * applies the correct curve for that control — logarithmic for gain,
+   * audio-tapered for volume — which a client scaling from min/max cannot do.
+   * See SPIKE-1 §4.3.
+   */
+  async setParameter(group, item, parameter) {
+    await this.request({ t: MessageType.SET, group, item, parameter });
+  }
+
+  /** @returns {number} the control's normalised 0..1 position */
+  async getParameter(group, item) {
+    const r = await this.request({ t: MessageType.GET, group, item });
+    return r.parameter;
+  }
+
+  /**
    * @param {Array<{group: string, item: string}>} controls
    * @param {number} [maxHz] coalescing cap — REQ-CDEP-14
    */

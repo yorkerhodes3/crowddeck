@@ -65,7 +65,10 @@ for (const line of unwrapped) {
   const h = line.match(/^#{2,3}\s+(.*)$/);
   if (h) section = clean(h[1]);
 
-  const req = line.match(/^- \*\*(REQ-([A-Z]+)-(\d+))\*\*\s+(.*)$/);
+  // The numeric part may carry a lowercase suffix (REQ-CDEP-12a). That is how an
+  // amendment inserts a sub-requirement without renumbering everything after it
+  // and invalidating existing citations in the backlog and code comments.
+  const req = line.match(/^- \*\*(REQ-([A-Z]+)-(\d+[a-z]?))\*\*\s+(.*)$/);
   if (req) {
     const [, id, group, num, rawText] = req;
     const text = clean(rawText);
@@ -95,7 +98,7 @@ for (const line of unwrapped) {
     const [, id, capsRaw, body] = ac;
     const caps = capsRaw ? [...capsRaw.matchAll(/\*?([A-H]\d+)\*?/g)].map((m) => m[1]) : [];
     const adrRefs = capsRaw ? [...capsRaw.matchAll(/(ADR-\d+)/g)].map((m) => m[1]) : [];
-    const reqRefs = capsRaw ? [...capsRaw.matchAll(/(REQ-[A-Z]+-\d+)/g)].map((m) => m[1]) : [];
+    const reqRefs = capsRaw ? [...capsRaw.matchAll(/(REQ-[A-Z]+-\d+[a-z]?)/g)].map((m) => m[1]) : [];
     acceptance.push({ id, capabilities: caps, adr: adrRefs, requirements: reqRefs, text: clean(body) });
   }
 }

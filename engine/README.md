@@ -30,9 +30,19 @@ headless, and per [ADR-005](../DECISIONS.md#adr-005--native-qt-shell-or-thin-nat
 all consoles are web.
 
 The extraction is tractable because Mixxx's `src/control` already exposes an enumerable, named,
-change-notifying parameter bus (`ControlObject`, `ControlObjectScript`, `ControlModel`) that its JavaScript
-controller layer drives the entire engine through. CDEP adopts that vocabulary, so the work is largely
-adding a transport over a proven abstraction rather than inventing one.
+change-notifying parameter bus (`ControlObject`, `ControlObjectScript`, and
+`ControlDoublePrivate::getAllInstances()`) that its JavaScript controller layer drives the entire engine
+through. CDEP adopts that vocabulary, so the work is largely adding a transport over a proven abstraction
+rather than inventing one.
+
+[SPIKE-1](../spike/SPIKE-1-REPORT.md) verified this against real Mixxx source and found two things worth
+knowing before anyone starts:
+
+- **`EngineMixer` is not GUI-coupled.** `enginemixer.h` includes only `<QObject>` and `<QVarLengthArray>` —
+  QtCore, no QtWidgets. The single largest risk in "strip Mixxx to headless" turns out to be absent.
+- **`effects` is not optional.** Per-deck EQ is routed through the effects rack
+  (`[EqualizerRack1_[ChannelN]_Effect1]`), so it cannot be discarded to slim the fork. It is already in the
+  keep-list above; SPIKE-1 confirms it has to stay.
 
 ## Rules for code in this directory
 

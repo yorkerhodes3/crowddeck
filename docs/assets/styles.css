@@ -161,6 +161,7 @@ tr.target-row td.name { color: #b9b0ff; }
 .chip-P1 { color: var(--warn); border-color: rgba(255, 180, 84, 0.42); background: rgba(255, 180, 84, 0.09); }
 .chip-P2 { color: var(--txt-3); border-color: var(--line); background: var(--panel-2); }
 .chip-tier { color: var(--txt-2); border-color: var(--line); background: var(--panel-2); }
+.chip-partial { color: var(--warn); border-color: rgba(255, 180, 84, 0.45); background: rgba(255, 180, 84, 0.11); }
 
 /* ---------- cards ---------- */
 .grid { display: grid; gap: 14px; margin: 18px 0; }

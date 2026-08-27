@@ -70,9 +70,21 @@ test("every message variant stays open to unknown fields — REQ-CDEP-7", () => 
   }
 });
 
-test("control descriptors require everything a UI needs — REQ-CDEP-12", () => {
+test("control descriptors require what an engine can actually supply — REQ-CDEP-12", () => {
   const required = new Set(schema.$defs.controlDescriptor.required);
-  for (const field of ["group", "item", "type", "min", "max", "default", "readonly", "label"]) {
+
+  // SPIKE-1 read the Mixxx source and found `min`, `max` and `type` are not
+  // reachable: ranges live in a privately-held behavior object, and every
+  // control is a double. Requiring them would have made the protocol
+  // unimplementable by the very engine it was designed for, so they are now
+  // optional hints and clients use normalised parameter space instead.
+  for (const field of ["group", "item", "default", "readonly", "label"]) {
     assert.ok(required.has(field), `controlDescriptor must require "${field}"`);
+  }
+  for (const field of ["min", "max", "type"]) {
+    assert.ok(
+      !required.has(field),
+      `"${field}" must stay optional — SPIKE-1 §4.1 found it is not universally available`
+    );
   }
 });

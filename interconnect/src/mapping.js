@@ -231,7 +231,16 @@ export class MappingEngine {
           this.pendingTakeover.delete(k);
         }
         this.softwareValues.set(k, normalised);
-        return { group: binding.group, item: binding.item, value: scale(normalised, desc) };
+        // `parameter` is the value the engine should actually be given: it knows
+        // the right curve for this control, which scaling from min/max cannot
+        // reproduce (SPIKE-1 §4.3). `value` is retained for engines that predate
+        // parameter space and for readable test assertions.
+        return {
+          group: binding.group,
+          item: binding.item,
+          parameter: normalised,
+          value: scale(normalised, desc)
+        };
       }
     }
   }

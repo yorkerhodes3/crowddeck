@@ -40,7 +40,12 @@ const PLANES = [
   { prefix: "clients", licence: "Apache-2.0", copyleft: false },
   { prefix: "interconnect", licence: "Apache-2.0", copyleft: false },
   { prefix: "tools", licence: "Apache-2.0", copyleft: false },
-  { prefix: "docs", licence: "Apache-2.0", copyleft: false }
+  { prefix: "docs", licence: "Apache-2.0", copyleft: false },
+  // Unmodified upstream Mixxx source, kept only as evidence for SPIKE-1's citations.
+  // `thirdParty` means: do not demand our SPDX header (we must not edit upstream files),
+  // but DO treat it as copyleft, so importing from it is a REQ-LIC-2 violation exactly
+  // as importing from engine/ is. See spike/mixxx-src/PROVENANCE.md.
+  { prefix: "spike/mixxx-src", licence: "GPL-2.0-or-later", copyleft: true, thirdParty: true }
 ];
 
 /** Source extensions that must carry an SPDX header. */
@@ -88,34 +93,61 @@ for (const file of walk(root)) {
   if (EXEMPT_FILES.has(rel)) continue;
 
   const plane = planeFor(rel);
-  if (!plane) continue; // outside any declared plane
+  if (!plane) {
+    // Fail closed. A gate that silently ignores whatever it does not recognise
+    // gives false confidence: source could be added in a new top-level directory
+    // and this tool would still report "no violations". If you add a directory,
+    // declare its plane above.
+    violations.push({
+      rule: "REQ-LIC-1",
+      file: rel,
+      message: "sits outside every declared plane — add it to PLANES in tools/licence-lint.mjs"
+    });
+    continue;
+  }
 
   checked++;
   const text = readFileSync(file, "utf8");
 
-  // 1 + 2. SPDX header present and matching the plane.
-  const m = SPDX_RE.exec(text.slice(0, 2000));
-  if (!m) {
-    violations.push({
-      rule: "REQ-LIC-1",
-      file: rel,
-      message: `missing SPDX-License-Identifier (plane requires ${plane.licence})`
-    });
-  } else if (m[1] !== plane.licence) {
-    violations.push({
-      rule: "REQ-LIC-1",
-      file: rel,
-      message: `declares ${m[1]} but sits in the ${plane.prefix}/ plane, which is ${plane.licence}`
-    });
+  // 1 + 2. SPDX header present and matching the plane. Skipped for unmodified
+  // third-party source, which we deliberately do not touch.
+  if (!plane.thirdParty) {
+    const m = SPDX_RE.exec(text.slice(0, 2000));
+    if (!m) {
+      violations.push({
+        rule: "REQ-LIC-1",
+        file: rel,
+        message: `missing SPDX-License-Identifier (plane requires ${plane.licence})`
+      });
+    } else if (m[1] !== plane.licence) {
+      violations.push({
+        rule: "REQ-LIC-1",
+        file: rel,
+        message: `declares ${m[1]} but sits in the ${plane.prefix}/ plane, which is ${plane.licence}`
+      });
+    }
   }
 
   // 3. Permissive code must not reach into the copyleft plane.
   if (!plane.copyleft) {
     const gplPlanes = PLANES.filter((p) => p.copyleft).map((p) => p.prefix);
-    const importRe = /(?:^|\s)(?:import|export)[\s\S]{0,200}?from\s+["']([^"']+)["']|require\(\s*["']([^"']+)["']\s*\)|#include\s+["<]([^">]+)[">]/g;
+    // Every form that can pull in a module. The `from` clause is NOT sufficient:
+    // a bare side-effect import (`import "x";`) has no `from` and would otherwise
+    // walk straight through this check — which is exactly how a negative test
+    // caught this rule failing to fire.
+    const importRe = new RegExp(
+      [
+        /(?:^|[\s;])(?:import|export)[\s\S]{0,200}?\sfrom\s*["']([^"']+)["']/.source,
+        /(?:^|[\s;])import\s*["']([^"']+)["']/.source,
+        /\bimport\s*\(\s*["']([^"']+)["']\s*\)/.source,
+        /\brequire\s*\(\s*["']([^"']+)["']\s*\)/.source,
+        /#include\s+["<]([^">]+)[">]/.source
+      ].join("|"),
+      "g"
+    );
     let im;
     while ((im = importRe.exec(text)) !== null) {
-      const spec = im[1] ?? im[2] ?? im[3];
+      const spec = im[1] ?? im[2] ?? im[3] ?? im[4] ?? im[5];
       if (!spec) continue;
       const resolved = spec.startsWith(".")
         ? relative(root, resolve(dirname(file), spec)).split(sep).join("/")

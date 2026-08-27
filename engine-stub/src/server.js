@@ -129,7 +129,13 @@ class Connection {
     const batch = [...this.pending.values()];
     this.pending.clear();
     for (const u of batch) {
-      if (!this.offer(changed(u.group, u.item, u.value))) break;
+      let parameter;
+      try {
+        parameter = this.server.engine.getParameter(u.group, u.item);
+      } catch {
+        parameter = undefined;
+      }
+      if (!this.offer(changed(u.group, u.item, u.value, parameter))) break;
     }
   }
 
@@ -301,17 +307,27 @@ export class Server {
       case MessageType.GET: {
         const group = requireString(msg, "group");
         const item = requireString(msg, "item");
-        conn.reply(value(id, group, item, this.engine.get(group, item)));
+        conn.reply(
+          value(id, group, item, this.engine.get(group, item), this.engine.getParameter(group, item))
+        );
         return;
       }
 
       case MessageType.SET: {
         const group = requireString(msg, "group");
         const item = requireString(msg, "item");
-        if (typeof msg.value !== "number") {
-          throw new CdepError(ErrorCode.INVALID_FIELD, `"value" must be a number`);
+        // Either representation is accepted; parameter space is preferred for
+        // anything driven by a physical control (SPIKE-1 §4.3).
+        if (msg.parameter !== undefined) {
+          if (typeof msg.parameter !== "number") {
+            throw new CdepError(ErrorCode.INVALID_FIELD, `"parameter" must be a number`);
+          }
+          this.engine.setParameter(group, item, msg.parameter);
+        } else if (typeof msg.value === "number") {
+          this.engine.set(group, item, msg.value);
+        } else {
+          throw new CdepError(ErrorCode.INVALID_FIELD, `"value" or "parameter" is required`);
         }
-        this.engine.set(group, item, msg.value);
         conn.reply(ok(id));
         return;
       }

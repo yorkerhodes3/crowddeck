@@ -118,19 +118,21 @@ export const error = (code, message, id) => ({
   message
 });
 
-export const value = (id, group, item, v) => ({
+export const value = (id, group, item, v, parameter) => ({
   t: MessageType.VALUE,
   ...(id === undefined ? {} : { id }),
   group,
   item,
-  value: v
+  value: v,
+  ...(parameter === undefined ? {} : { parameter })
 });
 
-export const changed = (group, item, v) => ({
+export const changed = (group, item, v, parameter) => ({
   t: MessageType.CHANGED,
   group,
   item,
-  value: v
+  value: v,
+  ...(parameter === undefined ? {} : { parameter })
 });
 
 export const description = (id, controls) => ({

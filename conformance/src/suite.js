@@ -475,6 +475,47 @@ export const checks = [
       );
       assert((await c.get("[Channel3]", "play")) === 1, "playback must continue");
     }
+  },
+  {
+    id: "C20",
+    requirement: "REQ-CDEP-12",
+    title: "every control exposes a normalised parameter, and accepts writes in it",
+    async run({ connect }) {
+      const c = await connect();
+      const controls = await c.describe();
+
+      // Descriptors must carry the fields a real engine can actually supply.
+      // min/max/type became optional after SPIKE-1 found they are not reachable
+      // in Mixxx; label and default are still mandatory because they are.
+      for (const d of controls) {
+        assert(typeof d.label === "string" && d.label.length > 0, `${d.item} needs a label`);
+        assert(typeof d.default === "number", `${d.item} needs a default`);
+        assert(typeof d.readonly === "boolean", `${d.item} needs a readonly flag`);
+      }
+
+      const writable = controls.find((d) => !d.readonly && d.type !== "bool");
+      assert(writable, "no writable non-bool control to exercise");
+
+      const read = await c.request({ t: "get", group: writable.group, item: writable.item });
+      assert(typeof read.parameter === "number", "get must return a parameter");
+      assert(
+        read.parameter >= 0 && read.parameter <= 1,
+        `parameter must be normalised, got ${read.parameter}`
+      );
+
+      await c.setParameter(writable.group, writable.item, 0.75);
+      const after = await c.getParameter(writable.group, writable.item);
+      assert(
+        Math.abs(after - 0.75) < 0.02,
+        `parameter write should round-trip, wrote 0.75 read ${after}`
+      );
+
+      await expectError(
+        c.setParameter(writable.group, writable.item, 1.5),
+        ErrorCode.VALUE_OUT_OF_RANGE,
+        "a parameter outside 0..1 must be refused rather than clamped"
+      );
+    }
   }
 ];
 

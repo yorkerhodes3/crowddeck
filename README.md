@@ -6,7 +6,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 > ## 📊 [**View the project dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
 >
 > The dashboard is the recommended way to read this project: an interactive capability matrix, a filterable
-> open-source triage table, the proposed architecture, and browsable views of all 117 requirements and 59
+> open-source triage table, the proposed architecture, and browsable views of all 118 requirements and 60
 > backlog stories.
 
 ---
@@ -17,9 +17,9 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 |---|---|---|
 | **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
-| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 117 requirements, 18 acceptance criteria |
-| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 59 stories, 117/117 traced |
-| **4 — Build** | `protocol/` `core/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI, 29/60 stories** |
+| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 118 requirements, 18 acceptance criteria |
+| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 60 stories, 118/118 traced |
+| **4 — Build** | `protocol/` `core/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI, 30/60 stories** |
 
 ### Try it
 
@@ -45,11 +45,11 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
 | [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks everything above, and permanently proves the engine is replaceable (REQ-LIC-5) |
-| [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 19 checks |
+| [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 20 checks |
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**212 tests · 19 conformance checks · zero runtime dependencies.**
+**228 tests · 20 conformance checks · zero runtime dependencies.**
 
 ### The definition of done, as an executable test
 
@@ -88,8 +88,15 @@ largely adding a transport over a proven abstraction.
 
 ### What happens next
 
-`SPIKE-1` — a ~6-week headless-Mixxx extraction spike, now with a **concrete contract and a passing
-conformance suite to extract against**. `LEGAL-1`, review of the licence boundary, runs alongside it.
+`SPIKE-1` is **partially complete**. Its source-analysis half is done and written up in
+[`spike/SPIKE-1-REPORT.md`](spike/SPIKE-1-REPORT.md): the enumerable-control-bus assumption that
+[ADR-002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new) rests on is **verified against real Mixxx
+source**, `EngineMixer` is confirmed to be GUI-free, and §2.10 was validated — which turned up two errors and
+produced a real amendment to CDEP (parameter space, `REQ-CDEP-12a`).
+
+Its **build-and-measure half is not done**, and cannot be done here: it needs Qt6, CMake, MSVC and real audio
+and MIDI hardware. So the §8.1 latency budgets remain **unvalidated assumptions** and are now the single
+largest technical risk in the plan. `LEGAL-1`, review of the licence boundary, runs alongside.
 
 ---
 
@@ -138,8 +145,8 @@ Raw findings are preserved in [`research/`](research/).
 ```
 CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
 DECISIONS.md             Five ratified ADRs
-SPECIFICATION.md         117 requirements, 18 acceptance criteria (source of truth)
-BACKLOG.md               Generated — 11 epics, 59 stories
+SPECIFICATION.md         118 requirements, 18 acceptance criteria (source of truth)
+BACKLOG.md               Generated — 11 epics, 60 stories
 
 protocol/                Apache-2.0 — CDEP: the engine contract
   cdep-1.schema.json       Published wire-format schema
@@ -157,17 +164,24 @@ engine-stub/             Apache-2.0 — a conformant engine with no audio
   bin/                     crowddeck-engine-stub
   test/                    integration, transport, back-pressure
 conformance/             Apache-2.0 — the suite any engine must pass
+api/                     Apache-2.0 — venue API + hand-written RFC 6455 WebSocket
+clients/                 Apache-2.0 — patron PWA, venue display, DJ console
+interconnect/            Apache-2.0 — MIDI ports, mappings, clock, live instruments
 engine/                  GPL-2.0-or-later — empty until SPIKE-1
+spike/                   SPIKE-1 findings + the Mixxx source extracts they cite
+  SPIKE-1-REPORT.md        What was verified, what was corrected, what is still owed
+  mixxx-src/               Unmodified upstream GPL source, kept as evidence — see PROVENANCE.md
 
 docs/
   index.html             Interactive dashboard explainer (GitHub Pages root)
   assets/                styles.css, app.js — no external dependencies
   data/                  Structured data, reusable by later phases
 tools/
-  licence-lint.mjs          Enforces the ADR-001 plane boundary
+  licence-lint.mjs          Enforces the ADR-001 plane boundary — fails closed
   extract-requirements.mjs  SPECIFICATION.md  → docs/data/requirements.json
   build-backlog.mjs         backlog.json      → BACKLOG.md, validates traceability
   build-data.mjs            docs/data/*.json  → docs/data/bundle.js
+  test/                     Tests that each licence rule actually fires
 research/                Raw Tavily findings and GitHub API output
 ```
 

@@ -223,8 +223,10 @@
           head.appendChild(el("span", "capid", s.id));
           var nm = el("span", "capname", s.name);
           if (s.status === "done") nm.style.color = "var(--accent)";
+          else if (s.status === "partial") nm.style.color = "var(--warn)";
           head.appendChild(nm);
           if (s.status === "done") head.appendChild(chip("done", "chip-FORK"));
+          else if (s.status === "partial") head.appendChild(chip("partial", "chip-partial"));
           head.appendChild(chip(s.size, "chip-tier"));
           if (s.verdict) head.appendChild(chip(s.verdict, "chip-" + s.verdict));
           row.appendChild(head);

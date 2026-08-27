@@ -135,10 +135,18 @@ Two findings from inspecting the source tree make the extraction **much cheaper 
 
 **2. Mixxx already has an enumerable, named parameter bus — which is an IPC surface in all but transport.**
 
-`src/control` contains `ControlObject`, `ControlProxy`, **`ControlObjectScript`** and **`ControlModel`**.
+`src/control` contains `ControlObject`, `ControlProxy`, **`ControlObjectScript`** and `ControlModel`.
 `ControlObjectScript` is the bridge that lets the JavaScript controller-mapping layer drive the *entire*
-engine through string-addressed controls (`[Channel1]`, `play`). `ControlModel` makes the full control set
-**enumerable at runtime**.
+engine through string-addressed controls (`[Channel1]`, `play`). Enumeration comes from
+**`ControlDoublePrivate::getAllInstances()`** (`control.h:63`, *"Returns a list of all existing instances"*),
+which — combined with per-control `name()`, `description()` and `defaultValue()` — makes the full control set
+**enumerable at runtime** with the metadata a UI needs.
+
+> **Corrected by SPIKE-1.** This ADR originally credited `ControlModel` with runtime enumeration. It does not
+> do that: it is a `QAbstractTableModel` backing Mixxx's Developer→Controls window, populated by manual
+> `addControl()` calls. The decision is unaffected — enumeration *is* available, and `getAllInstances()` is
+> arguably a better mechanism than the one I claimed — but the ADR was resting on a misidentified citation
+> and that is worth recording rather than quietly editing.
 
 The hard part of headless extraction — designing a uniform, introspectable, change-notifying parameter
 surface — **is already done and already proven** by every controller mapping Mixxx ships. Our work is

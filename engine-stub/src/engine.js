@@ -15,10 +15,13 @@ import {
   CdepError,
   ErrorCode,
   MASTER_GROUP,
+  coerceParameter,
   coerceValue,
   control,
   controlKey,
-  deckGroup
+  deckGroup,
+  parameterToValue,
+  valueToParameter
 } from "../../protocol/src/index.js";
 import { SimulatedSink } from "./sink.js";
 
@@ -148,6 +151,34 @@ export class StubEngine extends EventEmitter {
       throw new CdepError(ErrorCode.UNKNOWN_CONTROL, `${group}/${item}`);
     }
     return this.values.get(key);
+  }
+
+  /**
+   * Read a control in normalised parameter space (0..1) — SPIKE-1 §4.3.
+   *
+   * A real engine computes this with the control's own curve. The stub is
+   * linear, which is fine because the *protocol* guarantee is only that the
+   * value is normalised, not how.
+   */
+  getParameter(group, item) {
+    const key = controlKey(group, item);
+    const desc = this.descriptors.get(key);
+    if (!desc) throw new CdepError(ErrorCode.UNKNOWN_CONTROL, `${group}/${item}`);
+    return valueToParameter(desc, this.values.get(key));
+  }
+
+  /** Write a control in normalised parameter space. */
+  setParameter(group, item, rawParameter) {
+    const key = controlKey(group, item);
+    const desc = this.descriptors.get(key);
+    if (!desc) throw new CdepError(ErrorCode.UNKNOWN_CONTROL, `${group}/${item}`);
+    if (desc.readonly) throw new CdepError(ErrorCode.READONLY_CONTROL, `${group}/${item}`);
+
+    const parameter = coerceParameter(rawParameter);
+    const value = parameterToValue(desc, parameter);
+    this.#setInternal(group, item, value);
+    this.#applySideEffects(group, item, value);
+    return value;
   }
 
   /**

@@ -38,7 +38,7 @@ for (const epic of backlog.epics) {
     seenStoryIds.add(s.id);
 
     if (!backlog.sizes[s.size]) errors.push(`${s.id}: unknown size "${s.size}"`);
-    if (s.status !== undefined && !["done", "todo"].includes(s.status)) {
+    if (s.status !== undefined && !["done", "partial", "todo"].includes(s.status)) {
       errors.push(`${s.id}: unknown status "${s.status}"`);
     }
     if (s.verdict !== null && !knownVerdicts.has(s.verdict)) {
@@ -63,6 +63,12 @@ const doneCount = backlog.epics.reduce(
   (a, e) => a + e.stories.filter((s) => s.status === "done").length,
   0
 );
+// Counted separately and never folded into `done`. A story that is half-finished
+// is not finished, and reporting it as such is how plans start lying.
+const partialCount = backlog.epics.reduce(
+  (a, e) => a + e.stories.filter((s) => s.status === "partial").length,
+  0
+);
 
 // ---------------------------------------------------------------- render
 const L = [];
@@ -74,7 +80,9 @@ p("> **Generated file.** Edit `docs/data/backlog.json` and run `node tools/build
 p("> Traceability is validated at build time: every `REQ-*` cited below exists in");
 p("> [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.");
 p();
-p("**Status:** 🚧 In progress — " + doneCount + " of " + storyCount + " stories complete · **Date:** " + backlog.generated);
+p("**Status:** 🚧 In progress — " + doneCount + " of " + storyCount + " stories complete" +
+  (partialCount ? ` · ${partialCount} partial (◐)` : "") +
+  " · **Date:** " + backlog.generated);
 p("**Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**");
 p();
 p(`**${backlog.epics.length} epics · ${storyCount} stories · ${citedReqs.size} of ${knownReqs.size} requirements covered**`);
@@ -115,7 +123,7 @@ for (const m of backlog.milestones) {
     for (const s of epic.stories) {
       const verdict = s.verdict ? `\`${s.verdict}\`` : "build";
       const reqs = s.reqs.length ? s.reqs.map((r) => `\`${r}\``).join(" ") : "—";
-      const mark = s.status === "done" ? "✅ " : "";
+      const mark = s.status === "done" ? "✅ " : s.status === "partial" ? "◐ " : "";
       p(`| ${mark}**${s.id}** | **${s.name}**<br>${s.detail} | ${s.size} | ${verdict} | ${reqs} |`);
     }
     p();

@@ -30,8 +30,8 @@
     },
     "controlDescriptor": {
       "type": "object",
-      "description": "Self-description sufficient to build a control UI and a MIDI mapping target list with no hard-coded engine knowledge (REQ-CDEP-12, REQ-CDEP-13).",
-      "required": ["group", "item", "type", "min", "max", "default", "readonly", "label"],
+      "description": "Self-description sufficient to build a control UI and a MIDI mapping target list with no hard-coded engine knowledge (REQ-CDEP-12, REQ-CDEP-13). `min`, `max` and `type` are OPTIONAL hints: SPIKE-1 found they are not reachable in Mixxx, where ranges live in a privately-held behavior object and every control is a double. Clients should work in normalised parameter space instead.",
+      "required": ["group", "item", "default", "readonly", "label"],
       "properties": {
         "group": { "$ref": "#/$defs/group" },
         "item": { "$ref": "#/$defs/item" },

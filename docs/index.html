@@ -33,7 +33,7 @@
 </header>
 
 <div class="wrap hero">
-  <span class="eyebrow">Planning Complete · Build Started — M1 Green</span>
+  <span class="eyebrow">Planning Complete · Build Started · SPIKE-1 Assumption Verified</span>
   <h1>The DJ booth and the jukebox have never shared <em>one machine</em>.</h1>
   <p class="lede">
     CrowdDeck is a concept for an open-source venue runtime that runs a professional multi-deck DJ engine
@@ -549,13 +549,13 @@
     <span class="status">✅</span>
     <div class="ph">Phase 2 · complete</div>
     <h4>SPECIFICATION.md</h4>
-    <p>117 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
+    <p>118 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
       </div>
   <div class="gate done">
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>11 epics, 59 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>11 epics, 60 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -578,7 +578,7 @@
 <section id="spec">
   <div class="wrap">
     <div class="sec-num">11 — SPECIFICATION</div>
-    <h2>117 requirements, traced to the research</h2>
+    <h2>118 requirements, traced to the research</h2>
     <p>
       Phase 2 converts the capability set into testable requirements against the five ratified decisions.
       The first section written was the <strong>engine IPC contract</strong>, because everything else is
@@ -639,7 +639,7 @@
     <div class="callout">
       <strong>Traceability is enforced, not asserted.</strong> Every story cites the requirements it
       satisfies, and <span class="mono">tools/build-backlog.mjs</span> fails the build if a story references
-      a requirement that does not exist in the specification. All <strong>117 of 117</strong> requirements
+      a requirement that does not exist in the specification. All <strong>118 of 118</strong> requirements
       are currently covered.
     </div>
 
@@ -648,12 +648,12 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>212 tests, 19 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>228 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
 
-    <div class="callout" style="border-left-color: var(--accent2);">
+    <div class="callout" style="border-left-color: var(--accent-2);">
       <strong>The specification's definition of done now runs as a test.</strong>
       §0.4 describes a full trading day in prose; <span class="mono">day-in-the-life.test.js</span>
       executes it. The venue opens unattended and the fallback carries the room, patrons queue and vote,
@@ -665,6 +665,32 @@
       one checks they compose.
     </div>
 
+    <div class="callout" style="border-left-color: var(--warn);">
+      <strong>SPIKE-1: the assumption everything rests on has been checked — and it held.</strong>
+      The whole plan depends on one claim: that Mixxx's control bus is enumerable, self-describing and
+      drivable from outside. Reading the real source confirms it —
+      <span class="mono">ControlDoublePrivate::getAllInstances()</span> returns every control, each carrying
+      a name, a description and a default. Better still,
+      <span class="mono">EngineMixer</span> includes only QtCore, so the engine is <em>not</em> entangled
+      with the GUI — the single largest risk in "strip Mixxx to headless" simply isn't there.
+      <br><br>
+      Looking closely also changed the contract. CDEP required <span class="mono">min</span> and
+      <span class="mono">max</span> on every control so clients could scale into range. Mixxx cannot supply
+      them — and it turns out clients shouldn't want them: each control carries its own curve, logarithmic
+      for gain, audio-taper for volume, linear for the crossfader. So CDEP now speaks
+      <strong>normalised parameter space</strong> and the engine applies its own curve. The specification had
+      declared master gain as <span class="mono">0..4</span> linear; it is really
+      <span class="mono">-14..14</span> dB, so a fader at half travel would have meant <em>"double gain"</em>
+      to a client and <em>"unity"</em> to the engine. A test now pins that down.
+      <br><br>
+      <strong>But the spike is only half done, and the honest half is missing.</strong> Building Mixxx needs
+      Qt6, CMake and MSVC, and measuring latency needs real audio and MIDI hardware — none of which exist in
+      this environment. The <span class="mono">§8.1</span> latency budgets remain
+      <strong>unvalidated assumptions</strong>, and they are now the largest technical risk in the plan.
+      Read <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/spike/SPIKE-1-REPORT.md">the full
+      report</a>, including what it deliberately did <em>not</em> do.
+    </div>
+
     <div data-render="backlog"></div>
   </div>
 </section>
@@ -673,7 +699,7 @@
   <div class="wrap">
     <p>
       <strong>CrowdDeck — planning complete, build under way.</strong> Concept research, five ratified
-      decisions, 117 specified requirements, a 59-story sequenced backlog, and a working CDEP contract with
+      decisions, 118 specified requirements, a 60-story sequenced backlog, and a working CDEP contract with
       a conformant stub engine. The Mixxx fork comes after the de-risking spike, not before it.
     </p>
     <p>

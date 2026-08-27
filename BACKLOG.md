@@ -4,10 +4,10 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 30 of 60 stories complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 30 of 60 stories complete · 1 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
-**11 epics · 60 stories · 117 of 117 requirements covered**
+**11 epics · 60 stories · 118 of 118 requirements covered**
 
 Sizes are t-shirt estimates for a small team, not commitments: **S** ≤1 week · **M** 1-3 weeks · **L** 3-6 weeks · **XL** 6-12 weeks.
 
@@ -41,7 +41,7 @@ Two assumptions carry the plan. Both are cheap to test and expensive to get wron
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **SPIKE-1** | **Headless Mixxx extraction spike**<br>Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan. | L | `FORK` | `REQ-CDEP-17` `REQ-CDEP-18` |
+| ◐ **SPIKE-1** | **Headless Mixxx extraction spike**<br>Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan. PARTIAL — the source-analysis half is done and reported in spike/SPIKE-1-REPORT.md: the enumerable-control-bus assumption ADR-002 rests on is verified, EngineMixer is confirmed GUI-free, §2.10 is validated and two errors fixed, and CDEP is amended to parameter space. The build-and-measure half is NOT done — it needs Qt6/CMake/MSVC and real audio+MIDI hardware, which this environment has none of. §8.1 latency budgets therefore remain unvalidated assumptions and are the largest residual risk in the plan. | L | `FORK` | `REQ-CDEP-17` `REQ-CDEP-18` |
 | **LEGAL-1** | **Legal review of the ADR-001 IPC boundary**<br>Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down. | S | build | `REQ-LIC-2` `REQ-LIC-4` `REQ-LIC-5` |
 | **SPIKE-2** | **Audio backend selection**<br>Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts. | S | `ADOPT` | `REQ-NFR-1` |
 
@@ -147,9 +147,9 @@ Fork now that the contract is proven. Its Control bus already drives the whole e
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **ENG-1** | **Fork and strip to headless**<br>Keep engine, audio, soundio, mixer, analyzer, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. | XL | `FORK` | `REQ-LIC-4` |
-| **ENG-2** | **CDEP server over the Control bus**<br>Bridge ControlObject/ControlModel to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. | L | `FORK` | `REQ-CDEP-5` `REQ-CDEP-6` `REQ-CDEP-12` |
-| **ENG-3** | **Four decks with EQ, filter, crossfader**<br>Inherited from Mixxx; wire to the CDEP control set. | M | `FORK` | `REQ-CDEP-10` |
+| **ENG-1** | **Fork and strip to headless**<br>Keep engine, audio, soundio, mixer, analyzer, effects, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. SPIKE-1: effects is NOT optional — per-deck EQ is routed through [EqualizerRack1_[ChannelN]_Effect1], so the rack must be retained. SPIKE-1 also found EngineMixer includes only QtCore, so the headless strip is less risky than assumed. | XL | `FORK` | `REQ-LIC-4` |
+| **ENG-2** | **CDEP server over the Control bus**<br>Bridge ControlObject / ControlDoublePrivate::getAllInstances() to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. SPIKE-1: describe() is built from getAllInstances() + name()/description()/defaultValue(); min/max are NOT reachable, so serve parameter space via ControlDoublePrivate::getParameter/setParameter (REQ-CDEP-12a). Coalescing for REQ-CDEP-14 is inheritable from ControlObjectScript's CompressingProxy rather than built from scratch. | L | `FORK` | `REQ-CDEP-5` `REQ-CDEP-6` `REQ-CDEP-12` `REQ-CDEP-12a` |
+| **ENG-3** | **Four decks with EQ, filter, crossfader**<br>Inherited from Mixxx; wire to the CDEP control set. SPIKE-1: EQ is an effects-rack unit, not a deck control — budget for wiring [EqualizerRack1_[ChannelN]_Effect1]/parameter1..3. | M | `FORK` | `REQ-CDEP-10` |
 | **ENG-4** | **Beatgrid, key detection and key-lock**<br>Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open. | L | `FORK` | `REQ-CON-2` |
 | **ENG-5** | **Sync lock with leader deck**<br>The leader deck becomes the single tempo source published to every transport. | M | `FORK` | `REQ-CLK-1` |
 | **ENG-6** | **Hot cues and loops**<br>Inherited from Mixxx. | M | `FORK` | `REQ-CDEP-10` |

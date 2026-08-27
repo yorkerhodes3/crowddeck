@@ -61,8 +61,8 @@
             "REQ-CDEP-17",
             "REQ-CDEP-18"
           ],
-          "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan.",
-          "status": "todo"
+          "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan. PARTIAL — the source-analysis half is done and reported in spike/SPIKE-1-REPORT.md: the enumerable-control-bus assumption ADR-002 rests on is verified, EngineMixer is confirmed GUI-free, §2.10 is validated and two errors fixed, and CDEP is amended to parameter space. The build-and-measure half is NOT done — it needs Qt6/CMake/MSVC and real audio+MIDI hardware, which this environment has none of. §8.1 latency budgets therefore remain unvalidated assumptions and are the largest residual risk in the plan.",
+          "status": "partial"
         },
         {
           "id": "LEGAL-1",
@@ -534,7 +534,7 @@
           "reqs": [
             "REQ-LIC-4"
           ],
-          "detail": "Keep engine, audio, soundio, mixer, analyzer, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders.",
+          "detail": "Keep engine, audio, soundio, mixer, analyzer, effects, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. SPIKE-1: effects is NOT optional — per-deck EQ is routed through [EqualizerRack1_[ChannelN]_Effect1], so the rack must be retained. SPIKE-1 also found EngineMixer includes only QtCore, so the headless strip is less risky than assumed.",
           "status": "todo"
         },
         {
@@ -545,9 +545,10 @@
           "reqs": [
             "REQ-CDEP-5",
             "REQ-CDEP-6",
-            "REQ-CDEP-12"
+            "REQ-CDEP-12",
+            "REQ-CDEP-12a"
           ],
-          "detail": "Bridge ControlObject/ControlModel to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17.",
+          "detail": "Bridge ControlObject / ControlDoublePrivate::getAllInstances() to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. SPIKE-1: describe() is built from getAllInstances() + name()/description()/defaultValue(); min/max are NOT reachable, so serve parameter space via ControlDoublePrivate::getParameter/setParameter (REQ-CDEP-12a). Coalescing for REQ-CDEP-14 is inheritable from ControlObjectScript's CompressingProxy rather than built from scratch.",
           "status": "todo"
         },
         {
@@ -558,7 +559,7 @@
           "reqs": [
             "REQ-CDEP-10"
           ],
-          "detail": "Inherited from Mixxx; wire to the CDEP control set.",
+          "detail": "Inherited from Mixxx; wire to the CDEP control set. SPIKE-1: EQ is an effects-rack unit, not a deck control — budget for wiring [EqualizerRack1_[ChannelN]_Effect1]/parameter1..3.",
           "status": "todo"
         },
         {

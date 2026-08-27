@@ -101,9 +101,10 @@ consumer rather than dictated by the fork.
 ### 2.1 Design basis
 
 Mixxx's `src/control` already exposes an enumerable, named, change-notifying parameter bus
-(`ControlObject`, `ControlProxy`, `ControlObjectScript`, `ControlModel`) that its JavaScript controller
-layer drives the entire engine through. CDEP **adopts that vocabulary** and adds a transport. This is why
-extraction is tractable — we are wrapping a proven abstraction, not inventing one.
+(`ControlObject`, `ControlProxy`, `ControlObjectScript`, and `ControlDoublePrivate::getAllInstances()` for
+enumeration) that its JavaScript controller layer drives the entire engine through. CDEP **adopts that
+vocabulary** and adds a transport. This is why extraction is tractable — we are wrapping a proven
+abstraction, not inventing one. SPIKE-1 verified this claim against real source rather than inference.
 
 ### 2.2 Transport
 
@@ -173,10 +174,27 @@ Every message is a JSON object with a `t` (type) field. Requests carry an `id`; 
 
 ### 2.7 Self-description
 
-- **REQ-CDEP-12** `describe` **MUST** return every control with a descriptor: `group`, `item`, `type`
-  (`bool` | `int` | `float` | `enum`), `min`, `max`, `default`, `readonly`, and a human label.
+- **REQ-CDEP-12** `describe` **MUST** return every control with a descriptor carrying `group`, `item`,
+  `default`, `readonly`, and a human `label`. `type` (`bool` | `int` | `float` | `enum`), `min` and `max`
+  are **SHOULD** — an engine supplies them where it knows them and omits them where it does not.
+- **REQ-CDEP-12a** Every control **MUST** additionally be readable and writable in **parameter space**: a
+  normalised `0.0..1.0` where 0 is the control's minimum useful position and 1 its maximum. `get` **MUST**
+  return `parameter` alongside `value`; `set` **MUST** accept either.
 - **REQ-CDEP-13** The description **MUST** be sufficient to build a complete control UI and a complete
-  MIDI-mapping target list with no hard-coded knowledge of the engine.
+  MIDI-mapping target list with no hard-coded knowledge of the engine. A client that uses only parameter
+  space **MUST** be able to do this using solely **MUST**-level descriptor fields.
+
+> **Amended by SPIKE-1.** `min`/`max`/`type` were originally **MUST**. Reading the Mixxx source showed that
+> would have made CDEP unimplementable by its own reference engine: ranges live in protected members of a
+> privately-held `ControlPotmeterBehavior` (`controlbehavior.h:54-55`, `control.h:189`) with no getter, some
+> behaviors are unbounded by design, and every control is a `double` so `type` is not modelled at all.
+>
+> Parameter space is not a workaround, it is the better primitive. Mixxx already exposes
+> `getParameter`/`setParameter` universally (`control.h:113-116`) and each control carries its own curve —
+> logarithmic for gain, audio-taper for volume, linear for the crossfader. A client scaling linearly between
+> `min` and `max` would get every one of those wrong even if it *could* read them. Sending a normalised
+> parameter and letting the engine apply its own curve is both simpler and more correct.
+> See [`spike/SPIKE-1-REPORT.md`](spike/SPIKE-1-REPORT.md) §4.
 
 > Self-description is deliberately symmetric with the MIDI-CI Property Exchange model in §6.3 — the same
 > "the device describes itself" principle applied on both sides of the system.
@@ -202,8 +220,28 @@ Every message is a JSON object with a `t` (type) field. Requests carry an `id`; 
 
 | Group | Items |
 |---|---|
-| `[ChannelN]` | `play`, `cue_gotoandplay`, `rate`, `rate_dir`, `bpm`, `key`, `keylock`, `volume`, `pregain`, `filter`, `eq_low/mid/high`, `loop_in`, `loop_out`, `loop_enabled`, `hotcue_N_activate`, `playposition`, `track_loaded`, `duration`, `sync_enabled`, `sync_leader` |
+| `[ChannelN]` | `play`, `cue_gotoandplay`, `rate`, `rate_dir`, `bpm`, `key`, `keylock`, `volume`, `pregain`, `filter`, `loop_in`, `loop_out`, `loop_enabled`, `hotcue_N_activate`, `playposition`, `track_loaded`, `duration`, `sync_enabled`, `sync_leader` |
 | `[Master]` | `crossfader`, `gain`, `headMix`, `headGain`, `bpm`, `mode`, `num_decks` |
+| `[EqualizerRack1_[ChannelN]_Effect1]` | `parameter1` (low), `parameter2` (mid), `parameter3` (high) |
+
+**Ranges.** `[Master]`/`gain` and `[Master]`/`headGain` are **-14..14 dB** (`enginemixer.cpp:67,71`), not a
+linear multiplier. `crossfader` is -1..1. Clients **SHOULD NOT** hard-code these: use parameter space
+(REQ-CDEP-12a) and the ranges become the engine's problem, which is where they belong.
+
+> **Amended by SPIKE-1.** Two errors were found by checking this table against real Mixxx source.
+>
+> First, `gain`/`headGain` were specified as 0..4 linear. They are decibels. A MIDI fader at half travel
+> would have meant "double gain" to a client and "unity" to the engine.
+>
+> Second — and with scope consequences — **per-deck EQ is not a deck control.** Mixxx routes it through the
+> effects subsystem as `[EqualizerRack1_[ChannelN]_Effect1]`/`parameter1..3`
+> (`common-controller-scripts.js:590`). `[ChannelN]`/`eq_low|mid|high` does not exist. The headless extraction
+> in §0.2 therefore **must retain the effects rack**, not just the mixer and decks. This is a real increase in
+> the surface area of the fork and is tracked as such in the backlog.
+>
+> 12 of the 14 remaining names in this table were verified directly against Mixxx source; the other two
+> (`crossfader`, `headMix`) are present but were not returned by code search. See
+> [`spike/SPIKE-1-REPORT.md`](spike/SPIKE-1-REPORT.md) §5.
 
 ---
 
