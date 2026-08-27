@@ -6,7 +6,7 @@
   "description": "CrowdDeck — an open-source venue runtime fusing a DJ deck engine with a crowd-request jukebox.",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5.0"
   },
   "scripts": {
     "start": "node api/bin/crowddeck-server.js",

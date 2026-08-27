@@ -50,13 +50,13 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**282 tests · 20 conformance checks · zero runtime dependencies.**
+**286 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
-> and needs **Node 22.5+**. It prints an `ExperimentalWarning` on first use, which is left visible on
-> purpose. If the API moves, the blast radius is [`data/src/db.js`](data/src/db.js); everything else talks to
-> `VenueDatabase`, not to SQLite.
+> and needs **Node 22.5+** (declared in `engines`, and checked by a test so it cannot drift). It prints an
+> `ExperimentalWarning` on first use, which is left visible on purpose. If the API moves, the blast radius is
+> [`data/src/db.js`](data/src/db.js); everything else talks to `VenueDatabase`, not to SQLite.
 
 ### The definition of done, as an executable test
 
