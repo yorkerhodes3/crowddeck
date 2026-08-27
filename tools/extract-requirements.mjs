@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 CrowdDeck contributors
+
 // Extracts the requirement set and acceptance criteria from SPECIFICATION.md into
 // docs/data/requirements.json, so the specification document stays the single
 // source of truth and the dashboard can never drift from it.

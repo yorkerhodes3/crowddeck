@@ -3292,7 +3292,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-17",
               "REQ-CDEP-18"
             ],
-            "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan."
+            "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan.",
+            "status": "todo"
           },
           {
             "id": "LEGAL-1",
@@ -3304,7 +3305,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-LIC-4",
               "REQ-LIC-5"
             ],
-            "detail": "Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down."
+            "detail": "Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down.",
+            "status": "todo"
           },
           {
             "id": "SPIKE-2",
@@ -3314,7 +3316,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-NFR-1"
             ],
-            "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts."
+            "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts.",
+            "status": "todo"
           }
         ]
       },
@@ -3337,7 +3340,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-8",
               "REQ-CDEP-9"
             ],
-            "detail": "JSON Schema for every message type, versioned cdep/1, with the documented error-code enumeration. Transport is arms-length by design: no shared memory, no GPL-defined structures, because that generality is a licence requirement."
+            "detail": "JSON Schema for every message type, versioned cdep/1, with the documented error-code enumeration. Transport is arms-length by design: no shared memory, no GPL-defined structures, because that generality is a licence requirement.",
+            "status": "done"
           },
           {
             "id": "CDEP-2",
@@ -3351,7 +3355,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-13",
               "REQ-CDEP-18"
             ],
-            "detail": "Apache-2.0 reference engine with a self-describing control set, accepting multiple concurrent clients with independent subscription state. No Mixxx dependency."
+            "detail": "Apache-2.0 reference engine with a self-describing control set, accepting multiple concurrent clients with independent subscription state. No Mixxx dependency.",
+            "status": "done"
           },
           {
             "id": "CDEP-3",
@@ -3362,7 +3367,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-18",
               "REQ-FALL-3"
             ],
-            "detail": "Load, transport, and gap-free track-to-track playback on the chosen audio backend. Enough to develop the entire fusion core against."
+            "detail": "Load, transport, and gap-free track-to-track playback on the chosen audio backend. Enough to develop the entire fusion core against.",
+            "status": "done"
           },
           {
             "id": "CDEP-4",
@@ -3374,7 +3380,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-15",
               "REQ-CDEP-16"
             ],
-            "detail": "max_hz coalescing and bounded send queues. Includes the AC-18 test that a stalled client cannot disturb audio."
+            "detail": "max_hz coalescing and bounded send queues. Includes the AC-18 test that a stalled client cannot disturb audio.",
+            "status": "done"
           },
           {
             "id": "CDEP-5",
@@ -3384,7 +3391,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CDEP-17"
             ],
-            "detail": "Executable suite both engines must pass, wired into CI. Gates every future engine change."
+            "detail": "Executable suite both engines must pass, wired into CI. Gates every future engine change.",
+            "status": "done"
           }
         ]
       },
@@ -3402,7 +3410,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-LIC-1"
             ],
-            "detail": "Directory structure per SPECIFICATION §1.2, SPDX header on every file."
+            "detail": "Directory structure per SPECIFICATION §1.2, SPDX header on every file.",
+            "status": "done"
           },
           {
             "id": "REPO-2",
@@ -3413,7 +3422,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-LIC-2",
               "REQ-LIC-3"
             ],
-            "detail": "Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16."
+            "detail": "Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16.",
+            "status": "done"
           },
           {
             "id": "REPO-3",
@@ -3424,7 +3434,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-LIC-6",
               "REQ-LIC-7"
             ],
-            "detail": "A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact."
+            "detail": "A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact.",
+            "status": "todo"
           }
         ]
       },
@@ -3444,7 +3455,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-2",
               "REQ-SCH-5"
             ],
-            "detail": "States, guarded transitions, and an append-only event log with actor and reason."
+            "detail": "States, guarded transitions, and an append-only event log with actor and reason.",
+            "status": "todo"
           },
           {
             "id": "SCH-2",
@@ -3455,7 +3467,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-3",
               "REQ-SCH-4"
             ],
-            "detail": "The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1."
+            "detail": "The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1.",
+            "status": "todo"
           },
           {
             "id": "SCH-3",
@@ -3469,7 +3482,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-9",
               "REQ-SCH-10"
             ],
-            "detail": "Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here."
+            "detail": "Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here.",
+            "status": "todo"
           },
           {
             "id": "SCH-4",
@@ -3483,7 +3497,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-17",
               "REQ-SCH-18"
             ],
-            "detail": "Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6."
+            "detail": "Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6.",
+            "status": "todo"
           },
           {
             "id": "SCH-5",
@@ -3494,7 +3509,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MODE-4",
               "REQ-MODE-5"
             ],
-            "detail": "Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2."
+            "detail": "Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2.",
+            "status": "todo"
           },
           {
             "id": "SCH-6",
@@ -3506,7 +3522,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MODE-2",
               "REQ-MODE-3"
             ],
-            "detail": "Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3."
+            "detail": "Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3.",
+            "status": "todo"
           },
           {
             "id": "SCH-7",
@@ -3519,7 +3536,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-FALL-3",
               "REQ-FALL-4"
             ],
-            "detail": "Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8."
+            "detail": "Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8.",
+            "status": "todo"
           }
         ]
       },
@@ -3538,7 +3556,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-1",
               "REQ-DAT-2"
             ],
-            "detail": "Near-zero cost now; a migration across every table and query later."
+            "detail": "Near-zero cost now; a migration across every table and query later.",
+            "status": "todo"
           },
           {
             "id": "DAT-2",
@@ -3552,7 +3571,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-6",
               "REQ-DAT-7"
             ],
-            "detail": "Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1."
+            "detail": "Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1.",
+            "status": "todo"
           },
           {
             "id": "DAT-3",
@@ -3565,7 +3585,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-10",
               "REQ-DAT-11"
             ],
-            "detail": "Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14."
+            "detail": "Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14.",
+            "status": "todo"
           },
           {
             "id": "DAT-4",
@@ -3577,7 +3598,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-13",
               "REQ-DAT-14"
             ],
-            "detail": "Local-only evidence trail for PRO reporting, never transmitted."
+            "detail": "Local-only evidence trail for PRO reporting, never transmitted.",
+            "status": "todo"
           },
           {
             "id": "DAT-5",
@@ -3588,7 +3610,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-4",
               "REQ-NFR-5"
             ],
-            "detail": "The queue is durable and the engine is replaceable; a core crash must not stop audio."
+            "detail": "The queue is durable and the engine is replaceable; a core crash must not stop audio.",
+            "status": "todo"
           }
         ]
       },
@@ -3606,7 +3629,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-SCH-14"
             ],
-            "detail": "Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1."
+            "detail": "Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1.",
+            "status": "todo"
           },
           {
             "id": "CRW-2",
@@ -3617,7 +3641,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-3",
               "REQ-NFR-7"
             ],
-            "detail": "No app install, no personal data, expiring venue-scoped tokens."
+            "detail": "No app install, no personal data, expiring venue-scoped tokens.",
+            "status": "todo"
           },
           {
             "id": "CRW-3",
@@ -3629,7 +3654,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-12",
               "REQ-SCH-13"
             ],
-            "detail": "TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4."
+            "detail": "TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4.",
+            "status": "todo"
           },
           {
             "id": "CRW-4",
@@ -3639,7 +3665,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-SCH-17"
             ],
-            "detail": "Enforced by a uniqueness constraint, not UI logic."
+            "detail": "Enforced by a uniqueness constraint, not UI logic.",
+            "status": "todo"
           },
           {
             "id": "CRW-5",
@@ -3650,7 +3677,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-5",
               "REQ-API-6"
             ],
-            "detail": "Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9."
+            "detail": "Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9.",
+            "status": "todo"
           },
           {
             "id": "CRW-6",
@@ -3660,7 +3688,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-DAT-11"
             ],
-            "detail": "Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms."
+            "detail": "Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms.",
+            "status": "todo"
           }
         ]
       },
@@ -3680,7 +3709,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-2",
               "REQ-API-4"
             ],
-            "detail": "/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI."
+            "detail": "/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI.",
+            "status": "todo"
           },
           {
             "id": "API-2",
@@ -3692,7 +3722,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-11",
               "REQ-API-12"
             ],
-            "detail": "Including jukeboxControl with the jukeboxMediaTypes extension. Buys an existing client ecosystem on day one."
+            "detail": "Including jukeboxControl with the jukeboxMediaTypes extension. Buys an existing client ecosystem on day one.",
+            "status": "todo"
           },
           {
             "id": "API-3",
@@ -3704,7 +3735,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-8",
               "REQ-API-9"
             ],
-            "detail": "Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely."
+            "detail": "Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely.",
+            "status": "todo"
           }
         ]
       },
@@ -3722,7 +3754,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-LIC-4"
             ],
-            "detail": "Keep engine, audio, soundio, mixer, analyzer, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders."
+            "detail": "Keep engine, audio, soundio, mixer, analyzer, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders.",
+            "status": "todo"
           },
           {
             "id": "ENG-2",
@@ -3734,7 +3767,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CDEP-6",
               "REQ-CDEP-12"
             ],
-            "detail": "Bridge ControlObject/ControlModel to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17."
+            "detail": "Bridge ControlObject/ControlModel to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17.",
+            "status": "todo"
           },
           {
             "id": "ENG-3",
@@ -3744,7 +3778,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CDEP-10"
             ],
-            "detail": "Inherited from Mixxx; wire to the CDEP control set."
+            "detail": "Inherited from Mixxx; wire to the CDEP control set.",
+            "status": "todo"
           },
           {
             "id": "ENG-4",
@@ -3754,7 +3789,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-2"
             ],
-            "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open."
+            "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open.",
+            "status": "todo"
           },
           {
             "id": "ENG-5",
@@ -3764,7 +3800,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CLK-1"
             ],
-            "detail": "The leader deck becomes the single tempo source published to every transport."
+            "detail": "The leader deck becomes the single tempo source published to every transport.",
+            "status": "todo"
           },
           {
             "id": "ENG-6",
@@ -3774,7 +3811,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CDEP-10"
             ],
-            "detail": "Inherited from Mixxx."
+            "detail": "Inherited from Mixxx.",
+            "status": "todo"
           },
           {
             "id": "ENG-7",
@@ -3785,7 +3823,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-1",
               "REQ-NFR-2"
             ],
-            "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events."
+            "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events.",
+            "status": "todo"
           }
         ]
       },
@@ -3803,7 +3842,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-5"
             ],
-            "detail": "One interface: search, resolve, stream URL, licence class."
+            "detail": "One interface: search, resolve, stream URL, licence class.",
+            "status": "todo"
           },
           {
             "id": "CON-2",
@@ -3813,7 +3853,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-1"
             ],
-            "detail": "beets + Chromaprint/AcoustID + MusicBrainz, de-duplicating by fingerprint. Satisfies AC-15."
+            "detail": "beets + Chromaprint/AcoustID + MusicBrainz, de-duplicating by fingerprint. Satisfies AC-15.",
+            "status": "todo"
           },
           {
             "id": "CON-3",
@@ -3824,7 +3865,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CON-2",
               "REQ-CON-3"
             ],
-            "detail": "One pass produces beatgrid, key, loudness, waveform, phrases. librosa (ISC) keeps the analysis path licence-safe. Never shares a process with the audio engine."
+            "detail": "One pass produces beatgrid, key, loudness, waveform, phrases. librosa (ISC) keeps the analysis path licence-safe. Never shares a process with the audio engine.",
+            "status": "todo"
           },
           {
             "id": "CON-4",
@@ -3834,7 +3876,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-6"
             ],
-            "detail": "Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary."
+            "detail": "Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary.",
+            "status": "todo"
           },
           {
             "id": "CON-5",
@@ -3844,7 +3887,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-6"
             ],
-            "detail": "So a fresh install has legally playable music on first run, with licence metadata from the API."
+            "detail": "So a fresh install has legally playable music on first run, with licence metadata from the API.",
+            "status": "todo"
           },
           {
             "id": "CON-6",
@@ -3854,7 +3898,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-4"
             ],
-            "detail": "ReplayGain / EBU R128. Non-negotiable when a CC track, a local file and a live instrument follow one another."
+            "detail": "ReplayGain / EBU R128. Non-negotiable when a CC track, a local file and a live instrument follow one another.",
+            "status": "todo"
           },
           {
             "id": "CON-7",
@@ -3864,7 +3909,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-7"
             ],
-            "detail": "A CI check plus an architectural note. This is the flaw that makes existing open jukeboxes unusable in venues, and designing it out is a feature."
+            "detail": "A CI check plus an architectural note. This is the flaw that makes existing open jukeboxes unusable in venues, and designing it out is a feature.",
+            "status": "todo"
           }
         ]
       },
@@ -3885,7 +3931,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-3",
               "REQ-MIDI-7"
             ],
-            "detail": "MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10."
+            "detail": "MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10.",
+            "status": "todo"
           },
           {
             "id": "MID-2",
@@ -3895,7 +3942,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-MIDI-4"
             ],
-            "detail": "No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11."
+            "detail": "No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11.",
+            "status": "todo"
           },
           {
             "id": "MID-3",
@@ -3906,7 +3954,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-5",
               "REQ-MIDI-6"
             ],
-            "detail": "Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge."
+            "detail": "Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge.",
+            "status": "todo"
           },
           {
             "id": "MID-4",
@@ -3919,7 +3968,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CLK-5",
               "REQ-CLK-6"
             ],
-            "detail": "≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only."
+            "detail": "≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only.",
+            "status": "todo"
           },
           {
             "id": "MID-5",
@@ -3930,7 +3980,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CLK-3",
               "REQ-CLK-4"
             ],
-            "detail": "GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff."
+            "detail": "GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff.",
+            "status": "todo"
           },
           {
             "id": "MID-6",
@@ -3941,7 +3992,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-INST-1",
               "REQ-INST-2"
             ],
-            "detail": "The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12."
+            "detail": "The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12.",
+            "status": "todo"
           },
           {
             "id": "MID-7",
@@ -3952,7 +4004,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-8",
               "REQ-MIDI-9"
             ],
-            "detail": "Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead."
+            "detail": "Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead.",
+            "status": "todo"
           }
         ]
       },
@@ -3972,7 +4025,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-POL-3",
               "REQ-POL-4"
             ],
-            "detail": "Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides."
+            "detail": "Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides.",
+            "status": "todo"
           },
           {
             "id": "VEN-2",
@@ -3982,7 +4036,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-POL-2"
             ],
-            "detail": "An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7."
+            "detail": "An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7.",
+            "status": "todo"
           },
           {
             "id": "VEN-3",
@@ -3992,7 +4047,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-DAT-9"
             ],
-            "detail": "Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes."
+            "detail": "Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes.",
+            "status": "todo"
           },
           {
             "id": "VEN-4",
@@ -4003,7 +4059,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-3",
               "REQ-NFR-9"
             ],
-            "detail": "Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13."
+            "detail": "Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13.",
+            "status": "todo"
           },
           {
             "id": "VEN-5",
@@ -4014,7 +4071,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-6",
               "REQ-NFR-8"
             ],
-            "detail": "Assert no outbound traffic beyond enabled providers; separate staff credentials."
+            "detail": "Assert no outbound traffic beyond enabled providers; separate staff credentials.",
+            "status": "todo"
           },
           {
             "id": "VEN-6",
@@ -4025,7 +4083,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-10",
               "REQ-NFR-11"
             ],
-            "detail": "Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU."
+            "detail": "Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU.",
+            "status": "todo"
           }
         ]
       }
@@ -4081,6 +4140,10 @@ window.__CROWDDECK_DATA__ = {
         "when": "not planned",
         "why": "ADR-005 accepts this as mediocre. The target user is a venue with hardware."
       }
-    ]
+    ],
+    "statuses": {
+      "done": "Implemented, tested and green in CI",
+      "todo": "Not started"
+    }
   }
 };

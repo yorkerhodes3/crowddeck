@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** ✅ Phase 3 complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 7 of 59 stories complete · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 59 stories · 117 of 117 requirements covered**
@@ -57,11 +57,11 @@ The contract is written before any engine exists so it is shaped by its consumer
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **CDEP-1** | **Specify and publish the CDEP schema**<br>JSON Schema for every message type, versioned cdep/1, with the documented error-code enumeration. Transport is arms-length by design: no shared memory, no GPL-defined structures, because that generality is a licence requirement. | S | build | `REQ-CDEP-1` `REQ-CDEP-2` `REQ-CDEP-3` `REQ-CDEP-7` `REQ-CDEP-8` `REQ-CDEP-9` |
-| **CDEP-2** | **Stub engine: handshake, describe, get/set**<br>Apache-2.0 reference engine with a self-describing control set, accepting multiple concurrent clients with independent subscription state. No Mixxx dependency. | M | build | `REQ-CDEP-4` `REQ-CDEP-11` `REQ-CDEP-12` `REQ-CDEP-13` `REQ-CDEP-18` |
-| **CDEP-3** | **Stub engine: gapless sequential playback**<br>Load, transport, and gap-free track-to-track playback on the chosen audio backend. Enough to develop the entire fusion core against. | M | `ADOPT` | `REQ-CDEP-18` `REQ-FALL-3` |
-| **CDEP-4** | **Subscriptions with coalescing and back-pressure**<br>max_hz coalescing and bounded send queues. Includes the AC-18 test that a stalled client cannot disturb audio. | M | build | `REQ-CDEP-14` `REQ-CDEP-15` `REQ-CDEP-16` |
-| **CDEP-5** | **Conformance suite**<br>Executable suite both engines must pass, wired into CI. Gates every future engine change. | M | build | `REQ-CDEP-17` |
+| ✅ **CDEP-1** | **Specify and publish the CDEP schema**<br>JSON Schema for every message type, versioned cdep/1, with the documented error-code enumeration. Transport is arms-length by design: no shared memory, no GPL-defined structures, because that generality is a licence requirement. | S | build | `REQ-CDEP-1` `REQ-CDEP-2` `REQ-CDEP-3` `REQ-CDEP-7` `REQ-CDEP-8` `REQ-CDEP-9` |
+| ✅ **CDEP-2** | **Stub engine: handshake, describe, get/set**<br>Apache-2.0 reference engine with a self-describing control set, accepting multiple concurrent clients with independent subscription state. No Mixxx dependency. | M | build | `REQ-CDEP-4` `REQ-CDEP-11` `REQ-CDEP-12` `REQ-CDEP-13` `REQ-CDEP-18` |
+| ✅ **CDEP-3** | **Stub engine: gapless sequential playback**<br>Load, transport, and gap-free track-to-track playback on the chosen audio backend. Enough to develop the entire fusion core against. | M | `ADOPT` | `REQ-CDEP-18` `REQ-FALL-3` |
+| ✅ **CDEP-4** | **Subscriptions with coalescing and back-pressure**<br>max_hz coalescing and bounded send queues. Includes the AC-18 test that a stalled client cannot disturb audio. | M | build | `REQ-CDEP-14` `REQ-CDEP-15` `REQ-CDEP-16` |
+| ✅ **CDEP-5** | **Conformance suite**<br>Executable suite both engines must pass, wired into CI. Gates every future engine change. | M | build | `REQ-CDEP-17` |
 
 ### E2 · Repository, licence enforcement and CI
 
@@ -69,8 +69,8 @@ The split licence is only real if it is mechanically enforced. Contributor confu
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **REPO-1** | **Plane layout and SPDX headers**<br>Directory structure per SPECIFICATION §1.2, SPDX header on every file. | S | build | `REQ-LIC-1` |
-| **REPO-2** | **CI licence-lint gate**<br>Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16. | M | build | `REQ-LIC-2` `REQ-LIC-3` |
+| ✅ **REPO-1** | **Plane layout and SPDX headers**<br>Directory structure per SPECIFICATION §1.2, SPDX header on every file. | S | build | `REQ-LIC-1` |
+| ✅ **REPO-2** | **CI licence-lint gate**<br>Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16. | M | build | `REQ-LIC-2` `REQ-LIC-3` |
 | **REPO-3** | **LGPL-only FFmpeg build with component audit**<br>A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact. | M | `ADOPT` | `REQ-LIC-6` `REQ-LIC-7` |
 
 ---

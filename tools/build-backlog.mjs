@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 CrowdDeck contributors
+
 // Generates BACKLOG.md from docs/data/backlog.json and validates traceability:
 // every REQ-* cited by a story must exist in docs/data/requirements.json, and
 // every verdict must be a known verdict from docs/data/oss-inventory.json.
@@ -35,6 +38,9 @@ for (const epic of backlog.epics) {
     seenStoryIds.add(s.id);
 
     if (!backlog.sizes[s.size]) errors.push(`${s.id}: unknown size "${s.size}"`);
+    if (s.status !== undefined && !["done", "todo"].includes(s.status)) {
+      errors.push(`${s.id}: unknown status "${s.status}"`);
+    }
     if (s.verdict !== null && !knownVerdicts.has(s.verdict)) {
       errors.push(`${s.id}: unknown OSS verdict "${s.verdict}"`);
     }
@@ -53,6 +59,10 @@ if (errors.length) {
 }
 
 const uncited = [...knownReqs].filter((r) => !citedReqs.has(r));
+const doneCount = backlog.epics.reduce(
+  (a, e) => a + e.stories.filter((s) => s.status === "done").length,
+  0
+);
 
 // ---------------------------------------------------------------- render
 const L = [];
@@ -64,7 +74,7 @@ p("> **Generated file.** Edit `docs/data/backlog.json` and run `node tools/build
 p("> Traceability is validated at build time: every `REQ-*` cited below exists in");
 p("> [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.");
 p();
-p("**Status:** ✅ Phase 3 complete · **Date:** " + backlog.generated);
+p("**Status:** 🚧 In progress — " + doneCount + " of " + storyCount + " stories complete · **Date:** " + backlog.generated);
 p("**Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**");
 p();
 p(`**${backlog.epics.length} epics · ${storyCount} stories · ${citedReqs.size} of ${knownReqs.size} requirements covered**`);
@@ -105,7 +115,8 @@ for (const m of backlog.milestones) {
     for (const s of epic.stories) {
       const verdict = s.verdict ? `\`${s.verdict}\`` : "build";
       const reqs = s.reqs.length ? s.reqs.map((r) => `\`${r}\``).join(" ") : "—";
-      p(`| **${s.id}** | **${s.name}**<br>${s.detail} | ${s.size} | ${verdict} | ${reqs} |`);
+      const mark = s.status === "done" ? "✅ " : "";
+      p(`| ${mark}**${s.id}** | **${s.name}**<br>${s.detail} | ${s.size} | ${verdict} | ${reqs} |`);
     }
     p();
   }

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # ADR-001 puts a licence boundary between the Apache-2.0 core and the GPL
+      # engine plane. A two-licence repository only stays clean if the boundary
+      # is enforced mechanically, so this runs first and fails hard (AC-16).
+      - name: Licence lint
+        run: node tools/licence-lint.mjs
+
+      - name: Unit and integration tests
+        run: node --test "protocol/test/**/*.test.js" "engine-stub/test/**/*.test.js"
+
+      # Any conforming engine must pass this. Today only the stub exists; when
+      # the Mixxx-derived engine lands it runs against that too (REQ-CDEP-17,
+      # AC-17), which is what makes "the engine is replaceable" testable.
+      - name: CDEP conformance — engine-stub
+        run: node conformance/bin/cdep-conformance.js --engine engine-stub
+
+      # Regenerates requirements from SPECIFICATION.md and validates that every
+      # backlog story cites a requirement that actually exists.
+      - name: Requirements and backlog traceability
+        run: |
+          node tools/extract-requirements.mjs
+          node tools/build-backlog.mjs
+          node tools/build-data.mjs
+
+      - name: Verify generated files are committed
+        run: |
+          if ! git diff --quiet -- docs/data/ BACKLOG.md; then
+            echo "::error::Generated files are stale. Run the tools/ scripts and commit the result."
+            git diff --stat -- docs/data/ BACKLOG.md
+            exit 1
+          fi

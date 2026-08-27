@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowddeck.dev/schema/cdep-1.json",
+  "title": "CDEP — CrowdDeck Engine Protocol, version cdep/1",
+  "description": "Wire format for every CDEP message. Normative reference: SPECIFICATION.md §2. Receivers MUST ignore unknown properties (REQ-CDEP-7), so every message object here sets additionalProperties: true deliberately — tightening it would break forward compatibility.",
+
+  "$defs": {
+    "group": {
+      "type": "string",
+      "pattern": "^\\[[A-Za-z0-9_]+\\]$",
+      "description": "Control group. Decks are [Channel1]..[ChannelN]; the master bus is [Master] (REQ-CDEP-6)."
+    },
+    "item": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Control name within a group, e.g. \"play\", \"rate\"."
+    },
+    "id": {
+      "type": "integer",
+      "description": "Request correlation id. Optional; replies echo it when present."
+    },
+    "controlRef": {
+      "type": "object",
+      "required": ["group", "item"],
+      "properties": {
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" }
+      },
+      "additionalProperties": true
+    },
+    "controlDescriptor": {
+      "type": "object",
+      "description": "Self-description sufficient to build a control UI and a MIDI mapping target list with no hard-coded engine knowledge (REQ-CDEP-12, REQ-CDEP-13).",
+      "required": ["group", "item", "type", "min", "max", "default", "readonly", "label"],
+      "properties": {
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" },
+        "type": { "enum": ["bool", "int", "float", "enum"] },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "default": { "type": "number" },
+        "readonly": { "type": "boolean" },
+        "label": { "type": "string", "minLength": 1 },
+        "values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Member names; required when type is \"enum\"."
+        },
+        "highRate": {
+          "type": "boolean",
+          "description": "Changes continuously (playposition, meters). Never delivered unsubscribed (REQ-CDEP-15)."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "enum" } }, "required": ["type"] },
+          "then": { "required": ["values"] }
+        }
+      ],
+      "additionalProperties": true
+    },
+    "errorCode": {
+      "enum": [
+        "unsupported_protocol",
+        "not_handshaken",
+        "already_handshaken",
+        "malformed",
+        "unknown_type",
+        "invalid_field",
+        "unknown_control",
+        "readonly_control",
+        "value_out_of_range",
+        "load_failed",
+        "unavailable"
+      ],
+      "description": "Closed enumeration (REQ-CDEP-8). Adding a code is a protocol change."
+    },
+    "eventName": {
+      "enum": [
+        "track_loaded",
+        "track_ended",
+        "deck_empty",
+        "beat",
+        "phase",
+        "xrun",
+        "device_error"
+      ]
+    },
+    "track": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "duration": { "type": "number", "exclusiveMinimum": 0, "description": "Seconds." },
+        "bpm": { "type": "number", "minimum": 0 },
+        "key": { "type": "integer", "minimum": 0, "maximum": 24 }
+      },
+      "additionalProperties": true
+    }
+  },
+
+  "oneOf": [
+    {
+      "title": "hello (client → engine)",
+      "type": "object",
+      "required": ["t"],
+      "properties": {
+        "t": { "const": "hello" },
+        "id": { "$ref": "#/$defs/id" },
+        "protocol": { "type": "string", "examples": ["cdep/1"] },
+        "client": { "type": "string" },
+        "accept": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Versions the client supports, best first (REQ-CDEP-9)."
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "welcome (engine → client)",
+      "type": "object",
+      "required": ["t", "protocol", "engine", "decks"],
+      "properties": {
+        "t": { "const": "welcome" },
+        "id": { "$ref": "#/$defs/id" },
+        "protocol": { "type": "string" },
+        "engine": { "type": "string", "description": "name/version of the engine implementation" },
+        "decks": { "type": "integer", "minimum": 1 },
+        "sample_rate": { "type": "number", "exclusiveMinimum": 0 },
+        "latency_ms": { "type": "number", "minimum": 0 },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional features. Clients MUST degrade gracefully when one is absent (REQ-CDEP-11)."
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "describe (client → engine)",
+      "type": "object",
+      "required": ["t"],
+      "properties": { "t": { "const": "describe" }, "id": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    {
+      "title": "description (engine → client)",
+      "type": "object",
+      "required": ["t", "controls"],
+      "properties": {
+        "t": { "const": "description" },
+        "id": { "$ref": "#/$defs/id" },
+        "controls": { "type": "array", "items": { "$ref": "#/$defs/controlDescriptor" } }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "get (client → engine)",
+      "type": "object",
+      "required": ["t", "group", "item"],
+      "properties": {
+        "t": { "const": "get" },
+        "id": { "$ref": "#/$defs/id" },
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "value (engine → client)",
+      "type": "object",
+      "required": ["t", "group", "item", "value"],
+      "properties": {
+        "t": { "const": "value" },
+        "id": { "$ref": "#/$defs/id" },
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" },
+        "value": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "set (client → engine)",
+      "type": "object",
+      "required": ["t", "group", "item", "value"],
+      "properties": {
+        "t": { "const": "set" },
+        "id": { "$ref": "#/$defs/id" },
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" },
+        "value": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "subscribe (client → engine)",
+      "type": "object",
+      "required": ["t", "controls"],
+      "properties": {
+        "t": { "const": "subscribe" },
+        "id": { "$ref": "#/$defs/id" },
+        "controls": { "type": "array", "items": { "$ref": "#/$defs/controlRef" } },
+        "max_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "description": "Coalescing cap. The engine emits at most one update per control per interval (REQ-CDEP-14)."
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "unsubscribe (client → engine)",
+      "type": "object",
+      "required": ["t", "controls"],
+      "properties": {
+        "t": { "const": "unsubscribe" },
+        "id": { "$ref": "#/$defs/id" },
+        "controls": { "type": "array", "items": { "$ref": "#/$defs/controlRef" } }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "changed (engine → client)",
+      "type": "object",
+      "required": ["t", "group", "item", "value"],
+      "properties": {
+        "t": { "const": "changed" },
+        "group": { "$ref": "#/$defs/group" },
+        "item": { "$ref": "#/$defs/item" },
+        "value": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "load (client → engine)",
+      "type": "object",
+      "required": ["t", "group", "track"],
+      "properties": {
+        "t": { "const": "load" },
+        "id": { "$ref": "#/$defs/id" },
+        "group": { "$ref": "#/$defs/group" },
+        "track": {
+          "oneOf": [{ "$ref": "#/$defs/track" }, { "type": "string", "minLength": 1 }]
+        },
+        "next": {
+          "$ref": "#/$defs/track",
+          "description": "Optional. Continues gaplessly when the loaded track ends (REQ-FALL-3)."
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "event (engine → client)",
+      "type": "object",
+      "required": ["t", "event"],
+      "properties": {
+        "t": { "const": "event" },
+        "event": { "$ref": "#/$defs/eventName" },
+        "group": { "$ref": "#/$defs/group" },
+        "track": { "type": ["string", "null"] },
+        "duration": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "ping (either direction)",
+      "type": "object",
+      "required": ["t"],
+      "properties": { "t": { "const": "ping" }, "id": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    {
+      "title": "pong (either direction)",
+      "type": "object",
+      "required": ["t"],
+      "properties": { "t": { "const": "pong" }, "id": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    {
+      "title": "ok (engine → client)",
+      "type": "object",
+      "required": ["t"],
+      "properties": { "t": { "const": "ok" }, "id": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    {
+      "title": "error (engine → client)",
+      "type": "object",
+      "required": ["t", "code"],
+      "properties": {
+        "t": { "const": "error" },
+        "id": { "$ref": "#/$defs/id" },
+        "code": { "$ref": "#/$defs/errorCode" },
+        "message": { "type": "string", "description": "Human-readable detail. Never parsed by clients." }
+      },
+      "additionalProperties": true
+    }
+  ]
+}

@@ -33,7 +33,7 @@
 </header>
 
 <div class="wrap hero">
-  <span class="eyebrow">Concept → Decisions → Spec → Backlog · All Phases Complete</span>
+  <span class="eyebrow">Planning Complete · Build Started — M1 Green</span>
   <h1>The DJ booth and the jukebox have never shared <em>one machine</em>.</h1>
   <p class="lede">
     CrowdDeck is a concept for an open-source venue runtime that runs a professional multi-deck DJ engine
@@ -642,6 +642,15 @@
       a requirement that does not exist in the specification. All <strong>117 of 117</strong> requirements
       are currently covered.
     </div>
+
+    <div class="callout" style="border-left-color: var(--accent);">
+      <strong>Build has started.</strong> M1 is complete: the CDEP contract, a conformant stub engine, the
+      conformance suite and the licence-lint gate are implemented and green in CI —
+      <strong>50 tests, 18 conformance checks</strong>, zero dependencies.
+      <span class="mono">engine/</span> is still deliberately empty; per ADR-002 the Mixxx fork comes after
+      <span class="mono">SPIKE-1</span>.
+    </div>
+
     <div data-render="backlog"></div>
   </div>
 </section>
@@ -649,9 +658,9 @@
 <footer>
   <div class="wrap">
     <p>
-      <strong>CrowdDeck — planning complete, build not started.</strong> Concept research, five ratified
-      decisions, 117 specified requirements and a 59-story sequenced backlog. No product code exists yet;
-      the next step is the de-risking spike, not another document.
+      <strong>CrowdDeck — planning complete, build under way.</strong> Concept research, five ratified
+      decisions, 117 specified requirements, a 59-story sequenced backlog, and a working CDEP contract with
+      a conformant stub engine. The Mixxx fork comes after the de-risking spike, not before it.
     </p>
     <p>
       Competitive and technical research gathered via the Tavily search API across 56 queries. Open-source

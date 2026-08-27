@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 CrowdDeck contributors
+
 /* CrowdDeck concept dashboard renderer - vanilla JS, no dependencies. */
 (function () {
   "use strict";
@@ -171,6 +174,9 @@
     if (!host || !bl) return;
 
     var stories = bl.epics.reduce(function (a, e) { return a + e.stories.length; }, 0);
+    var done = bl.epics.reduce(function (a, e) {
+      return a + e.stories.filter(function (s) { return s.status === "done"; }).length;
+    }, 0);
     var cited = {};
     bl.epics.forEach(function (e) {
       e.stories.forEach(function (s) { s.reqs.forEach(function (r) { cited[r] = 1; }); });
@@ -179,7 +185,7 @@
     var summary = el("div", "grid g3");
     [
       [String(bl.epics.length), "epics"],
-      [String(stories), "stories"],
+      [done + " / " + stories, "stories complete"],
       [Object.keys(cited).length + " / " + (rq ? rq.counts.total : "?"), "requirements covered"]
     ].forEach(function (s) {
       var d = el("div", "stat");
@@ -215,15 +221,17 @@
           var row = el("div", "cap");
           var head = el("div", "caphead");
           head.appendChild(el("span", "capid", s.id));
-          head.appendChild(el("span", "capname", s.name));
+          var nm = el("span", "capname", s.name);
+          if (s.status === "done") nm.style.color = "var(--accent)";
+          head.appendChild(nm);
+          if (s.status === "done") head.appendChild(chip("done", "chip-FORK"));
           head.appendChild(chip(s.size, "chip-tier"));
           if (s.verdict) head.appendChild(chip(s.verdict, "chip-" + s.verdict));
           row.appendChild(head);
           row.appendChild(el("div", "capnote", s.detail));
           row.appendChild(el("div", "capfrom", s.reqs.join(" · ")));
           db.appendChild(row);
-        });
-      });
+        });      });
 
       d.appendChild(db);
       host.appendChild(d);

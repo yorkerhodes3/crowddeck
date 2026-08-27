@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 CrowdDeck contributors
+
 // Regenerates docs/data/bundle.js from the JSON files in docs/data/.
 //
 // The dashboard reads its data from JSON so the same files can be reused by

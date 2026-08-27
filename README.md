@@ -16,12 +16,29 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | Phase | Artefact | State |
 |---|---|---|
 | **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
-| **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ **Ratified 2026-08-27** |
+| **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 117 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 59 stories, 117/117 traced |
+| **4 — Build** | `protocol/` `engine-stub/` `conformance/` | 🚧 **In progress — M1 complete, 7/59 stories** |
 
-**Nothing is built yet.** This repository is the planning record for a build decision, plus the dashboard
-that explains it. The next step is `SPIKE-1`, not more documents.
+### What is built
+
+Milestone **M1 (walking skeleton)** is done — contract first, per
+[ADR-002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new):
+
+| Module | Licence | What it is |
+|---|---|---|
+| [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
+| [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks the fusion core, and permanently proves the engine is replaceable (REQ-LIC-5) |
+| [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 18 checks |
+| [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
+| [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
+
+**50 tests · 18 conformance checks · zero runtime dependencies.**
+
+```bash
+npm run check      # licence lint + tests + conformance
+```
 
 ### The five ratified decisions
 
@@ -40,8 +57,8 @@ largely adding a transport over a proven abstraction.
 
 ### What happens next
 
-`SPIKE-1` — a ~6-week headless-Mixxx extraction spike. It tests the one assumption the whole plan rests on,
-and its output *is* the CDEP contract. `LEGAL-1`, review of the licence boundary, runs alongside it.
+`SPIKE-1` — a ~6-week headless-Mixxx extraction spike, now with a **concrete contract and a passing
+conformance suite to extract against**. `LEGAL-1`, review of the licence boundary, runs alongside it.
 
 ---
 
@@ -92,18 +109,24 @@ CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
 DECISIONS.md             Five ratified ADRs
 SPECIFICATION.md         117 requirements, 18 acceptance criteria (source of truth)
 BACKLOG.md               Generated — 11 epics, 59 stories
+
+protocol/                Apache-2.0 — CDEP: the engine contract
+  cdep-1.schema.json       Published wire-format schema
+  src/                     messages, controls, framing, errors, client
+  test/                    node --test
+engine-stub/             Apache-2.0 — a conformant engine with no audio
+  src/                     server, engine model, simulated sink
+  bin/                     crowddeck-engine-stub
+  test/                    integration, transport, back-pressure
+conformance/             Apache-2.0 — the suite any engine must pass
+engine/                  GPL-2.0-or-later — empty until SPIKE-1
+
 docs/
   index.html             Interactive dashboard explainer (GitHub Pages root)
   assets/                styles.css, app.js — no external dependencies
   data/                  Structured data, reusable by later phases
-    competitors.json       11 products x 7 capability axes
-    capabilities.json      8 domains, 62 capabilities, each traced to its source
-    oss-inventory.json     41 projects triaged FORK / ADOPT / REFERENCE / AVOID
-    sources.json           Content sources + interconnect protocols
-    requirements.json      Generated from SPECIFICATION.md
-    backlog.json           Epics and stories (source of truth for BACKLOG.md)
-    bundle.js              Generated — lets the dashboard work over file:// too
 tools/
+  licence-lint.mjs          Enforces the ADR-001 plane boundary
   extract-requirements.mjs  SPECIFICATION.md  → docs/data/requirements.json
   build-backlog.mjs         backlog.json      → BACKLOG.md, validates traceability
   build-data.mjs            docs/data/*.json  → docs/data/bundle.js
