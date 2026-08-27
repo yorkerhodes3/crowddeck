@@ -1,0 +1,124 @@
+{
+  "generated": "2026-08-26",
+  "note": "The merged capability set for CrowdDeck, assembled from the researched feature sets. 'from' records which analysed product established the expectation. Priorities are proposals for SPECIFICATION.md review, not commitments.",
+  "domains": [
+    {
+      "id": "engine",
+      "name": "A. Performance Engine",
+      "summary": "The real-time audio core. Everything here has a hard latency budget and must run out of the browser.",
+      "capabilities": [
+        { "id": "A1", "name": "4 independent decks with per-deck EQ, filter, gain and crossfader assignment", "from": ["djay Pro AI", "Serato DJ Pro", "Traktor Pro 4", "Mixxx"], "priority": "P0", "note": "Four decks is the table stakes established by every analysed product." },
+        { "id": "A2", "name": "Beatgrid detection and manual grid editing", "from": ["djay Pro AI (Fluid Beatgrid)", "Traktor Pro 4", "Mixxx"], "priority": "P0", "note": "Everything downstream - sync, loops, quantize, auto-transitions, lighting cues - depends on grid accuracy." },
+        { "id": "A3", "name": "Musical key detection and key-lock / pitch-independent tempo", "from": ["Serato DJ Pro", "rekordbox", "Mixxx"], "priority": "P0", "note": "Key-lock quality is a licence decision: SoundTouch (LGPL) vs Rubber Band (GPL/commercial)." },
+        { "id": "A4", "name": "Sync lock with explicit leader deck, plus manual tempo", "from": ["Traktor Pro 4 (Auto-Master)", "Mixxx (sync lock)"], "priority": "P0", "note": "The leader deck also becomes the master tempo source published to MIDI clock and Ableton Link." },
+        { "id": "A5", "name": "Hot cues, memory cues, loops, beat jump, slicer, quantize, slip mode", "from": ["Serato DJ Pro", "rekordbox", "Mixxx"], "priority": "P0", "note": "" },
+        { "id": "A6", "name": "Per-stem control on every deck (vocals / harmonics / drums / bass)", "from": ["djay Pro AI (Neural Mix)", "VirtualDJ 2026", "Traktor Pro 4", "Mixxx 2.6 STEM"], "priority": "P1", "note": "Precompute stems on ingest and cache them. Live separation is not achievable at Demucs quality." },
+        { "id": "A7", "name": "Chainable per-deck FX with an XY performance pad", "from": ["djay Pro AI", "Traktor Pro 4 (43 FX)", "Serato DJ Pro"], "priority": "P1", "note": "" },
+        { "id": "A8", "name": "Sampler and step-sequencing pattern player", "from": ["Traktor Pro 4 (Pattern Player)", "VirtualDJ (StemSwap)", "Mixxx"], "priority": "P2", "note": "The natural bridge to the MIDI instrument domain - the pattern player is what an external drum machine syncs against." },
+        { "id": "A9", "name": "DVS timecode vinyl / CD control", "from": ["Serato DJ Pro", "Traktor Pro 4", "Mixxx", "xwax"], "priority": "P2", "note": "" },
+        { "id": "A10", "name": "Sandbox / practice mode - audition and build the next transition without touching the room output", "from": ["VirtualDJ 2026 (Sandbox)", "Serato DJ Pro (Practice Mode)"], "priority": "P1", "note": "Unusually important here: the DJ needs to pre-fly patron requests before they hit the room." },
+        { "id": "A11", "name": "Microphone and aux inputs with ducking, plus recording and Icecast broadcast", "from": ["Mixxx"], "priority": "P2", "note": "" }
+      ]
+    },
+    {
+      "id": "crowd",
+      "name": "B. Venue & Crowd Plane",
+      "summary": "The TouchTunes half. This is where the differentiation lives - no open-source project covers this properly today.",
+      "capabilities": [
+        { "id": "B1", "name": "Patron joins a venue by QR code or short URL, no app install required", "from": ["TouchTunes (map finder)", "Karaoke Eternal", "Festify"], "priority": "P0", "note": "QR beats a map-based venue finder for a self-hosted product - the patron is already in the room." },
+        { "id": "B2", "name": "Live queue with each patron's exact position in line", "from": ["TouchTunes"], "priority": "P0", "note": "TouchTunes' single most-cited feature. Visible position is what makes waiting tolerable." },
+        { "id": "B3", "name": "Paid priority - jump the queue (Fast Pass / Song Upgrade equivalent)", "from": ["TouchTunes"], "priority": "P1", "note": "The core monetisation primitive. Must be pluggable, and disable-able for free/private events." },
+        { "id": "B4", "name": "Credit wallet with non-expiring balance and auto-refill", "from": ["TouchTunes"], "priority": "P2", "note": "Payment provider must be an adapter; many self-hosted deployments will run creditless." },
+        { "id": "B5", "name": "Democratic voting to reorder the queue, with vote decay and cooldown", "from": ["Raveberry", "Festify / Jukestar"], "priority": "P1", "note": "Voting and paid priority are two orderings of the same queue - the scheduler must support blending them." },
+        { "id": "B6", "name": "Fair-queue anti-monopoly rules: per-patron limits, artist/track cooldown, rate limiting", "from": ["Karaoke Eternal (dynamic fair queue)", "Mopidy-Party", "TouchTunes"], "priority": "P0", "note": "Without this one patron plays the same song six times and the venue turns the system off." },
+        { "id": "B7", "name": "Venue policy engine: explicit-content filter, genre/artist allow and block lists, dayparting, volume schedule", "from": ["Rockbot / Soundtrack", "AMI Co-Pilot", "TouchTunes"], "priority": "P0", "note": "The venue owner must always be able to override the crowd." },
+        { "id": "B8", "name": "Staff override console - skip, veto, refund, mute, lock the queue, panic-stop", "from": ["TouchTunes", "Festify admin", "AMI Co-Pilot"], "priority": "P0", "note": "" },
+        { "id": "B9", "name": "Never-silent fallback rotation when the request queue empties", "from": ["Liquidsoap", "Rockbot", "Mixxx Auto DJ"], "priority": "P0", "note": "The system must degrade into a well-behaved background-music player, automatically." },
+        { "id": "B10", "name": "Loyalty points, emoji reactions and now-playing social feed", "from": ["TouchTunes Rewards"], "priority": "P2", "note": "" },
+        { "id": "B11", "name": "Multi-venue / multi-tenant operator console with remote scheduling and reporting", "from": ["AMI Co-Pilot", "TouchTunes cloud platform"], "priority": "P2", "note": "The operator route model is how this class of product actually makes money." },
+        { "id": "B12", "name": "Venue display screen - now playing, up next, QR to join, visualiser", "from": ["TouchTunes cabinet", "AMI NEXTGEN", "Karaoke Eternal"], "priority": "P1", "note": "" }
+      ]
+    },
+    {
+      "id": "fusion",
+      "name": "C. Fusion Layer (the actual novelty)",
+      "summary": "Where the DJ plane and the crowd plane meet. No analysed product, open or closed, does this.",
+      "capabilities": [
+        { "id": "C1", "name": "Crowd requests land in the DJ's staging lane, not directly on the output", "from": ["Novel"], "priority": "P0", "note": "The DJ approves, reorders and beatmatches requests. This is the single design decision that makes a jukebox and a DJ rig coexist." },
+        { "id": "C2", "name": "Autonomous mode - engine auto-mixes the crowd queue with beatmatched transitions when no DJ is present", "from": ["djay Pro AI (Automix AI)", "Mixxx Auto DJ", "Liquidsoap"], "priority": "P0", "note": "A venue runs unattended most of the day and staffed at night. One system, two modes." },
+        { "id": "C3", "name": "Handoff: DJ takes or releases control mid-set without a gap in audio", "from": ["Novel"], "priority": "P1", "note": "" },
+        { "id": "C4", "name": "Request-aware transition planning using intro/outro and phrase detection", "from": ["djay Pro AI (Automix AI)", "rekordbox (phrase analysis)"], "priority": "P1", "note": "" },
+        { "id": "C5", "name": "Crowd signal surfaced to the DJ: request heatmap, vote velocity, unfilled genre demand", "from": ["Novel"], "priority": "P2", "note": "Turning the request stream into live audience telemetry is a genuinely new capability." },
+        { "id": "C6", "name": "Patrons can only request what is playable and licensed in that venue's catalog", "from": ["Novel"], "priority": "P0", "note": "Search is scoped by the venue policy engine, so an unplayable request is never offered." }
+      ]
+    },
+    {
+      "id": "midi",
+      "name": "D. MIDI & Systems Interconnection",
+      "summary": "The interconnect fabric. Explicitly a first-class subsystem, not a settings page.",
+      "capabilities": [
+        { "id": "D1", "name": "MIDI 1.0 and MIDI 2.0 / UMP I/O with hot-plug and stable port identity", "from": ["libremidi", "MIDI 2.0 spec"], "priority": "P0", "note": "Windows 11 MIDI Services, macOS CoreMIDI (since 2021) and ALSA (kernel 6.5+) all now carry UMP natively. Mappings must bind to stable handles, not port indices." },
+        { "id": "D2", "name": "MIDI learn with soft-takeover / pickup, plus visual mapped-state indication", "from": ["djay Pro AI (MIDI-Learn)", "Traktor Pro 4", "Mixxx"], "priority": "P0", "note": "Soft-takeover prevents parameter jumps when a physical knob is out of sync with software state." },
+        { "id": "D3", "name": "Declarative, shareable, forkable controller mapping format", "from": ["Mixxx (XML + JS)", "Traktor (.tsi)", "Serato (XML)"], "priority": "P0", "note": "Mixxx's XML-plus-JavaScript model with typed API declarations is the best open prior art. Ship a controller wizard." },
+        { "id": "D4", "name": "HID controller support for high-resolution jog wheels", "from": ["Serato DJ Pro", "rekordbox", "Mixxx"], "priority": "P1", "note": "7-bit MIDI gives only 128 steps per rotation; HID is required for credible scratch feel." },
+        { "id": "D5", "name": "MIDI clock out/in at 24 PPQN, with the leader deck as tempo source", "from": ["Traktor Pro 4", "DJM mixers"], "priority": "P0", "note": "Clock is the tempo-accurate sync path; MTC is positional reference only and too coarse for beat-accurate triggering." },
+        { "id": "D6", "name": "Ableton Link peer sync for tempo, beat, phase and start/stop", "from": ["Traktor Pro 4", "djay Pro", "Ableton Link SDK"], "priority": "P1", "note": "How phones, laptops and hardware in the room join the same timeline with no cables. Watch the GPL/commercial licence split." },
+        { "id": "D7", "name": "External MIDI instrument integration - keyboards, drum machines, grooveboxes play in time with the deck", "from": ["Traktor Pro 4", "Ableton Link", "user intent"], "priority": "P1", "note": "The explicit brief: MIDI as an instrument interface, not only a control surface. Instruments become an additional content source, alongside files." },
+        { "id": "D8", "name": "OSC in/out for tablets, VJ software and show-control systems", "from": ["OLA", "QLC+", "liblo"], "priority": "P2", "note": "" },
+        { "id": "D9", "name": "Mackie Control / HUI emulation so studio control surfaces work as mixers", "from": ["MCU / HUI protocol"], "priority": "P2", "note": "Opens up a large installed base of motorised-fader surfaces beyond DJ-specific hardware." },
+        { "id": "D10", "name": "Web MIDI path for browser-based mapping and lightweight control", "from": ["WEBMIDI.js", "Web MIDI API"], "priority": "P2", "note": "Convenience only. Safari has no Web MIDI support on macOS or iOS, and Chrome 124+ requires a permission prompt over HTTPS - so the native path stays authoritative." }
+      ]
+    },
+    {
+      "id": "content",
+      "name": "E. Content & Catalog",
+      "summary": "Where the music comes from. Deliberately pluggable, because licensing differs per deployment.",
+      "capabilities": [
+        { "id": "E1", "name": "Local library ingest with fingerprint-backed tagging and de-duplication", "from": ["beets", "Chromaprint / AcoustID", "MusicBrainz"], "priority": "P0", "note": "" },
+        { "id": "E2", "name": "Self-hosted server sources over the OpenSubsonic API", "from": ["Navidrome", "gonic", "OpenSubsonic spec"], "priority": "P0", "note": "Also expose our own OpenSubsonic endpoint so existing clients work against CrowdDeck immediately." },
+        { "id": "E3", "name": "Creative Commons catalog providers", "from": ["Jamendo", "Free Music Archive", "ccMixter"], "priority": "P1", "note": "The licence-clean default catalog, so a fresh install has legal music in it on first run." },
+        { "id": "E4", "name": "Pluggable licensed-streaming adapters behind a provider interface", "from": ["Beatport", "TIDAL", "SoundCloud Go+", "Mopidy backends"], "priority": "P2", "note": "Every one of these needs a commercial agreement; ship the interface, not unauthorised implementations." },
+        { "id": "E5", "name": "Live MIDI instruments and external inputs registered as first-class queueable sources", "from": ["Novel", "user intent"], "priority": "P1", "note": "A keyboard or drum machine appears in the queue like a track does - the interconnection idea taken to its conclusion." },
+        { "id": "E6", "name": "Precomputed analysis cache: beatgrid, key, loudness, phrases, stems, waveform", "from": ["rekordbox prep", "Mixxx analyser", "Demucs"], "priority": "P0", "note": "One ingest pass feeds decks, auto-mix, lighting and patron preview alike." },
+        { "id": "E7", "name": "ReplayGain / EBU R128 loudness normalisation across mixed sources", "from": ["Mixxx", "Navidrome"], "priority": "P1", "note": "Non-negotiable when a CC track, a local file and a live instrument follow one another." },
+        { "id": "E8", "name": "Karaoke media support (CDG / MP4+lyrics) with singer rotation", "from": ["Karaoke Eternal", "OpenKJ", "TouchTunes karaoke add-on"], "priority": "P2", "note": "" }
+      ]
+    },
+    {
+      "id": "show",
+      "name": "F. Show Control",
+      "summary": "Making the room respond to the music.",
+      "capabilities": [
+        { "id": "F1", "name": "Beat- and phrase-synced DMX512 / Art-Net / sACN lighting", "from": ["rekordbox Lighting mode", "OLA", "QLC+"], "priority": "P2", "note": "rekordbox's phrase-aware auto-lighting is the benchmark; OLA plus the QLC+ fixture library gets us most of the way." },
+        { "id": "F2", "name": "Synchronised multi-zone audio across rooms", "from": ["Snapcast", "Music Assistant"], "priority": "P1", "note": "Patio, main room and restrooms are different zones with different policies and volumes." },
+        { "id": "F3", "name": "Video / visualiser output on the venue screen", "from": ["VirtualDJ 2026", "AMI NEXTGEN", "Karaoke Eternal"], "priority": "P2", "note": "" },
+        { "id": "F4", "name": "Digital signage and venue promo slots between tracks", "from": ["AMI NEXTGEN ad upload", "Rockbot"], "priority": "P2", "note": "A real revenue lever for operators." }
+      ]
+    },
+    {
+      "id": "platform",
+      "name": "G. Platform & Operations",
+      "summary": "What makes it deployable in a real venue rather than a demo.",
+      "capabilities": [
+        { "id": "G1", "name": "Offline-first venue runtime - full function with no internet", "from": ["Novel", "TouchTunes cloud dependency is a weakness"], "priority": "P0", "note": "A cloud-dependent jukebox goes silent when the venue's DSL drops. Local-first is a genuine advantage over TouchTunes." },
+        { "id": "G2", "name": "Headless server plus separate operator, DJ and patron clients", "from": ["Mopidy", "Navidrome", "Music Assistant"], "priority": "P0", "note": "" },
+        { "id": "G3", "name": "Open, documented HTTP + WebSocket API for the whole system", "from": ["OpenSubsonic", "Mopidy"], "priority": "P0", "note": "Third-party clients are how an open project out-features a closed one." },
+        { "id": "G4", "name": "Single-command deploy (container / compose) with a sane default catalog", "from": ["Navidrome", "Karaoke Eternal"], "priority": "P1", "note": "" },
+        { "id": "G5", "name": "Venue analytics: plays, requests, revenue, peak hours, unfilled demand", "from": ["AMI Co-Pilot", "TouchTunes operator reporting"], "priority": "P2", "note": "" },
+        { "id": "G6", "name": "No telemetry by default; all data stays in the venue", "from": ["Karaoke Eternal", "project principle"], "priority": "P0", "note": "" }
+      ]
+    },
+    {
+      "id": "legal",
+      "name": "H. Licensing, Compliance & Governance",
+      "summary": "The part hobby projects skip and venues get fined for.",
+      "capabilities": [
+        { "id": "H1", "name": "Per-venue licensing profile recording which PRO licences are held", "from": ["ASCAP / BMI / SESAC / GMR", "JLO closure"], "priority": "P1", "note": "The Jukebox License Office shut down in 2025, so operators now need separate ASCAP, BMI and SESAC licences. Software should track this, not assume it." },
+        { "id": "H2", "name": "Catalog sources tagged with their licence class and public-performance status", "from": ["Jamendo", "FMA", "ccMixter", "record pools"], "priority": "P0", "note": "The system must be able to answer 'may this venue legally play this track right now'." },
+        { "id": "H3", "name": "Reporting export of what was actually performed", "from": ["PRO reporting practice"], "priority": "P2", "note": "Play logs are the evidence trail for PRO reporting and label statements." },
+        { "id": "H4", "name": "Hard refusal to source venue catalog from consumer accounts or downloaders", "from": ["Festify's flaw", "librespot", "yt-dlp"], "priority": "P0", "note": "Consumer streaming subscriptions do not grant public-performance rights. Designing this out is a feature." },
+        { "id": "H5", "name": "Clean licence separation between the permissive core and any GPL-derived planes", "from": ["Mixxx GPL-2.0+", "JUCE AGPL", "Rubber Band GPL"], "priority": "P0", "note": "Decided before the first line of engine code, because it is nearly impossible to unwind later." }
+      ]
+    }
+  ]
+}

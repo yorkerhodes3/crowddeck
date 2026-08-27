@@ -1,0 +1,258 @@
+{
+  "generated": "2026-08-26",
+  "method": "Stars, language, license and last-push date were read directly from the GitHub REST API on 2026-08-26. Where GitHub reported NOASSERTION, the repository's LICENSE file was fetched and read to determine the real terms.",
+  "verdicts": {
+    "FORK":      "Fork or vendor the source. Closest existing implementation of a capability we need; cheaper to adapt than to rewrite.",
+    "ADOPT":     "Consume as an upstream dependency or over its published API. Do not fork - track upstream.",
+    "REFERENCE": "Do not take the code. Study the design, protocol or data model and reimplement to fit our architecture/licence.",
+    "AVOID":     "Do not depend on this for the venue product. Licence incompatibility, terms-of-service risk, or abandonment."
+  },
+  "items": [
+    {
+      "name": "Mixxx", "repo": "mixxxdj/mixxx", "license": "GPL-2.0-or-later", "stars": 7084, "lang": "C++", "updated": "2026-08",
+      "layer": "DJ engine", "verdict": "FORK",
+      "why": "The only mature, complete open-source DJ application. EngineMixer drives mixing/beatmatching/FX routing, SoundManager owns device selection, sample rate, latency and the circular buffer. It already ships beatgrids, key detection, sync lock, hot cues, loops, quantize, Auto DJ, DVS timecode, sampler, ReplayGain, Icecast broadcasting, and 2.6 adds NI-spec STEM mixing. Rebuilding this is years of work.",
+      "catch": "GPL-2.0-or-later. Anything we link into the same binary becomes GPL. This is the single biggest architectural constraint on the project - see the licence strategy section."
+    },
+    {
+      "name": "Karaoke Eternal", "repo": "bhj/KaraokeEternal", "license": "ISC", "stars": 893, "lang": "TypeScript", "updated": "2026-08",
+      "layer": "Crowd queue + karaoke", "verdict": "FORK",
+      "why": "The closest permissively-licensed implementation of the TouchTunes interaction model that exists in open source: QR-code join, multiple password-protected rooms, a dynamic fair queue that interleaves singers, browser-based control, music-synced visualisations, no ads or telemetry. ISC means we can relicense freely into our stack.",
+      "catch": "Built around CDG/MP4 karaoke media and a room-per-party model; the fair-queue algorithm needs generalising from 'singers' to 'patrons + paid priority'."
+    },
+    {
+      "name": "Mopidy", "repo": "mopidy/mopidy", "license": "Apache-2.0", "stars": 8563, "lang": "Python", "updated": "2026-08",
+      "layer": "Content source abstraction", "verdict": "FORK",
+      "why": "A permissively-licensed, extensible music server whose entire reason for existing is a pluggable backend API that normalises many content sources behind one library/playback interface. That is exactly the 'content sources' abstraction this project needs, and Apache-2.0 lets us take it without copyleft consequences.",
+      "catch": "Python and GStreamer-based, so it belongs in the catalog/control plane, not in the real-time audio path."
+    },
+    {
+      "name": "Mopidy-Party", "repo": "Lesterpig/mopidy-party", "license": "Apache-2.0", "stars": 114, "lang": "JavaScript", "updated": "2025-10",
+      "layer": "Crowd queue", "verdict": "REFERENCE",
+      "why": "A small, readable 'party mode' web client for Mopidy: guests queue tracks, with per-guest limits. Good minimal reference for request throttling.",
+      "catch": "Very small project; the UX is far below the TouchTunes bar."
+    },
+    {
+      "name": "Raveberry", "repo": "raveberry/raveberry", "license": "LGPL-3.0", "stars": 750, "lang": "Python", "updated": "2025-09",
+      "layer": "Crowd queue", "verdict": "REFERENCE",
+      "why": "Multi-user participation server with request + vote mechanics over several backends. Best open-source reference for democratic queue ordering and vote decay.",
+      "catch": "LGPL-3.0 and Django-bound. Take the queue-ordering ideas, not the code."
+    },
+    {
+      "name": "Navidrome", "repo": "navidrome/navidrome", "license": "GPL-3.0", "stars": 23137, "lang": "Go", "updated": "2026-08",
+      "layer": "Library server", "verdict": "ADOPT",
+      "why": "Integrate over the network, do not fork. It already implements the full Subsonic/OpenSubsonic API including server-side jukebox mode, smart playlists, transcoding, scrobbling and share links, and it has the largest client ecosystem. Speaking OpenSubsonic makes CrowdDeck instantly compatible with dozens of existing apps.",
+      "catch": "GPL-3.0, so consume it as a separate process over HTTP - which keeps our licence options open."
+    },
+    {
+      "name": "OpenSubsonic spec", "repo": "opensubsonic/open-subsonic", "license": "Community spec", "stars": 0, "lang": "Spec", "updated": "2026",
+      "layer": "Library API", "verdict": "ADOPT",
+      "why": "The de-facto open standard for self-hosted music servers, and it explicitly extends jukeboxControl via the jukeboxMediaTypes extension so podcast episodes and radio stations can be enqueued alongside songs. Implementing this API on our server gets us a free client ecosystem.",
+      "catch": "Jukebox mode in the base Subsonic spec only accepts song IDs; plan for the extension from day one."
+    },
+    {
+      "name": "Music Assistant", "repo": "music-assistant/server", "license": "Apache-2.0", "stars": 2984, "lang": "Python", "updated": "2026-08",
+      "layer": "Content source abstraction", "verdict": "REFERENCE",
+      "why": "A permissive, actively developed provider-abstraction model that unifies streaming services and local libraries, plus a well-thought-out player/queue abstraction across heterogeneous output devices. Strong prior art for our multi-zone output design.",
+      "catch": "Home-automation oriented; assumes a Home Assistant-style deployment."
+    },
+    {
+      "name": "libremidi", "repo": "celtera/libremidi", "license": "Permissive (RtMidi MIT + ModernMIDI derived)", "stars": 700, "lang": "C++", "updated": "2026-08",
+      "layer": "MIDI I/O", "verdict": "ADOPT",
+      "why": "The right MIDI choice for a project starting in 2026. Modern C++20 rewrite of RtMidi with real MIDI 2.0 / UMP support on macOS 11+, Linux kernel 6.5+ and Windows 11 MIDI Services, plus hot-plug-aware observers, stable handle-based port IDs, nanosecond timestamps, optional allocation-free message storage for hard real-time, and WebMIDI support.",
+      "catch": "Smaller community than RtMidi. Keep RtMidi as the fallback backend behind our own MIDI port interface."
+    },
+    {
+      "name": "RtMidi", "repo": "thestk/rtmidi", "license": "MIT-style", "stars": 1202, "lang": "C++", "updated": "2025-11",
+      "layer": "MIDI I/O", "verdict": "ADOPT",
+      "why": "The conservative fallback: minimal dependencies, permissive licence, and the widest platform reach (ALSA, JACK, CoreMIDI, Windows MM/UWP, iOS, Android, WebMIDI).",
+      "catch": "MIDI 1.0 only, and enumerates ports by unstable numeric index - a real problem for saved controller mappings across reboots."
+    },
+    {
+      "name": "Ableton Link", "repo": "Ableton/link", "license": "GPL-2.0-or-later OR commercial", "stars": 1337, "lang": "C++", "updated": "2026-05",
+      "layer": "Tempo sync", "verdict": "ADOPT",
+      "why": "The industry-standard way to share tempo, beat and phase peer-to-peer across apps and devices on a LAN. The quantum model means an 8-beat loop and a 4-beat loop stay phase-aligned, and enableStartStopSync quantises transport launches so everything starts together. Traktor, djay and hundreds of iOS apps already speak it.",
+      "catch": "GPL-2.0-or-later unless you buy Ableton's commercial licence. If our core is permissive, Link must live in a separate GPL process or optional module."
+    },
+    {
+      "name": "miniaudio", "repo": "mackron/miniaudio", "license": "Public domain OR MIT-0 (your choice)", "stars": 7185, "lang": "C", "updated": "2026-08",
+      "layer": "Audio I/O", "verdict": "ADOPT",
+      "why": "Single-file C audio playback/capture across WASAPI, CoreAudio, ALSA, PulseAudio and more, with the most permissive licence available. Zero licence friction anywhere in the stack.",
+      "catch": "No ASIO backend out of the box, which serious Windows DJ rigs will want; plan an ASIO or WASAPI-exclusive path."
+    },
+    {
+      "name": "PortAudio", "repo": "PortAudio/portaudio", "license": "MIT", "stars": 2136, "lang": "C", "updated": "2026-08",
+      "layer": "Audio I/O", "verdict": "ADOPT",
+      "why": "The long-established permissive cross-platform real-time audio I/O library, with ASIO and WASAPI-exclusive support. This is what Mixxx's SoundManager sits on top of, so a Mixxx-derived engine inherits it anyway.",
+      "catch": "Older C API; ASIO builds require Steinberg's SDK, which has its own redistribution terms."
+    },
+    {
+      "name": "Rubber Band", "repo": "breakfastquay/rubberband", "license": "GPL-2.0-or-later OR commercial", "stars": 773, "lang": "C++", "updated": "2025-03",
+      "layer": "Time-stretch / key-lock", "verdict": "AVOID",
+      "why": "Best-in-class open time-stretch and pitch-shift quality, and it is what gives key-lock its transparency.",
+      "catch": "GPL or a paid commercial licence. If we want a permissive core, prefer SoundTouch (LGPL-2.1 with a static-link exception) and treat Rubber Band as an optional GPL-plane quality upgrade."
+    },
+    {
+      "name": "Demucs", "repo": "adefossez/demucs", "license": "MIT", "stars": 3097, "lang": "Python", "updated": "2026-07",
+      "layer": "Stem separation", "verdict": "ADOPT",
+      "why": "The quality benchmark for open stem separation and MIT-licensed, so it is safe to ship. Correct for our offline prep pipeline: separate on ingest, cache the stems, then play them back like Mixxx 2.6's STEM format.",
+      "catch": "Roughly 5-10x real-time on a modern GPU and slower than real-time on CPU, needing 4-8 GB VRAM. Not viable for live on-the-fly separation - which is precisely why we precompute."
+    },
+    {
+      "name": "Spleeter", "repo": "deezer/spleeter", "license": "MIT", "stars": 28403, "lang": "Python", "updated": "2026-06",
+      "layer": "Stem separation", "verdict": "REFERENCE",
+      "why": "Dramatically faster than Demucs (around 100x real-time on GPU), so it is the fallback when a track is requested that has not been pre-analysed and the queue needs stems now.",
+      "catch": "Noticeably lower separation quality; ageing TensorFlow dependency."
+    },
+    {
+      "name": "python-audio-separator", "repo": "nomadkaraoke/python-audio-separator", "license": "MIT", "stars": 1327, "lang": "Python", "updated": "2026-08",
+      "layer": "Stem separation", "verdict": "ADOPT",
+      "why": "A maintained, MIT-licensed CLI/library wrapper over many pretrained separation models. Saves us from writing model-loading plumbing and lets us swap models without touching our pipeline.",
+      "catch": "Still a Python/GPU workload - keep it out-of-process behind a job queue."
+    },
+    {
+      "name": "aubio", "repo": "aubio/aubio", "license": "GPL-3.0", "stars": 3754, "lang": "C", "updated": "2026-04",
+      "layer": "Audio analysis", "verdict": "REFERENCE",
+      "why": "Lightweight, real-time-capable onset detection, beat tracking, BPM and pitch tracking in C.",
+      "catch": "GPL-3.0. Fine inside a GPL plane, fatal to a permissive core."
+    },
+    {
+      "name": "Essentia", "repo": "MTG/essentia", "license": "AGPL-3.0", "stars": 3705, "lang": "C++", "updated": "2026-07",
+      "layer": "Audio analysis", "verdict": "AVOID",
+      "why": "250+ algorithms including strong beat tracking, tempo extraction, chroma and a dedicated key extractor - the most capable option technically.",
+      "catch": "AGPL-3.0. The network clause is actively dangerous for a hosted venue service. Only usable as a fully separate offline analysis tool, or under a commercial licence."
+    },
+    {
+      "name": "libKeyFinder", "repo": "mixxxdj/libkeyfinder", "license": "GPL-3.0", "stars": 181, "lang": "C++", "updated": "2024-11",
+      "layer": "Key detection", "verdict": "REFERENCE",
+      "why": "The focused key-detection algorithm Mixxx itself uses - long-term chroma histogram matched against key profiles. If we fork Mixxx we inherit it for free.",
+      "catch": "GPL-3.0 and comparatively quiet upstream."
+    },
+    {
+      "name": "librosa", "repo": "librosa/librosa", "license": "ISC", "stars": 8576, "lang": "Python", "updated": "2026-08",
+      "layer": "Audio analysis", "verdict": "ADOPT",
+      "why": "Permissively licensed (ISC) and ideal for the offline ingest pipeline: onset envelopes, tempo estimation, beat tracking, and chroma features for key estimation. The licence-safe way to get analysis without GPL contamination.",
+      "catch": "Python and not real-time. Ingest pipeline only."
+    },
+    {
+      "name": "Chromaprint / AcoustID", "repo": "acoustid/chromaprint", "license": "MIT (own code)", "stars": 1354, "lang": "C++", "updated": "2026-07",
+      "layer": "Identification", "verdict": "ADOPT",
+      "why": "Acoustic fingerprinting so we can identify a track regardless of how bad its tags are, then resolve it to a MusicBrainz recording. Essential for reliable de-duplication and for matching patron requests to what is actually in the library.",
+      "catch": "Bundles some LGPL-2.1 FFmpeg parts; link accordingly."
+    },
+    {
+      "name": "beets", "repo": "beetbox/beets", "license": "MIT", "stars": 15591, "lang": "Python", "updated": "2026-08",
+      "layer": "Library management", "verdict": "ADOPT",
+      "why": "MIT-licensed library manager that already wires MusicBrainz autotagging to Chromaprint/AcoustID fingerprinting (the chroma plugin), stores acoustid_id fields, and can find duplicates by fingerprint. This is our ingest front door.",
+      "catch": "CLI-first and opinionated about on-disk layout."
+    },
+    {
+      "name": "Open Lighting Architecture", "repo": "OpenLightingProject/ola", "license": "LGPL-2.1 (libola) / GPL-2.0 (olad)", "stars": 748, "lang": "C++", "updated": "2026-06",
+      "layer": "Show control", "verdict": "ADOPT",
+      "why": "The standard open bridge from software to DMX512 / Art-Net / sACN, with an OSC input plugin. This is how we match rekordbox's Lighting mode without building a DMX stack.",
+      "catch": "Split licence - libola is LGPL-2.1 (linkable), the olad daemon is GPL-2.0 (run it as a separate process)."
+    },
+    {
+      "name": "QLC+", "repo": "mcallegari/qlcplus", "license": "Apache-2.0", "stars": 1510, "lang": "C++", "updated": "2026-08",
+      "layer": "Show control", "verdict": "ADOPT",
+      "why": "A full Apache-2.0 lighting desk with an enormous fixture library and OSC/Art-Net input. Permissive licence plus fixture definitions we would otherwise spend months curating.",
+      "catch": "It is an application, not a library - drive it over OSC rather than embedding it."
+    },
+    {
+      "name": "liblo", "repo": "radarsat1/liblo", "license": "LGPL-2.1", "stars": 218, "lang": "C", "updated": "2026-06",
+      "layer": "Show control", "verdict": "ADOPT",
+      "why": "Small, stable OSC implementation for talking to lighting desks, VJ software and tablet controllers.",
+      "catch": "LGPL-2.1 - dynamic-link it."
+    },
+    {
+      "name": "Snapcast", "repo": "snapcast/snapcast", "license": "GPL-3.0", "stars": 7842, "lang": "C++", "updated": "2026-06",
+      "layer": "Multi-zone audio", "verdict": "ADOPT",
+      "why": "Solves synchronised multi-room playback properly - the venue case of patio, main room and bathroom staying time-aligned. Feed it PCM via a FIFO and it distributes a clock-aligned stream to every client.",
+      "catch": "GPL-3.0, so it stays a separate process at the edge of our system."
+    },
+    {
+      "name": "Liquidsoap", "repo": "savonet/liquidsoap", "license": "GPL-2.0", "stars": 1720, "lang": "OCaml", "updated": "2026-08",
+      "layer": "Automation / fallback", "verdict": "REFERENCE",
+      "why": "Battle-tested radio automation: crossfades, smart transitions, fallback rotation when the request queue runs dry, and Icecast output. Excellent design reference for our 'never let the room go silent' fallback engine.",
+      "catch": "GPL-2.0 and OCaml. Reimplement the ideas."
+    },
+    {
+      "name": "wavesurfer.js", "repo": "katspaugh/wavesurfer.js", "license": "BSD-3-Clause", "stars": 10384, "lang": "TypeScript", "updated": "2026-08",
+      "layer": "Web UI", "verdict": "ADOPT",
+      "why": "Mature, permissive waveform rendering with regions and zoom. Gets the venue-display and patron-preview waveforms done without custom canvas work.",
+      "catch": "A display component, not a transport - the real timeline must stay authoritative in the engine."
+    },
+    {
+      "name": "WEBMIDI.js", "repo": "djipco/webmidi", "license": "Apache-2.0", "stars": 1711, "lang": "JavaScript", "updated": "2026-08",
+      "layer": "Web MIDI", "verdict": "ADOPT",
+      "why": "Makes the raw Web MIDI API usable for the browser-based controller and mapping UI, with note/CC helpers and clean device enumeration.",
+      "catch": "Web MIDI is unsupported in Safari on macOS and iOS with no announced roadmap, and Chrome 124+ gates the whole API behind a permission prompt over HTTPS. The browser cannot be the only MIDI path."
+    },
+    {
+      "name": "Tone.js", "repo": "Tonejs/Tone.js", "license": "MIT", "stars": 14711, "lang": "TypeScript", "updated": "2026-08",
+      "layer": "Web audio", "verdict": "REFERENCE",
+      "why": "Excellent transport/scheduling abstractions over Web Audio, useful for prototypes and the browser preview deck.",
+      "catch": "Browser round-trip latency is realistically 20-30 ms on desktop and 50-100 ms on mobile because the OS pipeline and device buffer are not configurable from a web page. Never the production performance path."
+    },
+    {
+      "name": "xwax", "repo": "xwax/xwax", "license": "GPL-3.0", "stars": 159, "lang": "C", "updated": "2026-05",
+      "layer": "DVS", "verdict": "REFERENCE",
+      "why": "A minimal, very low-latency timecode-vinyl implementation - the clearest readable reference for how DVS decoding actually works.",
+      "catch": "GPL-3.0, Linux-centric, and development happens on a mailing list rather than GitHub."
+    },
+    {
+      "name": "OpenKJ", "repo": "OpenKJ/OpenKJ", "license": "GPL-3.0", "stars": 194, "lang": "C++", "updated": "2025-12",
+      "layer": "Karaoke", "verdict": "REFERENCE",
+      "why": "Real karaoke-host workflow: rotating singer list, key change, tempo control, end-of-track silence detection, remote song requests, automatic performance recording.",
+      "catch": "GPL-3.0 and Qt/GStreamer-bound. Karaoke Eternal (ISC) is the better fork base."
+    },
+    {
+      "name": "RPi-Jukebox-RFID", "repo": "MiczFlor/RPi-Jukebox-RFID", "license": "MIT", "stars": 1779, "lang": "PHP", "updated": "2026-08",
+      "layer": "Kiosk", "verdict": "REFERENCE",
+      "why": "MIT-licensed and proves out the physical-token kiosk pattern (RFID card triggers playback) on cheap hardware - a credible low-cost analogue to a TouchTunes cabinet.",
+      "catch": "Aimed at home/children's use; not multi-tenant or payment-aware."
+    },
+    {
+      "name": "JUCE", "repo": "juce-framework/JUCE", "license": "AGPL-3.0 OR commercial (JUCE 9)", "stars": 8822, "lang": "C++", "updated": "2026-08",
+      "layer": "App framework", "verdict": "AVOID",
+      "why": "The richest cross-platform C++ audio framework, with strong MIDI, device and plugin-hosting abstractions.",
+      "catch": "As of JUCE 9 the modules are dual-licensed AGPLv3 or a paid commercial licence. AGPL on a framework used by a hosted venue service is a serious obligation. Prefer miniaudio/PortAudio + libremidi + Qt."
+    },
+    {
+      "name": "librespot / spotifyd", "repo": "librespot-org/librespot", "license": "MIT / GPL-3.0", "stars": 6973, "lang": "Rust", "updated": "2026-08",
+      "layer": "Streaming source", "verdict": "AVOID",
+      "why": "Technically excellent open Spotify client libraries.",
+      "catch": "Consumer streaming accounts are licensed for personal use, not public performance in a venue. Building the venue product on these repeats the core legal flaw of the Festify/Jukestar class of apps."
+    },
+    {
+      "name": "yt-dlp", "repo": "yt-dlp/yt-dlp", "license": "Unlicense", "stars": 187193, "lang": "Python", "updated": "2026-08",
+      "layer": "Content acquisition", "verdict": "AVOID",
+      "why": "Ubiquitous media downloader.",
+      "catch": "Sourcing a commercial venue's playback catalog this way is both a terms-of-service violation and unlicensed public performance. Explicitly out of scope."
+    },
+    {
+      "name": "Festify", "repo": "Festify/Festify", "license": "MIT", "stars": 0, "lang": "TypeScript", "updated": "2019-11",
+      "layer": "Crowd queue", "verdict": "AVOID",
+      "why": "Frequently cited as the reference open-source party jukebox.",
+      "catch": "Archived since 2019 and depends on a host's consumer Spotify Premium account. Dead upstream and legally unsuitable for venues. Cite it as prior art only."
+    },
+    {
+      "name": "Airsonic-Advanced", "repo": "airsonic-advanced/airsonic-advanced", "license": "GPL-3.0", "stars": 1405, "lang": "Java", "updated": "2024-04",
+      "layer": "Library server", "verdict": "AVOID",
+      "why": "A Subsonic-API server with transcoding and DLNA.",
+      "catch": "No pushes since April 2024. Navidrome and gonic are the maintained choices."
+    },
+    {
+      "name": "FFmpeg", "repo": "FFmpeg/FFmpeg", "license": "LGPL-2.1 / GPL-2.0 builds", "stars": 63672, "lang": "C", "updated": "2026-08",
+      "layer": "Codecs", "verdict": "ADOPT",
+      "why": "Unavoidable for decoding the format spread a real venue library contains, plus transcoding for patron preview streams.",
+      "catch": "Build LGPL-only and audit enabled components - a GPL-configured build silently drags the whole product to GPL."
+    },
+    {
+      "name": "libsndfile / libsamplerate / Opus", "repo": "libsndfile/libsndfile", "license": "LGPL-2.1 / BSD-2 / BSD-3", "stars": 1711, "lang": "C", "updated": "2026-08",
+      "layer": "Codecs / DSP", "verdict": "ADOPT",
+      "why": "The permissive workhorses: lossless file I/O, high-quality sample-rate conversion, and a modern low-latency codec for streaming previews to patron phones.",
+      "catch": "libsndfile is LGPL-2.1 - dynamic-link it; the other two are effectively unrestricted."
+    }
+  ]
+}

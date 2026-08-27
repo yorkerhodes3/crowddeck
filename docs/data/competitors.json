@@ -1,0 +1,123 @@
+{
+  "generated": "2026-08-26",
+  "note": "Scores are 0-5 analyst ratings of capability depth, derived from vendor documentation and press gathered via Tavily. They rate breadth/depth of the published capability, not audio quality.",
+  "axes": [
+    { "id": "decks",    "label": "Performance Decks",   "desc": "Multi-deck mixing, beatgrid, sync, cues, loops, DVS" },
+    { "id": "stems",    "label": "Stems / AI",          "desc": "Real-time source separation and per-stem control" },
+    { "id": "midi",     "label": "MIDI / Interconnect", "desc": "MIDI mapping, HID, clock, Ableton Link, OSC" },
+    { "id": "crowd",    "label": "Crowd / Jukebox",     "desc": "Patron requests, queue visibility, voting, payments" },
+    { "id": "catalog",  "label": "Catalog Reach",       "desc": "Streaming, local, and self-hosted content sources" },
+    { "id": "show",     "label": "Show Control",        "desc": "Lighting/DMX, video, karaoke" },
+    { "id": "openness", "label": "Openness",            "desc": "Source availability, mapping formats, open APIs" }
+  ],
+  "products": [
+    {
+      "name": "djay Pro AI",
+      "vendor": "Algoriddim",
+      "tier": "dj",
+      "model": "Subscription (~$19/mo)",
+      "scores": { "decks": 5, "stems": 5, "midi": 4, "crowd": 0, "catalog": 5, "show": 3, "openness": 1 },
+      "signature": "Neural Mix 4-stem separation (vocals/harmonics/drums/bass), Automix AI transition detection, Fluid Beatgrid, 4 decks, DVS, video mixing, 100+ class-compliant controllers, MIDI-Learn.",
+      "sources": "TIDAL, SoundCloud Go+, Beatport (50-100 track offline locker)"
+    },
+    {
+      "name": "Serato DJ Pro",
+      "vendor": "Serato",
+      "tier": "dj",
+      "model": "~$179 perpetual / $129 yr",
+      "scores": { "decks": 5, "stems": 4, "midi": 5, "crowd": 0, "catalog": 4, "show": 2, "openness": 2 },
+      "signature": "Industry-standard DVS and scratch response, Stems + Stems Pad FX, Practice Mode, 4 decks, ~50 FX, Sampler, Beat Jump, Slicer, Smart Sync, Key Analysis. Video/Play/DVS sold as expansion packs.",
+      "sources": "Beatport LINK, Beatsource, TIDAL, SoundCloud Go+"
+    },
+    {
+      "name": "rekordbox 7",
+      "vendor": "AlphaTheta / Pioneer DJ",
+      "tier": "dj",
+      "model": "~$129 perpetual; Cloud plans from $14.99/mo",
+      "scores": { "decks": 5, "stems": 4, "midi": 4, "crowd": 0, "catalog": 4, "show": 5, "openness": 1 },
+      "signature": "Tightest CDJ/XDJ integration, deep prep workflow, built-in stems, Cloud Library Sync + CloudDirectPlay (stream your library straight from a CDJ-3000 with Hot Cues and Memory Cues preserved), Lighting mode with phrase-aware DMX-512 via RB-DMX1.",
+      "sources": "Beatport, TIDAL, SoundCloud, Apple Music (prep)"
+    },
+    {
+      "name": "Traktor Pro 4",
+      "vendor": "Native Instruments",
+      "tier": "dj",
+      "model": "~$119 perpetual",
+      "scores": { "decks": 5, "stems": 4, "midi": 5, "crowd": 0, "catalog": 3, "show": 1, "openness": 2 },
+      "signature": "Modular controller mapping, Remix Decks, Pattern Player (4 drum units / 17 kits / step sequencing), iZotope RX stem separation, 43 FX across 9 slots, Auto-Master, DVS, native Ableton Link.",
+      "sources": "Beatport, Beatsource, TIDAL"
+    },
+    {
+      "name": "VirtualDJ 2026",
+      "vendor": "Atomix",
+      "tier": "dj",
+      "model": "Free Lite tier / ~$299 Pro",
+      "scores": { "decks": 5, "stems": 5, "midi": 5, "crowd": 2, "catalog": 5, "show": 5, "openness": 2 },
+      "signature": "Real-time 5-way stem separation (incl. hi-hats), Sandbox Mode (audition ahead without interrupting output), StemSwap sampler, AI/text-prompted beat-synced video loops, VST hosting, karaoke, one-click mapping for thousands of controllers.",
+      "sources": "Beatport, Beatsource, TIDAL, SoundCloud, Deezer, local"
+    },
+    {
+      "name": "Mixxx 2.5 / 2.6",
+      "vendor": "Mixxx Development Team",
+      "tier": "oss",
+      "model": "Free / GPL-2.0-or-later",
+      "scores": { "decks": 5, "stems": 3, "midi": 5, "crowd": 1, "catalog": 2, "show": 1, "openness": 5 },
+      "signature": "4 decks, BPM + key detection, sync lock / leader deck, hot cues, loops, quantize, Auto DJ crossfade automation, DVS timecode, sampler, mic/aux, ReplayGain, Icecast/Shoutcast broadcasting, recording. 2.6 adds NI-spec STEM mixing extended to any codec Mixxx already supports.",
+      "sources": "Local files; imports iTunes / Traktor / Rekordbox / Serato / Rhythmbox libraries. No native streaming."
+    },
+    {
+      "name": "TouchTunes",
+      "vendor": "TouchTunes",
+      "tier": "jukebox",
+      "model": "Pay-per-play credits; revenue split with venue + operator",
+      "scores": { "decks": 0, "stems": 0, "midi": 0, "crowd": 5, "catalog": 5, "show": 3, "openness": 0 },
+      "signature": "Phone-controlled venue jukebox: map-based venue finder, live queue showing your exact position in line, Fast Pass / Song Upgrade to jump the queue, non-expiring credit wallet with auto-refill, TouchTunes Rewards loyalty, emoji reactions, personal playlists. Hardware line (Playdium, Virtuo/Virtuo II, Angelina) is modular and cloud-connected with karaoke and photobooth add-ons.",
+      "sources": "Proprietary licensed catalog; PRO and label agreements bundled into the per-song fee"
+    },
+    {
+      "name": "AMI NEXTGEN",
+      "vendor": "AMI Entertainment",
+      "tier": "jukebox",
+      "model": "Pay-per-play; operator route model",
+      "scores": { "decks": 0, "stems": 0, "midi": 0, "crowd": 4, "catalog": 5, "show": 3, "openness": 0 },
+      "signature": "NGX-32 / NGX Curve with interchangeable Smart Skins, 35,000+ music videos, free-to-play trivia, venue ad upload, swappable core, Co-Pilot app for remote route management (volume, scheduling, promotions, reporting).",
+      "sources": "Proprietary licensed catalog"
+    },
+    {
+      "name": "Rockbot / Soundtrack",
+      "vendor": "Various",
+      "tier": "jukebox",
+      "model": "SaaS subscription per location",
+      "scores": { "decks": 0, "stems": 0, "midi": 0, "crowd": 3, "catalog": 5, "show": 2, "openness": 1 },
+      "signature": "Cloud background-music with commercial licensing bundled in, curated and dayparted playlists, digital signage, a limited guest request/voting layer. Optimised for brand control, not performance.",
+      "sources": "Licensed commercial catalog"
+    },
+    {
+      "name": "Festify / Jukestar",
+      "vendor": "Community / indie",
+      "tier": "jukebox",
+      "model": "Free / freemium, host supplies streaming account",
+      "scores": { "decks": 0, "stems": 0, "midi": 0, "crowd": 4, "catalog": 3, "show": 0, "openness": 3 },
+      "signature": "Guests join by short URL or QR, add songs to a shared queue and vote tracks up; host admin can skip, delete, pause. Depends entirely on a host account with a consumer streaming subscription, which is a personal-use licence and not a venue licence.",
+      "sources": "Spotify (consumer account)"
+    },
+    {
+      "name": "Navidrome + OpenSubsonic",
+      "vendor": "Community",
+      "tier": "oss",
+      "model": "Free / GPL-3.0",
+      "scores": { "decks": 0, "stems": 0, "midi": 0, "crowd": 2, "catalog": 3, "show": 0, "openness": 5 },
+      "signature": "Self-hosted streaming server over your own collection, full Subsonic/OpenSubsonic API including server-side jukebox mode, smart playlists, transcoding, scrobbling, share links, and a very large third-party client ecosystem.",
+      "sources": "Self-hosted local library"
+    },
+    {
+      "name": "CrowdDeck (target)",
+      "vendor": "This project",
+      "tier": "target",
+      "model": "Open source, self-hostable",
+      "scores": { "decks": 5, "stems": 4, "midi": 5, "crowd": 5, "catalog": 4, "show": 4, "openness": 5 },
+      "signature": "One venue runtime where a live DJ deck plane and a patron-request jukebox plane share a single scheduler, a single library, and a single MIDI/Link clock - so the crowd's queue feeds the DJ's decks instead of competing with them.",
+      "sources": "Self-hosted library, Subsonic/OpenSubsonic, CC catalogs (Jamendo / Free Music Archive / ccMixter), pluggable licensed-streaming adapters"
+    }
+  ]
+}

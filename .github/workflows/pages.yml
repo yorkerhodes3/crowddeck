@@ -1,0 +1,57 @@
+name: Deploy dashboard to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "tools/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Validates every JSON file and regenerates the bundle the dashboard loads.
+      # Fails the build on a syntax error, so it doubles as a data linter.
+      - name: Build data bundle
+        run: node tools/build-data.mjs
+
+      - name: Verify bundle is current
+        run: |
+          if ! git diff --quiet -- docs/data/bundle.js; then
+            echo "::warning::docs/data/bundle.js was stale and has been regenerated for this deploy."
+            echo "Run 'node tools/build-data.mjs' and commit the result."
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

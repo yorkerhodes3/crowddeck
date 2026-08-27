@@ -1,0 +1,80 @@
+mixxxdj/mixxx	7084	NOASSERTION	C++	08/27/2026	False	Mixxx is Free DJ software that gives you everything you need to perform live mixes.
+mixxxdj/libkeyfinder	181	GPL-3.0	C++	11/25/2024	False	Musical key detection for digital audio, GPL v3
+xwax/xwax	159	GPL-3.0	C	05/03/2026	False	Please send patches via the mailing list, this GitHub page is not monitored https://sourceforge.net/projects/xwax/lists/
+Tonejs/Tone.js	14711	MIT	TypeScript	08/21/2026	False	A Web Audio framework for making interactive music in the browser.
+katspaugh/wavesurfer.js	10384	BSD-3-Clause	TypeScript	08/21/2026	False	Audio waveform player
+naomiaro/waveform-playlist	1671	MIT	TypeScript	08/17/2026	False	Multitrack Web Audio editor and player with canvas waveform preview. Set cues, fades and shift multiple tracks in time. 
+gridsound/daw	1856	AGPL-3.0	JavaScript	07/28/2026	False	GridSound (2.59.3) is a work-in-progress free browser-based digital audio workstation following the Web Audio API 🎛🎹🎵
+djipco/webmidi	1711	Apache-2.0	JavaScript	08/13/2026	False	Tame the Web MIDI API. Send and receive MIDI messages with ease. Control instruments with user-friendly functions (playN
+navidrome/navidrome	23137	GPL-3.0	Go	08/26/2026	False	🎧 Your Personal Streaming Service 
+ampache/ampache	3824	AGPL-3.0	PHP	08/20/2026	False	A web based audio/video streaming application and file manager allowing you to access your music & videos from anywhere,
+airsonic-advanced/airsonic-advanced	1405	GPL-3.0	JavaScript	04/24/2024	False	
+sentriz/gonic	2517	GPL-3.0	Go	08/25/2026	False	music streaming server / free-software subsonic server API implementation
+jellyfin/jellyfin	56235	GPL-2.0	C#	08/26/2026	False	The Free Software Media System - Server Backend & API
+koel/koel	17234	MIT	PHP	08/22/2026	False	Music streaming solution that works.
+owntone/owntone-server	2544	GPL-2.0	C	08/25/2026	False	Audio server that can play to AirPlay 1+2 speakers (multiroom), Chromecast and locally. Supports Spotify, internet radio
+music-assistant/server	2984	Apache-2.0	Python	08/27/2026	False	Music Assistant is a free, opensource Media library manager that connects to your streaming services and a wide range of
+mopidy/mopidy	8563	Apache-2.0	Python	08/20/2026	False	Mopidy is an extensible music server written in Python
+mopidy/mopidy-mpd	111	Apache-2.0	Python	08/17/2026	False	Mopidy extension for controlling playback from MPD clients
+Lesterpig/mopidy-party	114	Apache-2.0	JavaScript	10/12/2025	False	Mopidy web extension designed for party
+raveberry/raveberry	750	LGPL-3.0	Python	09/05/2025	False	A multi-user music server with a focus on participation
+Festify/Festify	0	MIT		11/08/2019	True	
+bhj/KaraokeEternal	893	ISC	TypeScript	08/19/2026	False	Open karaoke party system
+OpenKJ/OpenKJ	194	GPL-3.0	C++	12/15/2025	False	Open source karaoke show hosting software.
+Vocaluxe/Vocaluxe	342	GPL-3.0	C#	08/24/2026	False	Vocaluxe is an open source singing game inspired by SingStar™ and Ultrastar Deluxe.
+performous/performous	640	NOASSERTION	C++	08/25/2026	False	An open-source music and rhythm game.
+beetbox/beets	15591	MIT	Python	08/27/2026	False	music library manager and MusicBrainz tagger
+acoustid/chromaprint	1354	NOASSERTION	C++	07/28/2026	False	C library for generating audio fingerprints used by AcoustID
+metabrainz/picard	5143	GPL-2.0	Python	08/26/2026	False	Picard is a cross-platform music tagger powered by the MusicBrainz database
+thestk/rtmidi	1202	NOASSERTION	C++	11/27/2025	False	A set of C++ classes that provide a common API for realtime MIDI input/output across Linux (ALSA & JACK), Macintosh OS X
+celtera/libremidi	700	NOASSERTION	C++	08/26/2026	False	A modern C++ MIDI 1 / MIDI 2 real-time & file I/O library. Supports Windows, macOS, Linux and WebMIDI.
+Ableton/link	1337	NOASSERTION	C++	05/19/2026	False	Ableton Link
+juce-framework/JUCE	8822	NOASSERTION	C++	08/26/2026	False	JUCE is an open-source cross-platform C++ application framework for desktop and mobile applications, including VST, VST3
+breakfastquay/rubberband	773	GPL-2.0	C++	03/03/2025	False	Official mirror of Rubber Band Library, an audio time-stretching and pitch-shifting library.
+deezer/spleeter	28403	MIT	Python	06/18/2026	False	Deezer source separation library including pretrained models.
+adefossez/demucs	3097	MIT	Python	07/11/2026	False	Code for the paper Hybrid Spectrogram and Waveform Source Separation
+facebookresearch/demucs	10359	MIT	Python	04/24/2024	True	Code for the paper Hybrid Spectrogram and Waveform Source Separation
+sigsep/open-unmix-pytorch	1503	MIT	Python	06/17/2024	False	Open-Unmix - Music Source Separation for PyTorch
+aubio/aubio	3754	GPL-3.0	C	04/10/2026	False	a library for audio and music analysis
+MTG/essentia	3705	AGPL-3.0	C++	07/22/2026	False	C++ library for audio and music analysis, description and synthesis, including Python bindings
+librosa/librosa	8576	ISC	Python	08/22/2026	False	Python library for audio and music analysis
+mackron/miniaudio	7185	NOASSERTION	C	08/19/2026	False	Audio playback and capture library written in C, in a single source file.
+PortAudio/portaudio	2136	NOASSERTION	C	08/21/2026	False	PortAudio is a cross-platform, open-source C language library for real-time audio input and output.
+OpenLightingProject/ola	748	NOASSERTION	C++	06/18/2026	False	The Open Lighting Architecture - The Travel Adaptor for the Lighting Industry
+mcallegari/qlcplus	1510	Apache-2.0	C++	08/26/2026	False	Q Light Controller Plus (QLC+) is a free and cross-platform software to control DMX or analog lighting systems like movi
+radarsat1/liblo	218	LGPL-2.1	C	06/19/2026	False	liblo is an implementation of the Open Sound Control protocol for POSIX systems
+snapcast/snapcast	7842	GPL-3.0	C++	06/27/2026	False	Synchronous multiroom audio player
+savonet/liquidsoap	1720	GPL-2.0	OCaml	08/26/2026	False	Liquidsoap is a statically typed scripting general-purpose language with dedicated operators and backend for all thing m
+MiczFlor/RPi-Jukebox-RFID	1779	MIT	PHP	08/05/2026	False	A Raspberry Pi jukebox, playing local music, podcasts, web radio and streams triggered by RFID cards, web app or home au
+xiph/opus	3293	NOASSERTION	C	08/24/2026	False	Modern audio compression for the internet.
+libsndfile/libsndfile	1711	LGPL-2.1	C	08/01/2026	False	A C library for reading and writing sound files containing sampled audio data.
+libsndfile/libsamplerate	742	BSD-2-Clause	C	08/13/2026	False	An audio Sample Rate Conversion library
+Spotifyd/spotifyd	10757	GPL-3.0	Rust	05/28/2026	False	A spotify daemon
+librespot-org/librespot	6973	MIT	Rust	08/22/2026	False	Open Source Spotify client library
+yt-dlp/yt-dlp	187193	Unlicense	Python	08/26/2026	False	A feature-rich command-line audio/video downloader
+MusicPlayerDaemon/MPD	2754	GPL-2.0	C++	08/26/2026	False	Music Player Daemon
+supercollider/supercollider	6704	GPL-3.0	C++	08/20/2026	False	An audio server, programming language, and IDE for sound synthesis and algorithmic composition.
+Ardour/ardour	5224	NOASSERTION	C++	08/20/2026	False	Mirror of Ardour Source Code
+falkTX/Carla	2155	NOASSERTION	C++	06/22/2026	False	Audio plugin host
+jackaudio/jack2	2444	GPL-2.0	C++	01/07/2026	False	jack2 codebase
+RustAudio/cpal	3913	Apache-2.0	Rust	08/23/2026	False	Low-level cross-platform audio I/O library in Rust
+RustAudio/rodio	2451	Apache-2.0	Rust	08/23/2026	False	Rust audio playback library
+Tonejs/Midi	1000	MIT	TypeScript	07/19/2023	False	Convert MIDI into Tone.js-friendly JSON
+tidalcycles/Tidal	2850	GPL-3.0	Haskell	06/13/2025	True	Pattern language
+node-dmx/dmx	322	MIT	JavaScript	05/28/2026	False	DMX controller library for node.js
+hundredrabbits/Orca	5073	MIT	JavaScript	11/16/2025	False	Esoteric Programming Language
+node-red/node-red	23590	Apache-2.0	JavaScript	08/16/2026	False	Low-code programming for event-driven applications
+sonic-pi-net/sonic-pi	12083	NOASSERTION	C++	08/12/2026	False	Code. Music. Live.
+		NOASSERTION				
+mixxxdj/manual	69	NOASSERTION	Python	08/26/2026	False	The Mixxx Manual
+GStreamer/gstreamer	3299	NOASSERTION	C	08/27/2026	False	GStreamer open-source multimedia framework
+FFmpeg/FFmpeg	63672	NOASSERTION	C	08/27/2026	False	Mirror of https://git.ffmpeg.org/ffmpeg.git
+audacity/audacity	17635	NOASSERTION	C++	08/26/2026	False	Audio Editor 
+LMMS/lmms	10293	GPL-2.0	C++	08/27/2026	False	Cross-platform music production software
+Anjok07/ultimatevocalremovergui	25998	MIT	Python	03/13/2025	False	 GUI for a Vocal Remover that uses Deep Neural Networks.
+nomadkaraoke/python-audio-separator	1327	MIT	Python	08/27/2026	False	Easy to use stem (e.g. instrumental/vocals) separation from CLI or as a python package, using a variety of amazing pre-t
+		NOASSERTION				
+tsirysndr/music-player	513	MIT	Rust	10/02/2024	False	 An extensible music server written in Rust 🚀🎵✨
+		NOASSERTION				
+		NOASSERTION				
+soundcloud/soundcloud-javascript	390	NOASSERTION	JavaScript	08/21/2026	False	Official SoundCloud Javascript SDK

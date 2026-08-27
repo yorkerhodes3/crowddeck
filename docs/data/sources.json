@@ -1,0 +1,173 @@
+{
+  "generated": "2026-08-26",
+  "contentSources": [
+    {
+      "name": "Local filesystem library",
+      "class": "Owned media",
+      "access": "Direct file I/O",
+      "performanceRights": "Venue must hold PRO licences (ASCAP / BMI / SESAC / GMR) for public performance; owning the file is not a performance right.",
+      "fit": "P0 - the baseline source",
+      "notes": "Ingest via beets + Chromaprint/AcoustID + MusicBrainz for reliable tags and de-duplication. Widest format spread, so FFmpeg/libsndfile decoding is unavoidable."
+    },
+    {
+      "name": "OpenSubsonic / Subsonic servers",
+      "class": "Self-hosted",
+      "access": "Open HTTP API",
+      "performanceRights": "Same as local media - the server is transport, not a licence.",
+      "fit": "P0 - primary integration",
+      "notes": "Navidrome (GPL-3.0, 23k stars), gonic (GPL-3.0) and others already implement it, including server-side jukebox mode. The jukeboxMediaTypes extension widens jukeboxControl beyond song IDs to podcast episodes and radio stations. We should both consume and expose this API."
+    },
+    {
+      "name": "Jamendo",
+      "class": "Creative Commons",
+      "access": "Public REST API, free client ID",
+      "performanceRights": "CC terms per track; commercial/venue use may require Jamendo's licensing product. Attribution and share-alike obligations vary by track.",
+      "fit": "P1 - default legal catalog",
+      "notes": "500,000+ CC tracks with streaming-ready URLs. The best candidate for shipping a demo install that is legal out of the box."
+    },
+    {
+      "name": "Free Music Archive",
+      "class": "Creative Commons",
+      "access": "JSON API",
+      "performanceRights": "Per-track CC licence, exposed in the API response.",
+      "fit": "P1",
+      "notes": "Metadata includes licence type, which maps directly onto our per-track licence-class tagging requirement (H2)."
+    },
+    {
+      "name": "ccMixter",
+      "class": "Creative Commons",
+      "access": "ccHost Query API",
+      "performanceRights": "Per-track CC licence.",
+      "fit": "P2",
+      "notes": "Remix- and stem-friendly catalog, which pairs unusually well with a stem-capable engine."
+    },
+    {
+      "name": "Beatport / Beatsource",
+      "class": "Licensed streaming (DJ)",
+      "access": "Partner integration only",
+      "performanceRights": "Subscription grants DJ performance use within approved applications. Beatsource is being folded into Beatport.",
+      "fit": "P2 - adapter interface only",
+      "notes": "Integrated into Serato, rekordbox, Traktor, VirtualDJ, djay, Engine OS and CDJ-3000 class hardware. Requires a commercial agreement; we ship the provider interface, not an implementation."
+    },
+    {
+      "name": "TIDAL",
+      "class": "Licensed streaming",
+      "access": "Partner integration only",
+      "performanceRights": "Per partner agreement.",
+      "fit": "P2 - adapter interface only",
+      "notes": "The most widely integrated hi-fi option across DJ software."
+    },
+    {
+      "name": "SoundCloud Go+",
+      "class": "Licensed streaming",
+      "access": "API with registered client ID",
+      "performanceRights": "Go+ content requires a separate written agreement with SoundCloud; the API terms mandate attribution and permalink backlinks and forbid circumventing quotas.",
+      "fit": "P2 - adapter interface only",
+      "notes": "Explicitly documented as needing a written agreement - a good example of why streaming adapters must be optional plugins."
+    },
+    {
+      "name": "DJ record pools (BPM Supreme, ZIPDJ)",
+      "class": "Licensed download",
+      "access": "Subscription download",
+      "performanceRights": "Subscription grants professional DJs the right to play downloaded music live, on radio and in streamed mixes.",
+      "fit": "P2 - ingest path",
+      "notes": "Roughly $20-25/month. Downloads land in the local library, so no special runtime integration is needed - only licence-class tagging."
+    },
+    {
+      "name": "Consumer streaming (Spotify, Apple Music personal accounts)",
+      "class": "Consumer subscription",
+      "access": "librespot / spotifyd / official SDKs",
+      "performanceRights": "NONE for public performance. Personal, non-commercial use only.",
+      "fit": "EXCLUDED",
+      "notes": "This is the fatal flaw in the Festify / Jukestar / PartyPlay class of open-source jukeboxes. CrowdDeck must refuse this path for venue mode by design."
+    },
+    {
+      "name": "Media downloaders (yt-dlp and similar)",
+      "class": "Unlicensed",
+      "access": "Scraping",
+      "performanceRights": "None. Terms-of-service violation plus unlicensed public performance.",
+      "fit": "EXCLUDED",
+      "notes": "Explicitly out of scope for the venue product."
+    },
+    {
+      "name": "Live MIDI instruments",
+      "class": "Performed in-room",
+      "access": "MIDI 1.0 / 2.0 UMP, Ableton Link",
+      "performanceRights": "Live-performance licensing is separate from jukebox licensing; original material needs none.",
+      "fit": "P1 - novel source class",
+      "notes": "The brief's distinguishing idea: a keyboard, groovebox or drum machine is registered as a queueable source that plays in time with the decks, not merely as a controller."
+    }
+  ],
+  "interconnect": [
+    {
+      "name": "MIDI 1.0",
+      "role": "Control surfaces, legacy gear",
+      "resolution": "7-bit (0-127); 14-bit exists but is rarely implemented",
+      "support": "Universal",
+      "verdict": "Required baseline. Insufficient alone for high-resolution jog wheels."
+    },
+    {
+      "name": "MIDI 2.0 / UMP",
+      "role": "High-resolution, bidirectional, self-describing control",
+      "resolution": "Up to 32-bit values; 16 groups x 16 channels",
+      "support": "Windows 11 MIDI Services (2026), macOS CoreMIDI (since Oct 2021), Linux ALSA (kernel 6.5+, 2023)",
+      "verdict": "Adopt now. MIDI-CI Property Exchange (JSON-based) and Profiles allow controllers to describe themselves, which could largely automate mapping - a real leap past every current DJ app."
+    },
+    {
+      "name": "HID",
+      "role": "High-resolution jog wheels and platters",
+      "resolution": "Far beyond 128 steps/rotation; Serato mappings commonly use 1536 (128 x 12)",
+      "support": "Pioneer CDJs and most Serato/Traktor-certified hardware, via an 'Advanced' HID mode",
+      "verdict": "Needed for credible scratch feel. Mixxx already implements HID mapping with a packet-parser helper."
+    },
+    {
+      "name": "MIDI Clock (24 PPQN)",
+      "role": "Tempo sync to external instruments",
+      "resolution": "24 pulses per quarter note",
+      "support": "Universal on hardware",
+      "verdict": "Primary outbound tempo path. Keep the clock path short and avoid Thru daisy-chains, which introduce jitter."
+    },
+    {
+      "name": "MIDI Time Code (MTC)",
+      "role": "Positional / SMPTE alignment",
+      "resolution": "~0.6 ms, 8 quarter-frame messages per frame",
+      "support": "Common in AV",
+      "verdict": "Positional reference only. Too coarse and too jitter-prone for beat-accurate musical triggering."
+    },
+    {
+      "name": "Ableton Link",
+      "role": "Peer-to-peer tempo, beat, phase and start/stop sync over LAN",
+      "resolution": "Shared continuous timeline with a phase 'quantum'",
+      "support": "Traktor, djay, hundreds of iOS apps and hardware",
+      "verdict": "Adopt - the cable-free way for phones, laptops and hardware in the room to share our timeline. Licence caution: GPL-2.0-or-later unless commercially licensed from Ableton."
+    },
+    {
+      "name": "OSC (Open Sound Control)",
+      "role": "Tablets, VJ software, show control",
+      "resolution": "Arbitrary typed messages over UDP/TCP",
+      "support": "OLA, QLC+, Lemur, TouchOSC",
+      "verdict": "Adopt via liblo (LGPL-2.1) for the bridge into lighting and visuals."
+    },
+    {
+      "name": "DMX512 / Art-Net / sACN",
+      "role": "Lighting fixtures",
+      "resolution": "512 channels per universe",
+      "support": "OLA, QLC+; rekordbox drives DMX via the RB-DMX1 interface",
+      "verdict": "Adopt through OLA. Phrase-aware auto-lighting, as in rekordbox Lighting mode, is the capability to match."
+    },
+    {
+      "name": "Mackie Control / HUI",
+      "role": "Studio control surfaces as mixers",
+      "resolution": "10-bit (0-1023) fader resolution via LSB trick",
+      "support": "Reverse-engineered spec; open implementations exist (TouchMCU, MusE)",
+      "verdict": "Optional. Unlocks a large installed base of motorised-fader surfaces that no DJ app currently addresses."
+    },
+    {
+      "name": "Web MIDI API",
+      "role": "Browser-based mapping and light control",
+      "resolution": "MIDI 1.0 byte stream",
+      "support": "Chrome 43+, Edge 79+, Firefox 108+, Opera, Samsung Internet. NOT Safari on macOS/iOS, with no announced roadmap. Chrome 124+ gates the entire API behind a permission prompt and requires HTTPS.",
+      "verdict": "Convenience path only. Because Safari and therefore every iPhone browser is excluded, the native MIDI path must remain authoritative."
+    }
+  ]
+}

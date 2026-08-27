@@ -1,0 +1,47 @@
+# slug || query
+djay-pro-features || djay Pro AI features list Algoriddim Neural Mix stems four decks Automix full feature set
+djay-pro-hardware-streaming || djay Pro supported MIDI controllers hardware integration and streaming services TIDAL SoundCloud Beatport
+serato-dj-pro-features || Serato DJ Pro features list Stems Practice Mode DVS expansion packs 2025
+rekordbox-features || Pioneer rekordbox DJ performance mode features CloudDirectPlay Lighting mode plans
+virtualdj-features || VirtualDJ 2026 features real time stem separation sandbox video mixing sampler
+traktor-pro-features || Native Instruments Traktor Pro 4 features Stem Deck Pattern Player remix decks
+dj-software-comparison-2025 || best DJ software 2025 comparison feature matrix Serato rekordbox Traktor djay VirtualDJ Mixxx
+dj-controller-standards || DJ controller MIDI mapping standard HID mode jog wheel resolution Serato Traktor mapping files
+touchtunes-overview || TouchTunes jukebox how it works mobile app credits queue Play Next bar jukebox features
+touchtunes-app-features || TouchTunes app features Fast Pass Play Next bar finder song queue loyalty rewards
+touchtunes-business-model || TouchTunes business model revenue share bar owners operators licensing music jukebox industry
+touchtunes-technology || TouchTunes jukebox hardware Playdium Virtuo Angelina architecture cloud connected
+digital-jukebox-competitors || AMI Entertainment Rowe digital jukebox competitors NEXTGEN jukebox features comparison
+jukebox-remote-request-apps || bar jukebox request app alternatives Rockbot Soundtrack Your Brand Jukestar crowd DJ request
+jukebox-licensing-us || commercial jukebox music licensing US ASCAP BMI SESAC jukebox license JLO Jukebox License Office
+crowd-request-features || crowd song request queue anti-abuse voting cooldown explicit filter bar jukebox software
+mixxx-features || Mixxx open source DJ software complete feature list 2.5 stems effects broadcasting
+mixxx-architecture || Mixxx source code architecture engine buffer soundmanager controller scripting QML
+mixxx-controller-scripting || Mixxx controller mapping JavaScript API HID MIDI mapping XML documentation
+open-source-dj-software || open source DJ software list alternatives Mixxx xwax Ultramixer libre DJ apps GitHub
+web-audio-dj-open-source || open source web based DJ app Web Audio API GitHub browser DJ mixer project
+open-source-jukebox || open source jukebox software self hosted party queue GitHub crowd requests
+navidrome-subsonic || Navidrome features Subsonic API self hosted music server playlists smart playlists
+funkwhale-ampache-airsonic || Funkwhale Ampache Airsonic Advanced Gonic self hosted music server comparison features
+mopidy-snapcast || Mopidy extensions Mopidy-Party Mopidy-MPD Snapcast multiroom audio open source
+raveberry-partyplay || Raveberry open source party music voting jukebox Festify PartyPlay Jukebox alternatives GitHub
+karaoke-open-source || open source karaoke software Karaoke Eternal OpenKJ Vocaluxe Performous features CDG
+beets-musicbrainz || beets music library manager MusicBrainz AcoustID Chromaprint metadata tagging
+midi-2-0-spec || MIDI 2.0 specification Universal MIDI Packet UMP MIDI-CI property exchange profiles 2025
+web-midi-api || Web MIDI API browser support SysEx permission MIDI 2.0 UMP Chrome status
+rtmidi-libremidi || RtMidi libremidi JUCE midi library cross platform C++ open source comparison
+ableton-link || Ableton Link protocol open source SDK tempo sync phase quantum how it works
+midi-clock-mtc-sync || MIDI clock MTC MIDI time code sync DJ software tempo sync jitter best practices
+osc-dmx-lighting || Open Sound Control OSC DMX Art-Net lighting control open source library DJ light show
+mackie-hui-control || Mackie Control HUI protocol MIDI control surface specification open source implementation
+midi-mapping-learn-ui || MIDI learn implementation controller mapping UI design DAW soft takeover pickup mode
+midi-instrument-integration || MIDI instrument integration live performance sync DJ software keyboard drum machine
+music-streaming-dj-api || DJ streaming integration Beatport LINK Beatsource TIDAL SoundCloud Go+ API terms for DJ apps
+free-music-apis || royalty free music API Jamendo Free Music Archive ccMixter Creative Commons music catalog API
+music-metadata-apis || MusicBrainz Discogs AcoustID Spotify Web API audio features metadata API comparison
+audio-analysis-open-source || open source audio analysis BPM key detection aubio Essentia librosa QM-DSP keyfinder
+stem-separation-open-source || open source stem separation Demucs Spleeter real time performance GPU latency
+timestretch-open-source || open source time stretching pitch shifting Rubber Band SoundTouch elastique license
+audio-engine-open-source || open source low latency audio engine miniaudio PortAudio JUCE RtAudio comparison C++
+dj-app-licensing-legal || DJ app streaming music licensing legal restrictions offline locker recording DMCA
+gpl-licensing-fork || GPL v2 v3 licensing implications forking Mixxx commercial open core AGPL choice

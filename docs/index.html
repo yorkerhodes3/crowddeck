@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrowdDeck — Concept Dashboard</title>
+<meta name="description" content="Competitive research and concept analysis for CrowdDeck: an open-source venue runtime that fuses a professional DJ deck engine, a TouchTunes-style crowd request jukebox, and MIDI-based systems interconnection.">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%234dd4ac'/><circle cx='50' cy='50' r='12' fill='%230a0c12'/></svg>">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> CrowdDeck</div>
+    <nav class="links">
+      <a href="#thesis">Thesis</a>
+      <a href="#landscape">Landscape</a>
+      <a href="#jukebox">Jukebox model</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#oss">Open source</a>
+      <a href="#content">Content</a>
+      <a href="#midi">MIDI</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#licence">Licence</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="ghlink" href="https://github.com/yorkerhodes3/crowddeck/blob/main/CONCEPT-IDEA.md">CONCEPT-IDEA.md →</a>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <span class="eyebrow">Concept Phase · Research Complete</span>
+  <h1>The DJ booth and the jukebox have never shared <em>one machine</em>.</h1>
+  <p class="lede">
+    CrowdDeck is a concept for an open-source venue runtime that runs a professional multi-deck DJ engine
+    and a TouchTunes-style patron request jukebox on a <strong>single scheduler, a single library and a
+    single clock</strong> — wired together by MIDI so that instruments, controllers and lighting all sit on
+    the same timeline. This dashboard is the evidence behind that concept.
+  </p>
+
+  <div class="equation">
+    <div class="eqbox">
+      <div class="k">Plane A</div>
+      <div class="v">DJ App Pro tier</div>
+      <div class="s">djay Pro AI · Serato · rekordbox · Traktor · VirtualDJ · Mixxx</div>
+    </div>
+    <div class="eqop">+</div>
+    <div class="eqbox">
+      <div class="k">Plane B</div>
+      <div class="v">TouchTunes tier</div>
+      <div class="s">TouchTunes · AMI NEXTGEN · Rockbot · Festify / Jukestar</div>
+    </div>
+    <div class="eqop">+</div>
+    <div class="eqbox">
+      <div class="k">Fabric</div>
+      <div class="v">MIDI interconnect</div>
+      <div class="s">MIDI 2.0 UMP · HID · Clock · Ableton Link · OSC / DMX</div>
+    </div>
+    <div class="eqop">=</div>
+    <div class="eqbox target">
+      <div class="k">Target</div>
+      <div class="v">CrowdDeck</div>
+      <div class="s">One open runtime, two modes, no silent room</div>
+    </div>
+  </div>
+
+  <div class="stats" data-render="stats"></div>
+</div>
+
+<!-- ============================= THESIS ============================= -->
+<section id="thesis" class="first">
+  <div class="wrap">
+    <div class="sec-num">01 — THESIS</div>
+    <h2>The gap this project exists to fill</h2>
+    <div class="body">
+      <p>
+        Every product surveyed is excellent at one half of the problem and structurally uninterested in the
+        other half. DJ software assumes a skilled operator is present and gives the audience no voice at all —
+        across djay Pro AI, Serato DJ Pro, rekordbox 7, Traktor Pro 4 and Mixxx, the crowd-participation score
+        is effectively zero. Jukebox platforms assume no operator is present and give the music no craft: they
+        are queue managers with a payment terminal bolted on, and none of them can beatmatch, loop, or run a stem.
+      </p>
+      <p>
+        Real venues are <em>both</em>, on a schedule. A bar is an unattended jukebox from 11:00 to 21:00 and a
+        DJ room from 21:00 to close. Today that means two systems, two libraries and an awkward physical handover.
+        Nobody has built the machine that does both, and open source has not even attempted it.
+      </p>
+    </div>
+
+    <div class="callout">
+      <strong>The core design decision.</strong> Crowd requests must never write directly to the audio output.
+      They land in a <strong>staging lane</strong> that the DJ can approve, reorder and beatmatch. When no DJ is
+      present, an autonomous mixer drains that same staging lane with beatmatched transitions. One queue, two
+      consumers. That single choice is what allows a jukebox and a DJ rig to coexist instead of fighting for the
+      speakers — and it is the part no existing product, open or closed, implements.
+    </div>
+
+    <h3>Four findings that shaped the concept</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h4>1. Open source has a DJ engine but no venue layer</h4>
+        <p>Mixxx is a genuinely complete DJ application — 7,000+ stars, actively developed, GPL-2.0-or-later,
+        with beatgrids, key detection, sync lock, DVS, Auto DJ and now STEM support in 2.6. There is no
+        comparable open-source implementation of the TouchTunes interaction model. The crowd plane is where
+        the real greenfield work is.</p>
+      </div>
+      <div class="card">
+        <h4>2. The existing open jukeboxes are built on a legal fault line</h4>
+        <p>Festify, Jukestar and the PartyPlay class all depend on a host's consumer Spotify Premium account.
+        That is a personal-use licence, not a public-performance licence. Festify itself has been archived since
+        2019. Any venue-credible product must be designed so this path is impossible.</p>
+      </div>
+      <div class="card">
+        <h4>3. Licence choice is an architecture decision, made once</h4>
+        <p>The most valuable code to fork (Mixxx) is GPL-2.0-or-later. Ableton Link is GPL-2.0-or-later, JUCE 9
+        is AGPLv3-or-commercial, Rubber Band is GPL-or-commercial, Essentia is AGPL-3.0. Get the process
+        boundaries wrong at the start and the whole product is copyleft by accident.</p>
+      </div>
+      <div class="card">
+        <h4>4. MIDI 2.0 finally landed on every platform</h4>
+        <p>Windows 11 MIDI Services (2026), macOS CoreMIDI (since 2021) and Linux ALSA (kernel 6.5+, 2023) all
+        carry Universal MIDI Packets natively. A project starting now should be UMP-native — and MIDI-CI Property
+        Exchange means controllers can describe themselves, which could largely automate the mapping problem that
+        every incumbent still solves with hand-written files.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ LANDSCAPE =========================== -->
+<section id="landscape">
+  <div class="wrap">
+    <div class="sec-num">02 — COMPETITIVE LANDSCAPE</div>
+    <h2>Capability matrix across both tiers</h2>
+    <p>
+      Eleven products scored on seven axes. Read it column-wise: the
+      <strong>Crowd / Jukebox</strong> column and the <strong>Performance Decks</strong> column are almost
+      perfectly complementary — nothing scores well in both.
+    </p>
+    <div data-render="matrix"></div>
+    <h3>What each product actually brings</h3>
+    <div data-render="products"></div>
+  </div>
+</section>
+
+<!-- ============================ JUKEBOX ============================= -->
+<section id="jukebox">
+  <div class="wrap">
+    <div class="sec-num">03 — THE JUKEBOX MODEL, DECODED</div>
+    <h2>What TouchTunes actually got right</h2>
+    <p>
+      TouchTunes is not interesting because of its catalog. It is interesting because of a small number of
+      interaction and business mechanics that no open-source project has replicated, and which are worth
+      copying deliberately.
+    </p>
+
+    <div class="grid g3">
+      <div class="card">
+        <h4>Position in line</h4>
+        <p>The single most-cited feature. Showing a patron exactly where their song sits in the queue is what
+        converts an unbounded, frustrating wait into a bounded, tolerable one. It is cheap to build and it is
+        the difference between a queue people trust and one they abandon.</p>
+      </div>
+      <div class="card">
+        <h4>Paid priority</h4>
+        <p>Fast Pass / Song Upgrade lets a patron spend extra credits to jump the line. This is the core
+        monetisation primitive of the entire industry — and it works precisely <em>because</em> position in line
+        is visible. One feature creates the demand the other one sells.</p>
+      </div>
+      <div class="card">
+        <h4>Non-expiring credit wallet</h4>
+        <p>Credits never expire and can auto-refill. This converts a transaction into a balance, which is a
+        retention mechanic. Layered on top: TouchTunes Rewards points, emoji reactions and a visible social feed
+        of who played what.</p>
+      </div>
+      <div class="card">
+        <h4>Zero-capex venue economics</h4>
+        <p>Hardware is installed free. Revenue comes from per-song fees that already include the negotiated PRO
+        and label licensing, then splits between the venue and the local amusement operator — the venue commonly
+        taking roughly a quarter to a half of net. Licensing bundled into the play fee is the reason venues accept it.</p>
+      </div>
+      <div class="card">
+        <h4>Operator route management</h4>
+        <p>Both TouchTunes and AMI's Co-Pilot let an operator manage many venues remotely: volume, content
+        scheduling, promotions and detailed route reporting. Multi-tenancy is not an enterprise afterthought
+        here — it is the business model.</p>
+      </div>
+      <div class="card">
+        <h4>The cabinet is a venue display</h4>
+        <p>Playdium, Virtuo/Virtuo II and Angelina are modular, cloud-connected units with HD touchscreens,
+        LED lighting, visualisers, and karaoke or photobooth add-ons. The physical presence advertises the
+        service to everyone in the room — a role a QR code and a wall screen can serve for a fraction of the cost.</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <strong>And what it got wrong — our opening.</strong> The TouchTunes cabinet is cloud-dependent by design.
+      When the venue's connection drops, the music stops. A local-first runtime that keeps working with no
+      internet is a real, demonstrable advantage, not just an ideological preference. Pair that with an open
+      API and no telemetry, and the open-source product has three things the incumbent structurally cannot offer.
+    </div>
+
+    <h3>The licensing reality every venue product must respect</h3>
+    <ul class="tight">
+      <li><strong>The Jukebox License Office closed in 2025.</strong> The JLO was the ASCAP/BMI/SESAC joint
+        clearinghouse that sold one economical annual licence covering all three repertories for coin-operated
+        jukeboxes. With it gone, operators must obtain separate annual licences from ASCAP, BMI and SESAC.</li>
+      <li><strong>Venue background-music licensing is separate and additive.</strong> Bars and restaurants
+        typically need ASCAP, BMI, SESAC <em>and</em> GMR, with combined annual cost commonly exceeding $1,000
+        per location depending on capacity, zones, outdoor playback, and whether there is live music, a DJ or karaoke.</li>
+      <li><strong>A DJ record pool is a legitimate ingest path.</strong> Services like BPM Supreme and ZIPDJ
+        (roughly $20–25/month) grant professional DJs the right to play downloaded music live.</li>
+      <li><strong>Consumer streaming is not.</strong> This is the line the existing open-source jukeboxes cross.</li>
+    </ul>
+    <p class="small">
+      This is research, not legal advice. The design consequence is concrete: the system must be able to answer
+      <em>"may this venue legally play this track right now?"</em> — which means per-track licence class and a
+      per-venue licensing profile are data model concerns from day one, not a later compliance bolt-on.
+    </p>
+  </div>
+</section>
+
+<!-- ========================== CAPABILITIES ========================== -->
+<section id="capabilities">
+  <div class="wrap">
+    <div class="sec-num">04 — MERGED CAPABILITY SET</div>
+    <h2>The union of everything researched</h2>
+    <p>
+      Eight domains. Every capability is traced back to the product that established the expectation, so
+      nothing here is invented for its own sake. Priorities are <strong>proposals for SPECIFICATION.md review</strong>,
+      not commitments. Domain C is the only one with no prior art — it is the actual novelty.
+    </p>
+    <div data-render="capabilities"></div>
+  </div>
+</section>
+
+<!-- ============================== OSS =============================== -->
+<section id="oss">
+  <div class="wrap">
+    <div class="sec-num">05 — OPEN-SOURCE LANDSCAPE</div>
+    <h2>What to fork, adopt, study, and refuse</h2>
+    <p>
+      The brief was explicit: do not write code we could have forked. Stars, language, licence and last-push
+      date below were read directly from the GitHub REST API on <span data-generated></span>. Where GitHub
+      reported <span class="mono">NOASSERTION</span>, the repository's actual LICENSE file was fetched and read —
+      which is how JUCE 9 turned out to be AGPLv3-or-commercial and miniaudio turned out to be public-domain-or-MIT-0.
+    </p>
+    <div data-render="oss"></div>
+
+    <h3>The three-line summary</h3>
+    <ul class="tight">
+      <li><strong>Fork Mixxx</strong> for the performance engine. It is the only mature open DJ application in
+        existence and rebuilding EngineMixer, SoundManager, the analysers and the DVS path would cost years.</li>
+      <li><strong>Fork Karaoke Eternal</strong> for the crowd plane. It is ISC-licensed — meaning we can relicense
+        it freely — and it already implements QR join, multi-room sessions, a dynamic fair queue and a
+        browser-first control surface, which is 70% of the TouchTunes interaction model.</li>
+      <li><strong>Fork Mopidy</strong> for content-source abstraction. Apache-2.0, and its entire purpose is a
+        pluggable backend API that normalises many sources behind one interface — exactly the layer we need,
+        with no copyleft consequences.</li>
+    </ul>
+    <div class="callout">
+      <strong>Everything else is a dependency or a reference.</strong> Navidrome should be consumed over the
+      OpenSubsonic API rather than forked, which keeps it in its own process and its GPL-3.0 out of our binary.
+      That pattern — talk to copyleft components over a socket — recurs throughout the architecture.
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CONTENT ============================= -->
+<section id="content">
+  <div class="wrap">
+    <div class="sec-num">06 — CONTENT SOURCES</div>
+    <h2>Where the music legally comes from</h2>
+    <p>
+      Content sources are pluggable because licensing differs per deployment. The table below is sorted by how
+      it should be built, and the two red rows are the paths the project must make architecturally impossible
+      for venue mode.
+    </p>
+    <div data-render="content"></div>
+    <div class="callout">
+      <strong>Ship legal music in the box.</strong> Jamendo (500,000+ Creative Commons tracks with a free client
+      ID and streaming-ready URLs), the Free Music Archive and ccMixter mean a fresh install can have real,
+      legally playable music on first run — with per-track licence metadata already exposed by their APIs.
+      ccMixter's remix- and stem-friendly catalog pairs unusually well with a stem-capable engine.
+    </div>
+  </div>
+</section>
+
+<!-- ============================== MIDI ============================== -->
+<section id="midi">
+  <div class="wrap">
+    <div class="sec-num">07 — MIDI &amp; SYSTEMS INTERCONNECTION</div>
+    <h2>The interconnect fabric</h2>
+    <p>
+      The brief treats MIDI as a first-class subsystem — an interface to musical instruments and other content
+      sources, not merely a way to read knobs. That reframing has real consequences: a groovebox becomes a
+      queueable source, and the leader deck becomes a clock master that the whole room follows.
+    </p>
+    <div data-render="interconnect"></div>
+
+    <div class="grid g2">
+      <div class="card accent">
+        <h4>Design position: be UMP-native from day one</h4>
+        <p>Every major OS now carries MIDI 2.0 Universal MIDI Packets natively. More importantly, MIDI-CI
+        Property Exchange gives a JSON-based model for a device to describe its own controls. Every incumbent
+        still solves mapping with hand-authored files; a UMP-native project could make most controllers
+        self-describing. That is a defensible technical lead available only to a project starting now.</p>
+      </div>
+      <div class="card accent">
+        <h4>Design position: the browser cannot be the MIDI path</h4>
+        <p>Web MIDI is absent from Safari on macOS and iOS with no announced roadmap — which excludes every
+        iPhone — and Chrome 124+ gates the whole API behind a permission prompt over HTTPS. Combined with
+        20–30 ms desktop and 50–100 ms mobile Web Audio round-trip latency, the browser is a fine surface for
+        patrons and for mapping UI, and an unacceptable one for the performance engine.</p>
+      </div>
+    </div>
+
+    <h4>Clock topology</h4>
+    <ul class="tight">
+      <li>The <strong>leader deck</strong> is the single tempo source. It publishes to MIDI Clock (24 PPQN) and
+        to Ableton Link simultaneously, so cabled hardware and wireless peers share one timeline.</li>
+      <li><strong>MIDI Clock</strong> carries tempo; <strong>MTC</strong> carries position. MTC's ~0.6 ms
+        resolution and susceptibility to traffic delay make it a positional reference only, never a beat-accurate trigger.</li>
+      <li>Keep the clock path short. Thru daisy-chains introduce jitter and can create loops.</li>
+      <li><strong>Ableton Link's quantum</strong> gives phase alignment for free: an 8-beat loop and a 4-beat loop
+        stay aligned at each 8-beat boundary, and <span class="mono">enableStartStopSync</span> quantises transport
+        launches so everything starts together.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- =========================== ARCHITECTURE ========================= -->
+<section id="architecture">
+  <div class="wrap">
+    <div class="sec-num">08 — PROPOSED ARCHITECTURE</div>
+    <h2>Two planes, one scheduler, one clock</h2>
+    <p>
+      The dashed boundary is a <strong>process boundary and a licence boundary at the same time</strong>.
+      Copyleft-heavy components live below it and are addressed over IPC or HTTP; the permissive core lives above it.
+    </p>
+
+    <div class="archwrap">
+      <svg viewBox="0 0 1000 660" role="img" aria-label="CrowdDeck layered architecture diagram">
+        <defs>
+          <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#6f7891"/>
+          </marker>
+          <style>
+            .bx { fill: #1b2030; stroke: #262d42; stroke-width: 1.2; rx: 8; }
+            .bx-a { fill: rgba(77,212,172,0.10); stroke: rgba(77,212,172,0.5); stroke-width: 1.2; rx: 8; }
+            .bx-p { fill: rgba(124,108,255,0.12); stroke: rgba(124,108,255,0.5); stroke-width: 1.2; rx: 8; }
+            .bx-g { fill: rgba(255,180,84,0.09); stroke: rgba(255,180,84,0.42); stroke-width: 1.2; rx: 8; }
+            .lbl { fill: #e6e9f2; font: 600 12.5px system-ui, sans-serif; }
+            .sub { fill: #a4adc4; font: 11px system-ui, sans-serif; }
+            .grp { fill: #6f7891; font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.11em; }
+            .ln  { stroke: #3a4360; stroke-width: 1.3; fill: none; marker-end: url(#arw); }
+            .bnd { stroke: rgba(255,180,84,0.55); stroke-width: 1.4; stroke-dasharray: 7 6; fill: none; }
+          </style>
+        </defs>
+
+        <!-- Clients -->
+        <text class="grp" x="16" y="20">CLIENTS</text>
+        <rect class="bx" x="16"  y="30" width="180" height="52"/>
+        <text class="lbl" x="30" y="52">Patron PWA</text><text class="sub" x="30" y="69">QR join · request · vote · pay</text>
+        <rect class="bx" x="208" y="30" width="180" height="52"/>
+        <text class="lbl" x="222" y="52">DJ Console</text><text class="sub" x="222" y="69">decks · staging lane · FX</text>
+        <rect class="bx" x="400" y="30" width="180" height="52"/>
+        <text class="lbl" x="414" y="52">Operator Console</text><text class="sub" x="414" y="69">policy · venues · reports</text>
+        <rect class="bx" x="592" y="30" width="180" height="52"/>
+        <text class="lbl" x="606" y="52">Venue Display</text><text class="sub" x="606" y="69">now playing · up next · QR</text>
+        <rect class="bx" x="784" y="30" width="200" height="52"/>
+        <text class="lbl" x="798" y="52">3rd-party clients</text><text class="sub" x="798" y="69">any OpenSubsonic app</text>
+
+        <line class="ln" x1="500" y1="86" x2="500" y2="106"/>
+
+        <!-- API -->
+        <text class="grp" x="16" y="106">API</text>
+        <rect class="bx-a" x="16" y="114" width="968" height="46"/>
+        <text class="lbl" x="30" y="136">Open API — HTTP + WebSocket, and an OpenSubsonic-compatible endpoint</text>
+        <text class="sub" x="30" y="152">Documented, versioned, no telemetry. Third-party clients are how an open project out-features a closed one.</text>
+
+        <line class="ln" x1="500" y1="164" x2="500" y2="184"/>
+
+        <!-- Fusion core -->
+        <text class="grp" x="16" y="184">FUSION CORE — the novelty</text>
+        <rect class="bx-p" x="16" y="192" width="968" height="112"/>
+        <rect class="bx" x="32" y="214" width="228" height="74"/>
+        <text class="lbl" x="46" y="236">Unified Scheduler</text>
+        <text class="sub" x="46" y="253">one queue, two consumers</text>
+        <text class="sub" x="46" y="269">staging lane · fair queue</text>
+        <text class="sub" x="46" y="283">paid priority · vote blend</text>
+        <rect class="bx" x="276" y="214" width="228" height="74"/>
+        <text class="lbl" x="290" y="236">Venue Policy Engine</text>
+        <text class="sub" x="290" y="253">explicit filter · allow/block</text>
+        <text class="sub" x="290" y="269">dayparting · volume schedule</text>
+        <text class="sub" x="290" y="283">licence-class gating</text>
+        <rect class="bx" x="520" y="214" width="228" height="74"/>
+        <text class="lbl" x="534" y="236">Mode &amp; Handoff</text>
+        <text class="sub" x="534" y="253">autonomous ⇄ DJ-attended</text>
+        <text class="sub" x="534" y="269">gapless control transfer</text>
+        <text class="sub" x="534" y="283">never-silent fallback</text>
+        <rect class="bx" x="764" y="214" width="204" height="74"/>
+        <text class="lbl" x="778" y="236">Crowd Telemetry</text>
+        <text class="sub" x="778" y="253">request heatmap</text>
+        <text class="sub" x="778" y="269">vote velocity</text>
+        <text class="sub" x="778" y="283">unfilled demand</text>
+
+        <line class="ln" x1="150" y1="308" x2="150" y2="336"/>
+        <line class="ln" x1="850" y1="308" x2="850" y2="336"/>
+
+        <!-- licence / process boundary -->
+        <path class="bnd" d="M8 320 L992 320"/>
+        <text x="500" y="314" text-anchor="middle" class="grp" style="fill: rgba(255,180,84,0.9)">PERMISSIVE CORE ABOVE  ·  COPYLEFT PLANE BELOW  ·  THIS LINE IS A PROCESS BOUNDARY</text>
+
+        <!-- Planes -->
+        <text class="grp" x="16" y="339">EXECUTION PLANES</text>
+        <rect class="bx-g" x="16" y="344" width="474" height="104"/>
+        <text class="lbl" x="32" y="366">Performance Plane — real-time, native, copyleft</text>
+        <text class="sub" x="32" y="384">4 decks · beatgrid · key-lock · sync lock · hot cues · loops</text>
+        <text class="sub" x="32" y="400">stem playback · chainable FX · DVS timecode · sampler</text>
+        <text class="sub" x="32" y="416">Mixxx-derived engine (GPL-2.0-or-later) + PortAudio / miniaudio</text>
+        <text class="sub" x="32" y="436">Hard budget: sub-10 ms, deterministic. Never in a browser.</text>
+
+        <rect class="bx" x="510" y="344" width="474" height="104"/>
+        <text class="lbl" x="526" y="366">Jukebox Plane — soft real-time, permissive</text>
+        <text class="sub" x="526" y="384">crowd queue · credits &amp; wallet · loyalty · moderation</text>
+        <text class="sub" x="526" y="400">multi-zone routing · karaoke rotation · venue display feed</text>
+        <text class="sub" x="526" y="416">Karaoke Eternal-derived (ISC) + Mopidy-derived sources (Apache-2.0)</text>
+        <text class="sub" x="526" y="436">Budget: hundreds of ms. Web is fine here.</text>
+
+        <line class="ln" x1="253" y1="452" x2="253" y2="480"/>
+        <line class="ln" x1="747" y1="452" x2="747" y2="480"/>
+
+        <!-- Interconnect -->
+        <text class="grp" x="16" y="480">INTERCONNECT BUS — one clock for the whole room</text>
+        <rect class="bx-a" x="16" y="488" width="968" height="60"/>
+        <text class="sub" x="30" y="510">MIDI 1.0 + MIDI 2.0 / UMP   ·   HID (hi-res jog)   ·   MIDI Clock 24 PPQN out/in   ·   Ableton Link (tempo + beat + phase)</text>
+        <text class="sub" x="30" y="530">OSC   ·   DMX512 / Art-Net / sACN via OLA   ·   Mackie Control / HUI   ·   Web MIDI (mapping UI only)</text>
+        <text class="sub" x="30" y="544">Leader deck is the single tempo source, published to every transport simultaneously.</text>
+
+        <line class="ln" x1="500" y1="552" x2="500" y2="576"/>
+
+        <!-- Sources -->
+        <text class="grp" x="16" y="576">CONTENT SOURCE PROVIDERS — pluggable, licence-tagged</text>
+        <rect class="bx" x="16"  y="584" width="186" height="58"/>
+        <text class="lbl" x="30" y="606">Local library</text><text class="sub" x="30" y="623">beets · AcoustID · MusicBrainz</text>
+        <rect class="bx" x="212" y="584" width="186" height="58"/>
+        <text class="lbl" x="226" y="606">OpenSubsonic</text><text class="sub" x="226" y="623">Navidrome, gonic — over HTTP</text>
+        <rect class="bx" x="408" y="584" width="186" height="58"/>
+        <text class="lbl" x="422" y="606">Creative Commons</text><text class="sub" x="422" y="623">Jamendo · FMA · ccMixter</text>
+        <rect class="bx" x="604" y="584" width="186" height="58"/>
+        <text class="lbl" x="618" y="606">Licensed streaming</text><text class="sub" x="618" y="623">adapter interface only</text>
+        <rect class="bx-p" x="800" y="584" width="184" height="58"/>
+        <text class="lbl" x="814" y="606">Live MIDI instruments</text><text class="sub" x="814" y="623">queueable, in-time source</text>
+
+        <!-- licence boundary -->
+      </svg>
+    </div>
+
+    <div class="grid g3">
+      <div class="card">
+        <h4>Why two planes</h4>
+        <p>They have latency budgets three orders of magnitude apart. The deck engine needs sub-10 ms determinism
+        and must be native; the crowd queue is happy at hundreds of milliseconds and should be web. Forcing them
+        into one runtime compromises both.</p>
+      </div>
+      <div class="card">
+        <h4>Why one scheduler</h4>
+        <p>Two queues would mean two sources of truth about what plays next, and the failure mode is the jukebox
+        and the DJ talking over each other. A single queue with a staging lane and two different consumers is
+        the whole trick.</p>
+      </div>
+      <div class="card">
+        <h4>Why one clock</h4>
+        <p>If the leader deck publishes to MIDI Clock and Ableton Link at once, then instruments, lighting, visuals
+        and other apps in the room are all on the same timeline for free — including during autonomous mode,
+        when no human is driving.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================= LICENCE ============================ -->
+<section id="licence">
+  <div class="wrap">
+    <div class="sec-num">09 — LICENCE STRATEGY</div>
+    <h2>The decision that must be made before any engine code</h2>
+    <p>
+      This is the highest-consequence open question in the concept, which is why it is being surfaced now rather
+      than discovered later. The most valuable components to reuse carry the strongest copyleft.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Component</th><th>Licence</th><th>Consequence if linked into our binary</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Mixxx engine</td><td class="mono">GPL-2.0-or-later</td><td class="small">Entire binary becomes GPL-2.0-or-later.</td></tr>
+          <tr><td class="name">Ableton Link</td><td class="mono">GPL-2.0-or-later OR commercial</td><td class="small">GPL, unless a commercial licence is bought from Ableton.</td></tr>
+          <tr><td class="name">Rubber Band</td><td class="mono">GPL-2.0-or-later OR commercial</td><td class="small">GPL. SoundTouch (LGPL-2.1 + static-link exception) is the permissive alternative.</td></tr>
+          <tr><td class="name">JUCE 9</td><td class="mono">AGPL-3.0 OR commercial</td><td class="small">AGPL — the network clause reaches a hosted venue service. Avoid.</td></tr>
+          <tr><td class="name">Essentia</td><td class="mono">AGPL-3.0</td><td class="small">AGPL. Only safe as a fully separate offline tool.</td></tr>
+          <tr><td class="name">aubio, libKeyFinder</td><td class="mono">GPL-3.0</td><td class="small">GPL-3.0, which is incompatible with GPL-2.0-<em>only</em> code.</td></tr>
+          <tr><td class="name">Navidrome, Snapcast</td><td class="mono">GPL-3.0</td><td class="small">No effect — separate processes reached over HTTP or a socket.</td></tr>
+          <tr><td class="name">Karaoke Eternal</td><td class="mono">ISC</td><td class="small">None. Freely relicensable.</td></tr>
+          <tr><td class="name">Mopidy, QLC+, WEBMIDI.js</td><td class="mono">Apache-2.0</td><td class="small">None. Patent grant included.</td></tr>
+          <tr><td class="name">miniaudio</td><td class="mono">Public domain OR MIT-0</td><td class="small">None whatsoever.</td></tr>
+          <tr><td class="name">librosa, beets, Demucs, Chromaprint</td><td class="mono">ISC / MIT</td><td class="small">None.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout hot">
+      <strong>Recommendation to carry into SPECIFICATION.md.</strong> Adopt a two-licence structure that matches
+      the two-plane architecture. The Performance Plane forks Mixxx and ships as <strong>GPL-2.0-or-later</strong>,
+      inheriting its engine, analysers and DVS. Everything else — fusion core, jukebox plane, API, clients, content
+      providers, controller mapping format — is <strong>Apache-2.0</strong>, and talks to the performance plane
+      over a documented IPC boundary. This keeps the valuable fork legal, keeps the crowd/venue layer reusable by
+      anyone, and preserves the option of a non-GPL alternative engine later. The alternative — a single GPL
+      product — is simpler but permanently forecloses embedding the venue layer in other systems.
+    </div>
+    <p class="small">This repository's own licence is Apache-2.0, covering the research, dashboard and scaffolding only.</p>
+  </div>
+</section>
+
+<!-- ============================ ROADMAP ============================= -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="sec-num">10 — PROJECT GATES</div>
+    <h2>Where this sits in the pipeline</h2>
+    <div class="gates">
+      <div class="gate done">
+        <span class="status">✅</span>
+        <div class="ph">Phase 1 · complete</div>
+        <h4>CONCEPT-IDEA.md</h4>
+        <p>Competitive research, capability synthesis, open-source triage, architecture and licence options. This dashboard is its companion.</p>
+      </div>
+      <div class="gate locked">
+        <span class="status">🔒</span>
+        <div class="ph">Phase 2 · gated on review</div>
+        <h4>SPECIFICATION.md</h4>
+        <p>Locks the licence structure, the plane boundary and the IPC contract; converts the capability set into testable requirements with acceptance criteria.</p>
+      </div>
+      <div class="gate locked">
+        <span class="status">🔒</span>
+        <div class="ph">Phase 3 · gated on spec</div>
+        <h4>BACKLOG.md</h4>
+        <p>Sequenced, estimated work items derived from the specification, with fork-vs-build already settled per item.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Five decisions needed to unblock Phase 2.</strong>
+      <ol style="margin: 10px 0 0; padding-left: 20px;">
+        <li>Licence structure — split Apache-2.0 / GPL as recommended, or single GPL?</li>
+        <li>Fork Mixxx, or build a new engine against permissive libraries only?</li>
+        <li>Is paid priority (Fast Pass) in scope for v1, or is v1 vote-only?</li>
+        <li>Single-venue appliance first, or multi-tenant operator console from the start?</li>
+        <li>Native desktop shell (Qt) vs. thin native engine plus web consoles?</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>
+      <strong>CrowdDeck — CONCEPT-IDEA phase.</strong> Nothing here is built yet; this is a research artefact
+      supporting a build decision.
+    </p>
+    <p>
+      Competitive and technical research gathered via the Tavily search API across 56 queries. Open-source
+      project metadata — stars, language, licence, last-push date — read directly from the GitHub REST API on
+      <span data-generated></span>, with LICENSE files fetched and read wherever GitHub reported
+      <span class="mono">NOASSERTION</span>. Raw findings are preserved in <span class="mono">research/</span>.
+    </p>
+    <p>
+      Product names and trademarks belong to their respective owners. Capability scores are analyst judgements of
+      published feature depth. The licensing summaries are research notes, not legal advice.
+    </p>
+  </div>
+</footer>
+
+<script src="data/bundle.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

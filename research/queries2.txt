@@ -1,0 +1,11 @@
+# slug || query
+verify-jlo-2025 || Jukebox License Office JLO closed ASCAP BMI SESAC separate jukebox license required 2025 2026
+verify-web-midi-safari || Web MIDI API browser support 2026 Safari Firefox Chrome caniuse status
+verify-opensubsonic || OpenSubsonic API specification jukebox mode extensions spec versus Subsonic API
+verify-mixxx-stems || Mixxx 2.6 stems support release notes NI stem format what is new
+verify-midi2-ump-os || MIDI 2.0 UMP operating system support Windows MIDI Services macOS CoreMIDI Linux ALSA 2026
+webaudio-latency || Web Audio API latency AudioWorklet limitations professional DJ app browser vs native
+tauri-electron-audio || Tauri vs Electron audio application architecture native audio engine Rust 2026
+open-source-dj-github-search || GitHub open source DJ deck application project browser mixer active 2025 2026
+dj-pool-record-labels || DJ record pool BPM Supreme ZIPDJ digital music pool licensing for DJs
+venue-music-licensing-restaurant || restaurant bar background music licensing ASCAP BMI SESAC GMR rates venue
