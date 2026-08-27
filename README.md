@@ -49,7 +49,23 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**211 tests · 19 conformance checks · zero runtime dependencies.**
+**212 tests · 19 conformance checks · zero runtime dependencies.**
+
+### The definition of done, as an executable test
+
+[`SPECIFICATION.md`](SPECIFICATION.md) §0.4 states in prose what "v1 works" means. That paragraph now runs
+as a test — [`core/test/day-in-the-life.test.js`](core/test/day-in-the-life.test.js):
+
+> A venue opens unattended at 11:00 and the fallback rotation carries the room. Patrons join, search a
+> policy-scoped catalogue, queue music and vote. The fair-queue rules refuse a patron's third request and
+> explain why. The room never falls silent through the afternoon. At 21:00 a DJ takes over **with no
+> interruption to what is playing**; requests now wait in the staging lane, and the scheduler itself is
+> refused permission to promote. The DJ works a MIDI controller where **soft-takeover** stops the volume
+> jumping, cues a patron request, and runs a MIDI clock so a live instrument locks to the deck — and that
+> instrument hands the room back when the performer stops early. At close the venue exports exactly what
+> was performed. **Nothing touched the internet all day.**
+
+Every other test checks one component. That one checks they compose.
 
 ```bash
 npm run check      # licence lint + tests + conformance

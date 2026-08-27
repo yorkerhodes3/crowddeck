@@ -4071,7 +4071,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-9"
             ],
             "detail": "Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "VEN-5",

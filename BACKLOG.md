@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 29 of 60 stories complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 30 of 60 stories complete · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 60 stories · 117 of 117 requirements covered**
@@ -204,7 +204,7 @@ The difference between a demo and something a venue keeps switched on.
 | ✅ **VEN-1** | **Venue policy engine**<br>Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides. | L | build | `REQ-POL-1` `REQ-POL-3` `REQ-POL-4` |
 | ✅ **VEN-2** | **Policy-scoped search**<br>An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7. | M | build | `REQ-POL-2` |
 | **VEN-3** | **Venue licensing profile**<br>Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes. | M | build | `REQ-DAT-9` |
-| **VEN-4** | **Offline-first verification**<br>Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13. | M | build | `REQ-NFR-3` `REQ-NFR-9` |
+| ✅ **VEN-4** | **Offline-first verification**<br>Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13. | M | build | `REQ-NFR-3` `REQ-NFR-9` |
 | ✅ **VEN-5** | **No-telemetry guarantee**<br>Assert no outbound traffic beyond enabled providers; separate staff credentials. | S | build | `REQ-NFR-6` `REQ-NFR-8` |
 | **VEN-6** | **Single-command container deploy**<br>Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU. | M | `ADOPT` | `REQ-NFR-10` `REQ-NFR-11` |
 

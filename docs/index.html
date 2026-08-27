@@ -648,9 +648,21 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>211 tests, 19 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>212 tests, 19 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--accent2);">
+      <strong>The specification's definition of done now runs as a test.</strong>
+      §0.4 describes a full trading day in prose; <span class="mono">day-in-the-life.test.js</span>
+      executes it. The venue opens unattended and the fallback carries the room, patrons queue and vote,
+      the fair-queue rules refuse a third request and explain why, a DJ takes over at 21:00
+      <em>without interrupting what is playing</em>, works a controller where soft-takeover stops the
+      volume jumping, cues a patron request from the staging lane, runs a clock so a live instrument locks
+      to the deck, and the venue exports exactly what was performed — with
+      <strong>nothing touching the internet all day</strong>. Every other test checks one component; that
+      one checks they compose.
     </div>
 
     <div data-render="backlog"></div>
