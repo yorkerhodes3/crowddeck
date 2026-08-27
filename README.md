@@ -50,7 +50,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**320 tests · 20 conformance checks · zero runtime dependencies.**
+**366 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
@@ -111,7 +111,7 @@ Two items are blocked. Neither blocks the ~9 remaining stories, which are pure J
 
 | Item | Blocked on | Not blocked on |
 |---|---|---|
-| **`SPIKE-2`** | MSVC Build Tools + CMake. Then an **ASIO-capable audio interface** for the ASIO path, a Mac for CoreAudio, and real Linux for ALSA. | WASAPI. The dev machine meets the `REQ-NFR-11` baseline and has real audio devices, so shared *and* exclusive WASAPI are measurable there today. |
+| **`SPIKE-2`** | MSVC Build Tools + CMake to compile the probe. Then an **ASIO interface** for the ASIO path, a Mac for CoreAudio, real Linux for ALSA. | The harness itself — [`spike/spike-2/`](spike/spike-2) is written, and its analysis half is **tested and runs today**. WASAPI shared and exclusive need only the two free installs. |
 | **`ENG-*`** | MSVC, CMake, Ninja, Qt6 and vcpkg for Mixxx's dependency tree — several GB, multi-hour first build. Plus a **USB-MIDI controller** for `AC-12`. | Design. `SPIKE-1` already resolved how `describe`, coalescing and parameter space will be implemented. |
 
 `LEGAL-1` is **closed** — see [ADR-006](DECISIONS.md#adr-006--distribution-shape-and-the-licence-risk-position).

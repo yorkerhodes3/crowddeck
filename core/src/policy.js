@@ -150,11 +150,35 @@ export function screen(args) {
     }
   }
 
-  return ALLOWED;
+  // Everything that could refuse has passed. Carry the licence coverage through
+  // rather than returning a bare ALLOWED: a caller needs to distinguish "cleared"
+  // from "allowed, but the PRO coverage is unestablished" (VEN-3). Flattening the
+  // two here is exactly how that qualification disappears on the way to the UI.
+  return licenceDecision.coverage
+    ? { ...ALLOWED, coverage: licenceDecision.coverage, missingPros: licenceDecision.missingPros }
+    : ALLOWED;
 }
 
 /**
  * May this venue legally play this track right now? — REQ-DAT-9.
+ *
+ * Accepts either shape of venue context:
+ *
+ * - `context.licenceProfile` — anything with an `assess(track)` method, in practice
+ *   a `VenueLicenceProfile` from `data/` (VEN-3). Models PRO licences individually,
+ *   which is what reality looks like: a US venue needs ASCAP *and* BMI *and* SESAC
+ *   *and* GMR, and holding three of four is a real exposure, not a rounding error.
+ * - `context.holdsPro` — the original boolean. Still honoured, so a venue that has
+ *   not configured a profile gets the coarse check rather than no check at all.
+ *
+ * Structural typing is deliberate: this module calls `.assess()` and never imports
+ * the class, so the fusion core stays independent of the persistence layer.
+ *
+ * When a profile is present its `coverage` is carried onto the decision, so callers
+ * can tell "cleared" from "probably fine but unestablished". Flattening those two
+ * into one boolean is how software ends up asserting legal conclusions it has not
+ * earned.
+ *
  * @returns {PolicyDecision}
  */
 export function screenLicence(track, policy, context = {}) {
@@ -171,6 +195,20 @@ export function screenLicence(track, policy, context = {}) {
           ? "Licensed for non-commercial use only, so it cannot be played in a commercial venue."
           : "The licence for this track is unknown, so it cannot be played in a commercial venue."
     };
+  }
+
+  if (context.licenceProfile && typeof context.licenceProfile.assess === "function") {
+    const assessment = context.licenceProfile.assess(track, context.nowMs);
+    if (!assessment.allowed) {
+      return {
+        allowed: false,
+        reason: PolicyReason.LICENCE_CLASS,
+        detail: assessment.detail,
+        coverage: assessment.coverage,
+        missingPros: assessment.missingPros
+      };
+    }
+    return { ...ALLOWED, coverage: assessment.coverage, missingPros: assessment.missingPros };
   }
 
   // owned_local and record_pool depend on the venue holding PRO licences.

@@ -27,7 +27,8 @@ export const VENUE_SCOPED_TABLES = Object.freeze([
   "play_log",
   "queue_entries",
   "queue_voters",
-  "queue_events"
+  "queue_events",
+  "venue_pro_licences"
 ]);
 
 /** REQ-DAT-8 — mirrors `LicenceClass` in core/src/policy.js. */
@@ -176,6 +177,31 @@ export const MIGRATIONS = Object.freeze([
         PRIMARY KEY (venue_id, entry_id, seq),
         FOREIGN KEY (entry_id) REFERENCES queue_entries (entry_id) ON DELETE CASCADE
       ) STRICT;
+    `
+  },
+  {
+    id: 2,
+    name: "performing-rights licences per venue",
+    sql: `
+      -- A venue does not simply "have a PRO licence". In the US it needs separate
+      -- licences from ASCAP, BMI, SESAC and now GMR, and holding three of the four
+      -- leaves a real gap rather than a rounding error. Modelling this as one
+      -- boolean would make the system give confident answers that are wrong.
+      CREATE TABLE venue_pro_licences (
+        venue_id    TEXT NOT NULL,
+        pro         TEXT NOT NULL,
+        reference   TEXT,
+        valid_from  INTEGER,
+        valid_until INTEGER,
+        PRIMARY KEY (venue_id, pro)
+      ) STRICT;
+
+      -- Which PRO registry applies. Drives what full coverage even means.
+      ALTER TABLE venues ADD COLUMN territory TEXT NOT NULL DEFAULT 'US';
+
+      -- The writers' PRO for this track, where it is known. Usually it is not,
+      -- which is the case the assessment has to handle honestly.
+      ALTER TABLE tracks ADD COLUMN pro TEXT;
     `
   }
 ]);

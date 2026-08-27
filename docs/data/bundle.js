@@ -3351,8 +3351,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-NFR-1"
             ],
-            "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts. TOOLCHAIN NEEDED: MSVC Build Tools + CMake (miniaudio is header-only; PortAudio needs a build). PARTLY DOABLE ON THE DEV MACHINE: it meets REQ-NFR-11 (4 physical cores, 8GB+, no GPU) and has real audio devices, so WASAPI shared AND exclusive are measurable there today. HARDWARE GAP: no ASIO driver registered — needs a real interface (Focusrite Scarlett, Behringer UMC, etc). ASIO4ALL exercises the code path but its latency is not representative. PLATFORM GAP: CoreAudio needs a Mac, ALSA needs real Linux. CI runners are VMs with no audio device and unreliable timing, so latency numbers from them would not be trustworthy.",
-            "status": "todo"
+            "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts. PARTIAL — the harness is written. spike/spike-2/analyse.mjs + report.mjs are complete and tested (18 tests) and run today with no toolchain; src/probe.c and CMakeLists.txt are written and need MSVC + CMake to compile. The analysis half was built first deliberately: the statistics are where a spike quietly goes wrong, and synthetic data with a known answer catches an off-by-one percentile in a way real hardware cannot. Ranking is on p99 and maximum, never the mean; any xrun disqualifies a configuration; and 'too close to call' is a permitted verdict rather than a coin flip dressed up as a number. STILL NEEDED: MSVC + CMake (free) for WASAPI shared and exclusive, which the dev machine can otherwise run today; an ASIO interface for the ASIO path; a Mac for CoreAudio and real Linux for ALSA.",
+            "status": "partial"
           }
         ]
       },
@@ -4106,8 +4106,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-DAT-9"
             ],
-            "detail": "Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes.",
-            "status": "todo"
+            "detail": "Which PRO licences the venue holds. Post-consent-decree, operators need separate ASCAP, BMI and SESAC licences — and since GMR began signing major writers away from the incumbents, a fourth — so the software tracks rather than assumes. DONE — data/src/licensing.js models each licence individually with validity dates, because a lapsed licence is not a licence. The decisive design choice is the middle outcome: when a track carries no PRO metadata (the normal case) and the venue holds some but not all licences, the answer is neither 'blocked' (which would block most of the catalogue and get switched off) nor a silent 'yes' (which manufactures false confidence) — it returns coverage:'gap' naming the missing PROs, so the venue can buy the licence or accept a known risk knowingly. Territories differ in what full coverage means (the UK splits PRS from PPL), and an unknown territory is reported as undeterminable rather than covered.",
+            "status": "done"
           },
           {
             "id": "VEN-4",

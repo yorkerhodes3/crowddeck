@@ -40,6 +40,14 @@ export class VenueApi {
     this.adapter = opts.adapter ?? null;
     this.staticHandler = opts.staticHandler ?? null;
 
+    // VEN-3 / REQ-DAT-9. Anything with an `assess(track, nowMs)` method — in
+    // practice a VenueLicenceProfile from data/. Structural typing keeps api/
+    // from having to depend on the persistence layer.
+    this.licenceProfile = opts.licenceProfile ?? null;
+    // Only consulted when no profile exists. Defaults to false, because a venue
+    // that has not told us what it holds has not told us it holds anything.
+    this.assumeProLicence = opts.assumeProLicence ?? false;
+
     this.sessions = new SessionStore();
     /** @type {Set<{ws: import("./ws.js").WebSocketConnection, session: object}>} */
     this.subscribers = new Set();
@@ -273,7 +281,20 @@ export class VenueApi {
 
   #policyContext() {
     const d = new Date();
-    return { venueMinuteOfDay: d.getHours() * 60 + d.getMinutes(), holdsPro: true };
+    const ctx = { venueMinuteOfDay: d.getHours() * 60 + d.getMinutes(), nowMs: d.getTime() };
+
+    // VEN-3: use the venue's real PRO licence profile when one is configured.
+    // `holdsPro: true` used to be hard-coded here, which meant the API asserted
+    // every track was cleared for public performance regardless of what the venue
+    // actually held — a confident answer with nothing behind it.
+    if (this.licenceProfile) {
+      ctx.licenceProfile = this.licenceProfile;
+    } else {
+      // No profile configured. Fall back to the coarse check rather than none, and
+      // stay conservative: an unconfigured venue has not told us it holds anything.
+      ctx.holdsPro = this.assumeProLicence === true;
+    }
+    return ctx;
   }
 
   #requireVenue(ctx) {

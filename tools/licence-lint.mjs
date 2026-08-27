@@ -46,7 +46,10 @@ const PLANES = [
   // `thirdParty` means: do not demand our SPDX header (we must not edit upstream files),
   // but DO treat it as copyleft, so importing from it is a REQ-LIC-2 violation exactly
   // as importing from engine/ is. See spike/mixxx-src/PROVENANCE.md.
-  { prefix: "spike/mixxx-src", licence: "GPL-2.0-or-later", copyleft: true, thirdParty: true }
+  { prefix: "spike/mixxx-src", licence: "GPL-2.0-or-later", copyleft: true, thirdParty: true },
+  // Our own spike code. Longest-prefix matching keeps this distinct from the GPL
+  // vendored source sitting beside it under the same spike/ parent.
+  { prefix: "spike/spike-2", licence: "Apache-2.0", copyleft: false }
 ];
 
 /** Source extensions that must carry an SPDX header. */

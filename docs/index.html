@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>320 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>366 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -762,6 +762,35 @@
       licence-lint prefixes so the two cannot disagree about where the boundary is. A DCO job covers
       <span class="mono">REQ-LIC-9</span>. Both were verified by reintroducing the exact mistake they exist
       to catch.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--info);">
+      <strong>Two decisions that a boolean cannot express.</strong>
+      <br><br>
+      <strong>VEN-3 — what "the venue has a PRO licence" actually means.</strong> In the US a venue needs
+      <em>separate</em> licences from ASCAP, BMI and SESAC, and since Global Music Rights began signing major
+      writers away from the incumbents, a fourth. Holding three of four is not 75% covered — it is fully
+      exposed on whatever the fourth controls. The interesting case is the common one: the track carries no
+      PRO metadata and the venue holds some but not all licences. Blocking would block most of the catalogue
+      and get the feature switched off; allowing silently manufactures false confidence. So the assessment
+      returns <span class="mono">coverage: "gap"</span> alongside <span class="mono">allowed: true</span>,
+      naming the missing PROs — the venue can buy the licence or accept a known risk knowingly, but the
+      system never claims a track is cleared when it does not know.
+      <br><br>
+      Replacing the hard-coded <span class="mono">holdsPro: true</span> in the API changed which tracks
+      patrons can see — and <strong>the entire suite stayed green</strong>, because nothing exercised licence
+      gating through the API. A default governing a legal question should not be changeable without a test
+      objecting, so tests now object.
+      <br><br>
+      <strong>SPIKE-2 — the harness, before the hardware.</strong>
+      <span class="mono">spike/spike-2/</span> is written: a probe whose audio callback reads a clock into a
+      preallocated array and does nothing else, because a probe that calls <span class="mono">printf()</span>
+      in the callback measures <span class="mono">printf()</span>. The analysis half is
+      <strong>finished and tested today</strong>, with no audio toolchain, on synthetic data whose correct
+      answer is known — which is the only way to catch an off-by-one percentile, since real data gives you
+      nothing to check against. Ranking is on p99 and maximum, never the mean; any xrun disqualifies a
+      configuration outright; and <em>"too close to call"</em> is a permitted verdict rather than a coin flip
+      dressed up as a number.
     </div>
 
     <div data-render="backlog"></div>
