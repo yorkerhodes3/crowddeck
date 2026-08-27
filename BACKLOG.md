@@ -4,10 +4,10 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 16 of 59 stories complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 24 of 60 stories complete · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
-**11 epics · 59 stories · 117 of 117 requirements covered**
+**11 epics · 60 stories · 117 of 117 requirements covered**
 
 Sizes are t-shirt estimates for a small team, not commitments: **S** ≤1 week · **M** 1-3 weeks · **L** 3-6 weeks · **XL** 6-12 weeks.
 
@@ -118,11 +118,12 @@ Fork Karaoke Eternal (ISC) — it already implements QR join, rooms and a dynami
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
 | **CRW-1** | **Fork Karaoke Eternal and generalise the fair queue**<br>Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1. | L | `FORK` | `REQ-SCH-14` |
-| **CRW-2** | **QR join and venue-scoped patron sessions**<br>No app install, no personal data, expiring venue-scoped tokens. | M | `FORK` | `REQ-API-3` `REQ-NFR-7` |
-| **CRW-3** | **Live queue with position in line**<br>TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4. | M | build | `REQ-SCH-11` `REQ-SCH-12` `REQ-SCH-13` |
-| **CRW-4** | **Voting with one-vote-per-patron**<br>Enforced by a uniqueness constraint, not UI logic. | S | build | `REQ-SCH-17` |
-| **CRW-5** | **Staff override console**<br>Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9. | M | build | `REQ-API-5` `REQ-API-6` |
-| **CRW-6** | **Venue display screen**<br>Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms. | M | `ADOPT` | `REQ-DAT-11` |
+| ✅ **CRW-2** | **QR join and venue-scoped patron sessions**<br>No app install, no personal data, expiring venue-scoped tokens. | M | `FORK` | `REQ-API-3` `REQ-NFR-7` |
+| ✅ **CRW-3** | **Live queue with position in line**<br>TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4. | M | build | `REQ-SCH-11` `REQ-SCH-12` `REQ-SCH-13` |
+| ✅ **CRW-4** | **Voting with one-vote-per-patron**<br>Enforced by a uniqueness constraint, not UI logic. | S | build | `REQ-SCH-17` |
+| ✅ **CRW-5** | **Staff override console**<br>Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9. | M | build | `REQ-API-5` `REQ-API-6` |
+| ✅ **CRW-6** | **Venue display screen**<br>Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms. | M | `ADOPT` | `REQ-DAT-11` |
+| **DISP-1** | **QR code on the venue display**<br>Needs a vetted QR encoder. A hand-rolled one was written and removed after a real decoder proved it did not scan; a QR that fails in a venue is worse than none, since joining is the display screen’s entire purpose. Until then the join affordance is a plain URL, which always works. | S | `ADOPT` | `REQ-DAT-11` |
 
 ### E6 · Public API and clients
 
@@ -130,9 +131,9 @@ The API is the only path in (REQ-API-1). Third-party clients are how an open pro
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **API-1** | **HTTP + WebSocket surface, venue-namespaced**<br>/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI. | L | build | `REQ-API-1` `REQ-API-2` `REQ-API-4` |
+| ✅ **API-1** | **HTTP + WebSocket surface, venue-namespaced**<br>/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI. | L | build | `REQ-API-1` `REQ-API-2` `REQ-API-4` |
 | **API-2** | **OpenSubsonic-compatible endpoint**<br>Including jukeboxControl with the jukeboxMediaTypes extension. Buys an existing client ecosystem on day one. | L | `ADOPT` | `REQ-API-10` `REQ-API-11` `REQ-API-12` |
-| **API-3** | **DJ console (web)**<br>Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely. | L | `ADOPT` | `REQ-API-7` `REQ-API-8` `REQ-API-9` |
+| ✅ **API-3** | **DJ console (web)**<br>Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely. | L | `ADOPT` | `REQ-API-7` `REQ-API-8` `REQ-API-9` |
 
 ---
 
@@ -204,7 +205,7 @@ The difference between a demo and something a venue keeps switched on.
 | ✅ **VEN-2** | **Policy-scoped search**<br>An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7. | M | build | `REQ-POL-2` |
 | **VEN-3** | **Venue licensing profile**<br>Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes. | M | build | `REQ-DAT-9` |
 | **VEN-4** | **Offline-first verification**<br>Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13. | M | build | `REQ-NFR-3` `REQ-NFR-9` |
-| **VEN-5** | **No-telemetry guarantee**<br>Assert no outbound traffic beyond enabled providers; separate staff credentials. | S | build | `REQ-NFR-6` `REQ-NFR-8` |
+| ✅ **VEN-5** | **No-telemetry guarantee**<br>Assert no outbound traffic beyond enabled providers; separate staff credentials. | S | build | `REQ-NFR-6` `REQ-NFR-8` |
 | **VEN-6** | **Single-command container deploy**<br>Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU. | M | `ADOPT` | `REQ-NFR-10` `REQ-NFR-11` |
 
 ---

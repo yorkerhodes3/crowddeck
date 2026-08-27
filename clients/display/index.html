@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright 2026 CrowdDeck contributors -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrowdDeck — Venue display</title>
+<style>
+  :root {
+    --bg:#0a0c12; --panel:#151926; --line:#262d42;
+    --txt:#e6e9f2; --txt2:#a4adc4; --txt3:#6f7891;
+    --accent:#4dd4ac; --accent2:#7c6cff;
+    --mono: ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; height:100vh; overflow:hidden; background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(124,108,255,.18), transparent 60%),
+      radial-gradient(900px 500px at 5% 0%, rgba(77,212,172,.14), transparent 60%), var(--bg);
+    color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:grid; grid-template-columns:1.45fr 1fr; gap:34px; padding:44px 48px;
+  }
+  .left { display:flex; flex-direction:column; min-width:0; }
+  .brand { display:flex; align-items:center; gap:11px; font-weight:700; font-size:19px; letter-spacing:-.02em; }
+  .dot { width:13px; height:13px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2));
+         box-shadow:0 0 18px rgba(77,212,172,.7); }
+  .venue { color:var(--txt2); font-size:15px; margin-top:3px; }
+  .label { font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:12px; }
+  .now { margin-top:auto; margin-bottom:auto; min-width:0; }
+  .now .title { font-size:clamp(34px,5.4vw,72px); font-weight:800; letter-spacing:-.035em; line-height:1.04;
+                overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .now .artist { font-size:clamp(19px,2.4vw,30px); color:var(--txt2); margin-top:12px; }
+  .attrib { font-size:14px; color:var(--txt3); margin-top:16px; font-family:var(--mono); }
+  .bar { height:6px; background:var(--panel); border-radius:99px; margin-top:26px; overflow:hidden; max-width:640px; }
+  .bar > div { height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .9s linear; }
+  .right { display:flex; flex-direction:column; min-width:0; }
+  .queue { flex:1; overflow:hidden; }
+  .item { display:flex; gap:15px; align-items:center; padding:13px 0; border-bottom:1px solid var(--line); }
+  .item:last-child { border-bottom:none; }
+  .pos { font-family:var(--mono); font-size:22px; font-weight:700; color:var(--accent); min-width:34px; }
+  .item .t { font-weight:600; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item .a { font-size:13.5px; color:var(--txt2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item .grow { min-width:0; }
+  .votes { font-family:var(--mono); font-size:13px; color:var(--txt3); }
+  .join { border-top:1px solid var(--line); padding-top:24px; margin-top:18px; }
+  .join .how b { color:var(--txt); display:block; font-size:19px; margin-bottom:10px; }
+  .join .how { font-size:15px; color:var(--txt2); }
+  .joinurl {
+    font-family:var(--mono); font-size:clamp(15px,1.5vw,20px); color:var(--accent);
+    background:var(--panel); border:1px solid var(--line); border-radius:11px;
+    padding:15px 18px; margin-top:14px; word-break:break-all; line-height:1.4;
+  }
+  .empty { color:var(--txt3); font-size:17px; }
+  .mode { position:fixed; top:44px; right:48px; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--txt3); border:1px solid var(--line); padding:5px 11px; border-radius:99px; }
+</style>
+</head>
+<body>
+
+<div class="left">
+  <div>
+    <div class="brand"><span class="dot"></span> CrowdDeck</div>
+    <div class="venue" id="venue">connecting…</div>
+  </div>
+  <div class="now">
+    <div class="label">Now playing</div>
+    <div class="title" id="title">—</div>
+    <div class="artist" id="artist"></div>
+    <div class="attrib" id="attrib"></div>
+    <div class="bar"><div id="progress"></div></div>
+  </div>
+</div>
+
+<div class="right">
+  <div class="label">Up next</div>
+  <div class="queue" id="queue"><div class="empty">Nothing queued yet.</div></div>
+  <div class="join">
+    <div class="how"><b>Pick the next song</b>Open this on your phone to browse and add:</div>
+    <div id="qr"></div>
+  </div>
+</div>
+
+<div class="mode" id="mode">—</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var venueId = new URLSearchParams(location.search).get("venue") || "the-anchor";
+  var patronUrl = location.origin + "/patron/index.html?venue=" + encodeURIComponent(venueId);
+  var el = function (id) { return document.getElementById(id); };
+
+  var current = null;
+  var startedAt = 0;
+
+  /* -------------------------------------------------------------- join
+   * Deliberately NOT a QR code yet.
+   *
+   * A hand-rolled QR encoder was written and then removed: verified against a
+   * real decoder, it produced codes that did not scan. A QR that fails in a
+   * venue is worse than no QR, because getting people to join is the whole
+   * point of this screen. Proper QR generation is tracked as DISP-1 in the
+   * backlog and needs a vetted encoder rather than a bespoke one.
+   *
+   * Until then the join affordance is an unambiguous URL, which always works. */
+  function renderJoin(url) {
+    var host = el("qr");
+    var pretty = url.replace(/^https?:\/\//, "");
+    host.innerHTML = "";
+    var box = document.createElement("div");
+    box.className = "joinurl";
+    box.textContent = pretty;
+    host.appendChild(box);
+  }
+
+  /* ------------------------------------------------------------ render */
+
+  function fmt(sec) {
+    if (!sec) return "";
+    var m2 = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m2 + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function renderNow(entry) {
+    current = entry;
+    startedAt = Date.now();
+    if (!entry) {
+      el("title").textContent = "—";
+      el("artist").textContent = "";
+      el("attrib").textContent = "";
+      el("progress").style.width = "0";
+      return;
+    }
+    el("title").textContent = entry.track.title || entry.track.id;
+    el("artist").textContent = entry.track.artist || "";
+    // CC-attribution tracks must be credited on screen while playing (REQ-DAT-11).
+    el("attrib").textContent = entry.track.attribution || "";
+  }
+
+  setInterval(function () {
+    if (!current || !current.track.duration) { el("progress").style.width = "0"; return; }
+    var pct = Math.min(100, ((Date.now() - startedAt) / 1000 / current.track.duration) * 100);
+    el("progress").style.width = pct + "%";
+  }, 900);
+
+  function renderQueue(queue) {
+    var host = el("queue");
+    host.innerHTML = "";
+    if (!queue.length) {
+      host.innerHTML = '<div class="empty">Nothing queued yet. Add the first song from your phone.</div>';
+      return;
+    }
+    queue.slice(0, 7).forEach(function (e) {
+      var item = document.createElement("div");
+      item.className = "item";
+      var pos = document.createElement("div");
+      pos.className = "pos";
+      pos.textContent = e.position;
+      var grow = document.createElement("div");
+      grow.className = "grow";
+      var t = document.createElement("div");
+      t.className = "t";
+      t.textContent = e.track.title || e.track.id;
+      var a = document.createElement("div");
+      a.className = "a";
+      a.textContent = e.track.artist || "";
+      grow.appendChild(t); grow.appendChild(a);
+      var v = document.createElement("div");
+      v.className = "votes";
+      v.textContent = e.votes ? "▲ " + e.votes : "";
+      item.appendChild(pos); item.appendChild(grow); item.appendChild(v);
+      host.appendChild(item);
+    });
+  }
+
+  /* -------------------------------------------------------- live feed */
+
+  function connect() {
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    var ws = new WebSocket(proto + "//" + location.host + "/v1/venues/" +
+      encodeURIComponent(venueId) + "/events");
+
+    ws.onmessage = function (ev) {
+      var msg = JSON.parse(ev.data);
+      if (msg.type === "hello") {
+        el("venue").textContent = msg.venue.name;
+        document.title = msg.venue.name + " — CrowdDeck";
+        el("mode").textContent = msg.mode;
+        renderQueue(msg.queue);
+        renderNow(msg.nowPlaying);
+      } else if (msg.type === "queue") {
+        renderQueue(msg.queue);
+      } else if (msg.type === "nowPlaying") {
+        renderNow(msg.entry);
+      } else if (msg.type === "mode") {
+        el("mode").textContent = msg.mode;
+      }
+    };
+    ws.onclose = function () { setTimeout(connect, 1500); };
+    ws.onerror = function () { ws.close(); };
+  }
+
+  renderJoin(patronUrl);
+  connect();
+})();
+</script>
+</body>
+</html>

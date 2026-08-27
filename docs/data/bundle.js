@@ -3642,7 +3642,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-7"
             ],
             "detail": "No app install, no personal data, expiring venue-scoped tokens.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "CRW-3",
@@ -3655,7 +3655,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-13"
             ],
             "detail": "TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "CRW-4",
@@ -3666,7 +3666,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-17"
             ],
             "detail": "Enforced by a uniqueness constraint, not UI logic.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "CRW-5",
@@ -3678,7 +3678,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-6"
             ],
             "detail": "Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "CRW-6",
@@ -3689,7 +3689,18 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-11"
             ],
             "detail": "Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms.",
-            "status": "todo"
+            "status": "done"
+          },
+          {
+            "id": "DISP-1",
+            "name": "QR code on the venue display",
+            "size": "S",
+            "verdict": "ADOPT",
+            "reqs": [
+              "REQ-DAT-11"
+            ],
+            "status": "todo",
+            "detail": "Needs a vetted QR encoder. A hand-rolled one was written and removed after a real decoder proved it did not scan; a QR that fails in a venue is worse than none, since joining is the display screen’s entire purpose. Until then the join affordance is a plain URL, which always works."
           }
         ]
       },
@@ -3710,7 +3721,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-4"
             ],
             "detail": "/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "API-2",
@@ -3736,7 +3747,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-API-9"
             ],
             "detail": "Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely.",
-            "status": "todo"
+            "status": "done"
           }
         ]
       },
@@ -4072,7 +4083,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-8"
             ],
             "detail": "Assert no outbound traffic beyond enabled providers; separate staff credentials.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "VEN-6",

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright 2026 CrowdDeck contributors -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c12">
+<title>CrowdDeck — Request a song</title>
+<style>
+  :root {
+    --bg:#0a0c12; --panel:#151926; --panel2:#1b2030; --line:#262d42;
+    --txt:#e6e9f2; --txt2:#a4adc4; --txt3:#6f7891;
+    --accent:#4dd4ac; --accent2:#7c6cff; --hot:#ff5c7a; --warn:#ffb454;
+    --mono: ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px; line-height:1.5; padding-bottom:env(safe-area-inset-bottom);
+  }
+  header {
+    position:sticky; top:0; z-index:10; background:rgba(10,12,18,.94);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--line); padding:14px 16px;
+  }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:-.02em; }
+  .dot { width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .venue { font-size:12.5px; color:var(--txt2); margin-top:2px; }
+  .mode { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+          border:1px solid var(--line); border-radius:999px; padding:3px 9px; color:var(--txt2); margin-left:auto; }
+  .mode.attended { color:var(--accent2); border-color:rgba(124,108,255,.5); }
+  main { padding:16px; max-width:640px; margin:0 auto; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.09em; color:var(--txt3);
+       margin:26px 0 10px; font-weight:600; }
+  h2:first-child { margin-top:0; }
+  input[type=search] {
+    width:100%; background:var(--panel); border:1px solid var(--line); color:var(--txt);
+    padding:13px 15px; border-radius:12px; font-size:16px; font-family:inherit;
+  }
+  input:focus { outline:none; border-color:var(--accent); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin-bottom:9px; }
+  .row { display:flex; align-items:center; gap:12px; }
+  .row .grow { flex:1; min-width:0; }
+  .title { font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .meta { font-size:12.5px; color:var(--txt2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  button {
+    font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
+    background:var(--accent); color:#06231b; border:none; padding:9px 15px; border-radius:9px;
+  }
+  button:active { transform:scale(.97); }
+  button.ghost { background:transparent; color:var(--txt2); border:1px solid var(--line); }
+  button.ghost:hover { color:var(--txt); }
+  button:disabled { opacity:.45; cursor:default; }
+  .pos {
+    font-family:var(--mono); font-weight:700; font-size:19px; min-width:42px; text-align:center;
+    color:var(--accent);
+  }
+  .pos small { display:block; font-size:9px; letter-spacing:.08em; color:var(--txt3); font-weight:400; }
+  .nowplaying { border-color:rgba(77,212,172,.45); background:linear-gradient(160deg,rgba(77,212,172,.1),var(--panel)); }
+  .mine { border-color:rgba(124,108,255,.45); }
+  .empty { color:var(--txt3); font-size:14px; padding:14px 0; }
+  .toast {
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+    padding:12px 18px; border-radius:11px; font-size:14px; max-width:90vw;
+    box-shadow:0 10px 34px rgba(0,0,0,.5); opacity:0; pointer-events:none; transition:opacity .18s;
+    z-index:50;
+  }
+  .toast.show { opacity:1; }
+  .toast.err { border-color:rgba(255,92,122,.55); }
+  .conn { font-family:var(--mono); font-size:10.5px; color:var(--txt3); }
+  .conn.live::before { content:"● "; color:var(--accent); }
+  .conn.down::before { content:"● "; color:var(--hot); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div class="grow">
+      <div class="brand"><span class="dot"></span> CrowdDeck</div>
+      <div class="venue" id="venue">connecting…</div>
+    </div>
+    <span class="mode" id="mode">—</span>
+  </div>
+</header>
+
+<main>
+  <h2>Now playing</h2>
+  <div id="now"><div class="empty">Nothing playing yet.</div></div>
+
+  <h2>Add a song</h2>
+  <input type="search" id="q" placeholder="Search by title, artist or genre…" autocomplete="off">
+  <div id="results" style="margin-top:10px"></div>
+
+  <h2>Up next <span class="conn" id="conn"></span></h2>
+  <div id="queue"><div class="empty">The queue is empty.</div></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var params = new URLSearchParams(location.search);
+  var venueId = params.get("venue") || "the-anchor";
+  var base = location.origin + "/v1/venues/" + encodeURIComponent(venueId);
+  var TOKEN_KEY = "crowddeck.token." + venueId;
+
+  var token = localStorage.getItem(TOKEN_KEY);
+  var patronId = null;
+  var state = { queue: [], nowPlaying: null, mode: null };
+  var myEntries = new Set();
+
+  var el = function (id) { return document.getElementById(id); };
+
+  function toast(message, isError) {
+    var t = el("toast");
+    t.textContent = message;
+    t.className = "toast show" + (isError ? " err" : "");
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function () { t.className = "toast"; }, 3200);
+  }
+
+  async function api(method, path, body) {
+    var headers = { "content-type": "application/json" };
+    if (token) headers.authorization = "Bearer " + token;
+    var res = await fetch(base + path, {
+      method: method,
+      headers: headers,
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      var err = new Error(data.message || data.error || ("HTTP " + res.status));
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  /** Join, or re-join if a stored token has expired. */
+  async function ensureSession() {
+    if (token) {
+      try {
+        var me = await api("GET", "/me");
+        patronId = me.patronId;
+        me.requests.forEach(function (r) { myEntries.add(r.id); });
+        return;
+      } catch (e) {
+        if (e.status !== 401) throw e;
+        localStorage.removeItem(TOKEN_KEY);
+        token = null;
+      }
+    }
+    var session = await api("POST", "/join", {});
+    token = session.token;
+    patronId = session.patronId;
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  /* --------------------------------------------------------- rendering */
+
+  function fmtDuration(sec) {
+    if (!sec) return "";
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function renderNow() {
+    var host = el("now");
+    host.innerHTML = "";
+    if (!state.nowPlaying) {
+      host.innerHTML = '<div class="empty">Nothing playing yet.</div>';
+      return;
+    }
+    var t = state.nowPlaying.track;
+    var card = document.createElement("div");
+    card.className = "card nowplaying";
+    card.innerHTML =
+      '<div class="row"><div class="grow">' +
+      '<div class="title"></div><div class="meta"></div>' +
+      "</div></div>";
+    card.querySelector(".title").textContent = t.title || t.id;
+    card.querySelector(".meta").textContent =
+      (t.artist || "") + (t.duration ? " · " + fmtDuration(t.duration) : "");
+    host.appendChild(card);
+  }
+
+  function renderQueue() {
+    var host = el("queue");
+    host.innerHTML = "";
+    if (!state.queue.length) {
+      host.innerHTML = '<div class="empty">The queue is empty. Add the first song.</div>';
+      return;
+    }
+    state.queue.forEach(function (entry) {
+      var mine = myEntries.has(entry.id);
+      var card = document.createElement("div");
+      card.className = "card" + (mine ? " mine" : "");
+
+      var row = document.createElement("div");
+      row.className = "row";
+
+      var pos = document.createElement("div");
+      pos.className = "pos";
+      pos.innerHTML = "<small>IN LINE</small>";
+      pos.insertBefore(document.createTextNode(String(entry.position)), pos.firstChild);
+      row.appendChild(pos);
+
+      var grow = document.createElement("div");
+      grow.className = "grow";
+      var title = document.createElement("div");
+      title.className = "title";
+      title.textContent = entry.track.title || entry.track.id;
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent =
+        (entry.track.artist || "") +
+        (entry.votes ? " · " + entry.votes + (entry.votes === 1 ? " vote" : " votes") : "") +
+        (mine ? " · yours" : "");
+      grow.appendChild(title);
+      grow.appendChild(meta);
+      row.appendChild(grow);
+
+      var vote = document.createElement("button");
+      vote.className = "ghost";
+      vote.textContent = "▲ Vote";
+      vote.onclick = function () { doVote(entry.id, vote); };
+      row.appendChild(vote);
+
+      card.appendChild(row);
+      host.appendChild(card);
+    });
+  }
+
+  function renderHeader() {
+    el("mode").textContent = state.mode || "—";
+    el("mode").className = "mode" + (state.mode === "attended" ? " attended" : "");
+  }
+
+  /* ----------------------------------------------------------- actions */
+
+  async function doVote(entryId, button) {
+    button.disabled = true;
+    try {
+      var r = await api("POST", "/queue/" + entryId + "/votes");
+      toast("Voted. Now #" + r.position + " in line.");
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function doRequest(track, button) {
+    button.disabled = true;
+    try {
+      var r = await api("POST", "/queue", { trackId: track.id });
+      myEntries.add(r.entry.id);
+      toast('"' + (track.title || track.id) + '" added — #' + r.position + " in line.");
+      renderQueue();
+    } catch (e) {
+      // Fairness and policy refusals carry an explanation; show it verbatim
+      // rather than a generic failure, so the rule is understandable.
+      toast(e.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  var searchTimer = null;
+  el("q").addEventListener("input", function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 220);
+  });
+
+  async function runSearch() {
+    var q = el("q").value.trim();
+    var host = el("results");
+    if (!q) { host.innerHTML = ""; return; }
+    try {
+      var r = await api("GET", "/search?q=" + encodeURIComponent(q));
+      host.innerHTML = "";
+      if (!r.results.length) {
+        host.innerHTML = '<div class="empty">Nothing matched. The venue may not allow it.</div>';
+        return;
+      }
+      r.results.slice(0, 12).forEach(function (track) {
+        var card = document.createElement("div");
+        card.className = "card";
+        var row = document.createElement("div");
+        row.className = "row";
+
+        var grow = document.createElement("div");
+        grow.className = "grow";
+        var title = document.createElement("div");
+        title.className = "title";
+        title.textContent = track.title;
+        var meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = track.artist + " · " + track.genre + " · " + fmtDuration(track.duration);
+        grow.appendChild(title);
+        grow.appendChild(meta);
+        row.appendChild(grow);
+
+        var add = document.createElement("button");
+        add.textContent = "Add";
+        add.onclick = function () { doRequest(track, add); };
+        row.appendChild(add);
+
+        card.appendChild(row);
+        host.appendChild(card);
+      });
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+
+  /* -------------------------------------------------------- live feed */
+
+  function connect() {
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    var url = proto + "//" + location.host + "/v1/venues/" +
+      encodeURIComponent(venueId) + "/events" + (token ? "?token=" + encodeURIComponent(token) : "");
+    var ws = new WebSocket(url);
+
+    ws.onopen = function () { el("conn").className = "conn live"; el("conn").textContent = "live"; };
+
+    ws.onmessage = function (ev) {
+      var msg = JSON.parse(ev.data);
+      if (msg.type === "hello") {
+        el("venue").textContent = msg.venue.name;
+        document.title = msg.venue.name + " — CrowdDeck";
+        state.mode = msg.mode;
+        state.queue = msg.queue;
+        state.nowPlaying = msg.nowPlaying;
+        renderHeader(); renderQueue(); renderNow();
+      } else if (msg.type === "queue") {
+        state.queue = msg.queue;
+        renderQueue();
+      } else if (msg.type === "nowPlaying") {
+        state.nowPlaying = msg.entry;
+        renderNow();
+      } else if (msg.type === "mode") {
+        state.mode = msg.mode;
+        renderHeader();
+      } else if (msg.type === "panic") {
+        toast("The venue stopped playback.", true);
+      }
+    };
+
+    // Offline-first (G1) means the venue box may restart under us; just retry.
+    ws.onclose = function () {
+      el("conn").className = "conn down";
+      el("conn").textContent = "reconnecting…";
+      setTimeout(connect, 1500);
+    };
+    ws.onerror = function () { ws.close(); };
+  }
+
+  /* ---------------------------------------------------------- startup */
+
+  (async function start() {
+    try {
+      await ensureSession();
+      connect();
+    } catch (e) {
+      el("venue").textContent = "could not connect";
+      toast(e.message, true);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
