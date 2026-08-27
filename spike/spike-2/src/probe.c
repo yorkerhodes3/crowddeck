@@ -91,13 +91,20 @@ static void on_frames(ma_device *device, void *output, const void *input, ma_uin
 
 static void usage(const char *argv0) {
     fprintf(stderr,
-        "usage: %s [--frames N] [--rate HZ] [--seconds S] [--api NAME] [--out FILE]\n"
+        "usage: %s [--frames N] [--rate HZ] [--seconds S] [--api NAME] [--device N] [--list] [--out FILE]\n"
         "\n"
         "  --frames   buffer size in frames (default 128; SPIKE-2 tests 64 and 128)\n"
         "  --rate     sample rate (default 48000)\n"
         "  --seconds  run length (default 60; needs 1000+ callbacks for a valid p99)\n"
         "  --api      wasapi | wasapi_shared | asio | coreaudio | alsa | jack | null\n"
-        "  --out      output file (default stdout)\n",
+        "  --device   playback device index (default: system default)\n"
+        "  --list     enumerate playback devices and exit\n"
+        "  --out      output file (default stdout)\n"
+        "\n"
+        "The default device is often not the one you want to measure. A USB\n"
+        "speakerphone or Bluetooth headset carries a large hardware buffer by\n"
+        "design, so measuring it tells you about that device rather than about the\n"
+        "audio backend. Use --list, then --device.\n",
         argv0);
 }
 
@@ -105,6 +112,7 @@ int main(int argc, char **argv) {
     ma_uint32 frames = 128, rate = 48000, seconds = 60;
     const char *api_name = "wasapi";
     const char *out_path = NULL;
+    int device_index = -1, list_only = 0;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--frames") && i + 1 < argc) frames = (ma_uint32)atoi(argv[++i]);
@@ -112,6 +120,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--seconds") && i + 1 < argc) seconds = (ma_uint32)atoi(argv[++i]);
         else if (!strcmp(argv[i], "--api") && i + 1 < argc) api_name = argv[++i];
         else if (!strcmp(argv[i], "--out") && i + 1 < argc) out_path = argv[++i];
+        else if (!strcmp(argv[i], "--device") && i + 1 < argc) device_index = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--list")) list_only = 1;
         else { usage(argv[0]); return 2; }
     }
 
@@ -150,6 +160,7 @@ int main(int argc, char **argv) {
     cfg.dataCallback       = on_frames;
     cfg.pUserData          = &st;
     cfg.wasapi.noAutoConvertSRC = MA_TRUE;
+    cfg.playback.shareMode = shared ? ma_share_mode_shared : ma_share_mode_exclusive;
     if (!shared) cfg.wasapi.noAutoStreamRouting = MA_TRUE;
 
     ma_context_config ctx_cfg = ma_context_config_init();
@@ -157,6 +168,32 @@ int main(int argc, char **argv) {
     if (ma_context_init(backends, 1, &ctx_cfg, &ctx) != MA_SUCCESS) {
         fprintf(stderr, "failed to initialise backend %s\n", api_name);
         return 1;
+    }
+
+    /* The default device is frequently not the one worth measuring. On this
+       machine it is a USB speakerphone, which carries a large hardware buffer by
+       design — measuring it characterises that device, not the audio backend. */
+    ma_device_info *playback_infos = NULL;
+    ma_uint32 playback_count = 0;
+    if (ma_context_get_devices(&ctx, &playback_infos, &playback_count, NULL, NULL) == MA_SUCCESS) {
+        if (list_only) {
+            printf("playback devices:\n");
+            for (ma_uint32 i = 0; i < playback_count; i++) {
+                printf("  [%u] %s%s\n", i, playback_infos[i].name,
+                       playback_infos[i].isDefault ? "  (default)" : "");
+            }
+            ma_context_uninit(&ctx);
+            return 0;
+        }
+        if (device_index >= 0) {
+            if ((ma_uint32)device_index >= playback_count) {
+                fprintf(stderr, "device index %d out of range (%u devices)\n",
+                        device_index, playback_count);
+                ma_context_uninit(&ctx);
+                return 2;
+            }
+            cfg.playback.pDeviceID = &playback_infos[device_index].id;
+        }
     }
 
     ma_device device;
@@ -185,6 +222,14 @@ int main(int argc, char **argv) {
     fprintf(out, "# api=%s\n", api_name);
     fprintf(out, "# sample_rate=%u\n", device.sampleRate);
     fprintf(out, "# buffer_frames=%u\n", frames);
+    /* What the device ACTUALLY gave us, which is frequently not what was asked
+       for. Without this the analysis computes jitter against a nominal period the
+       hardware never agreed to, and every backend looks broken in the same way. */
+    fprintf(out, "# actual_period_frames=%u\n", device.playback.internalPeriodSizeInFrames);
+    fprintf(out, "# actual_periods=%u\n", device.playback.internalPeriods);
+    fprintf(out, "# actual_sample_rate=%u\n", device.playback.internalSampleRate);
+    fprintf(out, "# share_mode=%s\n",
+            device.playback.shareMode == ma_share_mode_exclusive ? "exclusive" : "shared");
     fprintf(out, "# requested_seconds=%u\n", seconds);
     fprintf(out, "# device=%s\n", device.playback.name);
 

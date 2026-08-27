@@ -547,6 +547,21 @@ age_bonus = floor(minutes_waiting / AGING_INTERVAL) × AGING_WEIGHT
 | WebSocket event fanout | p95 **< 250 ms** |
 | Panic stop | **< 500 ms** |
 
+> **Partially validated by SPIKE-2.** The audio-callback budget is no longer an
+> assumption on Windows: miniaudio over **WASAPI shared at 128 frames** measured a
+> **p99 callback interval of 3.667 ms** on the `REQ-NFR-11` baseline — comfortably
+> inside 10 ms. See [`spike/spike-2/FINDINGS.md`](spike/spike-2/FINDINGS.md).
+>
+> Two findings change implementation guidance. **WASAPI exclusive was markedly worse
+> than shared** on that hardware (17% late callbacks against 0.14%), inverting the
+> usual advice — so share mode **MUST** be configurable and **SHOULD** default to
+> shared until a deployment is measured. And the default output device is often not
+> the one to measure: the first run characterised a USB speakerphone rather than the
+> audio backend.
+>
+> Still unvalidated: ASIO, CoreAudio and ALSA (each needs hardware or a platform not
+> available), and every non-audio row in this table.
+
 - **REQ-NFR-1** The audio thread **MUST NOT** allocate, lock, log, or perform I/O.
 - **REQ-NFR-2** Audio buffer xruns **MUST** be counted and surfaced as a CDEP `event`.
 

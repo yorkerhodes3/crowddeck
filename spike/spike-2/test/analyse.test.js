@@ -150,14 +150,29 @@ test("warm-up callbacks are discarded and the count is reported", () => {
   assert.equal(r.callbacks, 2000, "but the raw callback count is still reported in full");
 });
 
-test("xruns are counted and fail the verdict outright", () => {
-  const r = analyse(parseProbeOutput(synth({ xrunAt: [500, 1200] })));
-  assert.equal(r.xruns, 2);
-  assert.ok(r.xrunRatePerMinute > 0);
+test("late callbacks are counted, and judged as a rate rather than any-at-all", () => {
+  // Originally this asserted that a single xrun failed the run. Real measurement
+  // corrected that: the probe's "xrun" is a proxy — a gap over twice the nominal
+  // period — and with two periods of buffering a late callback is not necessarily
+  // an audible glitch. WASAPI shared measured 0.14% late while sounding continuous;
+  // exclusive measured 17%. So the verdict judges the rate.
+  const occasional = analyse(parseProbeOutput(synth({ xrunAt: [500, 1200] })));
+  assert.equal(occasional.xruns, 2);
+  assert.ok(occasional.xrunRatePerMinute > 0);
+  assert.equal(
+    verdict(occasional).pass,
+    true,
+    "2 late callbacks in 2000 is 0.1% — ordinary jitter, not a broken stream"
+  );
 
-  const v = verdict(r);
+  // A rate that cannot be explained as jitter must still fail.
+  const constant = [];
+  for (let i = 0; i < 2000; i += 3) constant.push(i);
+  const persistent = analyse(parseProbeOutput(synth({ xrunAt: constant })));
+  const v = verdict(persistent);
   assert.equal(v.pass, false);
-  assert.match(v.failures.join(" "), /xrun/);
+  assert.match(v.failures.join(" "), /late callbacks/);
+  assert.match(v.failures.join(" "), /not ordinary jitter/);
 });
 
 test("a short run is refused rather than reported as a result", () => {

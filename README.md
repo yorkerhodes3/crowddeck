@@ -111,7 +111,7 @@ Two items are blocked. Neither blocks the ~9 remaining stories, which are pure J
 
 | Item | Blocked on | Not blocked on |
 |---|---|---|
-| **`SPIKE-2`** | MSVC Build Tools + CMake to compile the probe. Then an **ASIO interface** for the ASIO path, a Mac for CoreAudio, real Linux for ALSA. | The harness itself — [`spike/spike-2/`](spike/spike-2) is written, and its analysis half is **tested and runs today**. WASAPI shared and exclusive need only the two free installs. |
+| **`SPIKE-2`** | An **ASIO interface** for the ASIO path, a Mac for CoreAudio, real Linux for ALSA. | **WASAPI is measured.** p99 callback interval **3.667 ms** against a 10 ms budget — see [`spike/spike-2/FINDINGS.md`](spike/spike-2/FINDINGS.md). |
 | **`ENG-*`** | MSVC, CMake, Ninja, Qt6 and vcpkg for Mixxx's dependency tree — several GB, multi-hour first build. Plus a **USB-MIDI controller** for `AC-12`. | Design. `SPIKE-1` already resolved how `describe`, coalescing and parameter space will be implemented. |
 
 `LEGAL-1` is **closed** — see [ADR-006](DECISIONS.md#adr-006--distribution-shape-and-the-licence-risk-position).

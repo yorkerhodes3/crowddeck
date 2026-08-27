@@ -23,3 +23,10 @@ desktop.ini
 # run was interrupted; the suite clears them on its next start.
 _lint_probe.*
 _lint_sandbox/
+
+# SPIKE-2 build artefacts. vendor/miniaudio.h is fetched by CMake or the
+# documented gcc line; measurements are kept zipped as evidence.
+spike/spike-2/vendor/
+spike/spike-2/runs/*.exe
+spike/spike-2/runs/*.csv
+spike/spike-2/build/

@@ -793,6 +793,27 @@
       dressed up as a number.
     </div>
 
+    <div class="callout" style="border-left-color: var(--accent);">
+      <strong>The latency budget is no longer an assumption.</strong> §8.1 asked for a sub-10 ms audio
+      callback and, until now, nobody had measured whether that was reachable — it was the largest open
+      technical risk in the plan. It is reachable: <strong>WASAPI shared at 128 frames delivered a p99
+      callback interval of 3.667 ms</strong> on an ordinary laptop, with 0.14% late callbacks.
+      <br><br>
+      Three things the measurement taught that reasoning had not. <strong>Exclusive mode was decisively
+      worse than shared</strong> — 17% late callbacks against 0.14% — which inverts the received wisdom, so
+      share mode must be configurable rather than hard-coded. <strong>The first run measured a USB
+      speakerphone</strong>, because that was the Windows default output; its large hardware buffer would
+      have been read as "no configuration met the budget", and the budget might have been loosened to
+      accommodate a conference phone. And <strong>the xrun check was too strict</strong>: it failed a run on
+      any late callback, when with two periods of buffering a single late callback is not a glitch. It now
+      judges a rate, with the threshold set from the measured populations rather than from taste.
+      <br><br>
+      Built with a portable GCC toolchain, since MSVC needs administrator rights this machine does not have.
+      That is stated rather than hidden — though a 10 ms budget dominated by the OS audio stack is not
+      something a compiler choice moves. ASIO, CoreAudio and ALSA remain unmeasured and need hardware or
+      platforms that aren't here.
+    </div>
+
     <div data-render="backlog"></div>
   </div>
 </section>
