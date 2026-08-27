@@ -3567,8 +3567,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-1",
               "REQ-DAT-2"
             ],
-            "detail": "Near-zero cost now; a migration across every table and query later.",
-            "status": "todo"
+            "detail": "Near-zero cost now; a migration across every table and query later. Built in data/src/schema.js + db.js on Node's built-in node:sqlite, so zero runtime dependencies still holds. Two tests guard it: every table in VENUE_SCOPED_TABLES carries venue_id, and any NEW table not listed there fails the suite. The venue is bound when the database is opened rather than passed per call, so no call site can read another venue's data.",
+            "status": "done"
           },
           {
             "id": "DAT-2",
@@ -3582,8 +3582,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-6",
               "REQ-DAT-7"
             ],
-            "detail": "Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1.",
-            "status": "todo"
+            "detail": "Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1. Append-only is enforced by SQL triggers that raise on UPDATE and DELETE, not by convention. Balance is SUM(delta) with no balance column to drift. spendFor({apply}) runs the debit and the effect in one transaction, so a failed boost cannot consume credit — verified by deliberately breaking the atomicity and confirming the suite went red.",
+            "status": "done"
           },
           {
             "id": "DAT-3",
@@ -3596,8 +3596,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-10",
               "REQ-DAT-11"
             ],
-            "detail": "Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14.",
-            "status": "todo"
+            "detail": "Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14. Gating logic lives in core/src/policy.js; data/src/tracks.js stores the facts it reads and refuses a track with no declared licence class — there is deliberately no default, because defaulting to 'unknown' turns 'nobody checked' into a stored fact. Attribution-required classes cannot be stored without attribution text (REQ-DAT-11).",
+            "status": "done"
           },
           {
             "id": "DAT-4",
@@ -3609,8 +3609,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-DAT-13",
               "REQ-DAT-14"
             ],
-            "detail": "Local-only evidence trail for PRO reporting, never transmitted.",
-            "status": "todo"
+            "detail": "Local-only evidence trail for PRO reporting, never transmitted. RFC 4180 quoting is tested against a title containing both a comma and quotes, because one unescaped comma shifts every later column and quietly corrupts a royalty report. REQ-DAT-14 is tested by reading the module source and failing if any transport API appears in it.",
+            "status": "done"
           },
           {
             "id": "DAT-5",
@@ -3621,8 +3621,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-NFR-4",
               "REQ-NFR-5"
             ],
-            "detail": "The queue is durable and the engine is replaceable; a core crash must not stop audio.",
-            "status": "todo"
+            "detail": "The queue is durable and the engine is replaceable; a core crash must not stop audio. REQ-NFR-4: data/src/queue-store.js round-trips the whole entry — state, votes, voter IDENTITIES so one-vote-per-patron still holds after a restart, and the transition log that is the audit trail for staff overrides. REQ-NFR-5: core/src/engine-link.js reconnects with jittered backoff and resyncs by reading the deck FIRST, adopting a playing track rather than re-issuing load — a naive reconnect would restart the track the room is dancing to. Tested against a real engine process over a real socket.",
+            "status": "done"
           }
         ]
       },

@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 30 of 60 stories complete · 1 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 35 of 60 stories complete · 1 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 60 stories · 118 of 118 requirements covered**
@@ -99,11 +99,11 @@ The two things that are expensive to retrofit — venue_id and the credit ledger
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **DAT-1** | **Schema with venue_id from the first migration**<br>Near-zero cost now; a migration across every table and query later. | M | build | `REQ-DAT-1` `REQ-DAT-2` |
-| **DAT-2** | **Append-only credit ledger**<br>Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1. | M | build | `REQ-DAT-3` `REQ-DAT-4` `REQ-DAT-5` `REQ-DAT-6` `REQ-DAT-7` |
-| **DAT-3** | **Licence-class model and gating**<br>Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14. | M | build | `REQ-DAT-8` `REQ-DAT-9` `REQ-DAT-10` `REQ-DAT-11` |
-| **DAT-4** | **Play log and CSV export**<br>Local-only evidence trail for PRO reporting, never transmitted. | S | build | `REQ-DAT-12` `REQ-DAT-13` `REQ-DAT-14` |
-| **DAT-5** | **Durable queue across restart**<br>The queue is durable and the engine is replaceable; a core crash must not stop audio. | M | build | `REQ-NFR-4` `REQ-NFR-5` |
+| ✅ **DAT-1** | **Schema with venue_id from the first migration**<br>Near-zero cost now; a migration across every table and query later. Built in data/src/schema.js + db.js on Node's built-in node:sqlite, so zero runtime dependencies still holds. Two tests guard it: every table in VENUE_SCOPED_TABLES carries venue_id, and any NEW table not listed there fails the suite. The venue is bound when the database is opened rather than passed per call, so no call site can read another venue's data. | M | build | `REQ-DAT-1` `REQ-DAT-2` |
+| ✅ **DAT-2** | **Append-only credit ledger**<br>Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1. Append-only is enforced by SQL triggers that raise on UPDATE and DELETE, not by convention. Balance is SUM(delta) with no balance column to drift. spendFor({apply}) runs the debit and the effect in one transaction, so a failed boost cannot consume credit — verified by deliberately breaking the atomicity and confirming the suite went red. | M | build | `REQ-DAT-3` `REQ-DAT-4` `REQ-DAT-5` `REQ-DAT-6` `REQ-DAT-7` |
+| ✅ **DAT-3** | **Licence-class model and gating**<br>Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14. Gating logic lives in core/src/policy.js; data/src/tracks.js stores the facts it reads and refuses a track with no declared licence class — there is deliberately no default, because defaulting to 'unknown' turns 'nobody checked' into a stored fact. Attribution-required classes cannot be stored without attribution text (REQ-DAT-11). | M | build | `REQ-DAT-8` `REQ-DAT-9` `REQ-DAT-10` `REQ-DAT-11` |
+| ✅ **DAT-4** | **Play log and CSV export**<br>Local-only evidence trail for PRO reporting, never transmitted. RFC 4180 quoting is tested against a title containing both a comma and quotes, because one unescaped comma shifts every later column and quietly corrupts a royalty report. REQ-DAT-14 is tested by reading the module source and failing if any transport API appears in it. | S | build | `REQ-DAT-12` `REQ-DAT-13` `REQ-DAT-14` |
+| ✅ **DAT-5** | **Durable queue across restart**<br>The queue is durable and the engine is replaceable; a core crash must not stop audio. REQ-NFR-4: data/src/queue-store.js round-trips the whole entry — state, votes, voter IDENTITIES so one-vote-per-patron still holds after a restart, and the transition log that is the audit trail for staff overrides. REQ-NFR-5: core/src/engine-link.js reconnects with jittered backoff and resyncs by reading the deck FIRST, adopting a playing track rather than re-issuing load — a naive reconnect would restart the track the room is dancing to. Tested against a real engine process over a real socket. | M | build | `REQ-NFR-4` `REQ-NFR-5` |
 
 ---
 

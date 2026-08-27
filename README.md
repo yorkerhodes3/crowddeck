@@ -19,7 +19,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 118 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 60 stories, 118/118 traced |
-| **4 — Build** | `protocol/` `core/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI, 30/60 stories** |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence, 35/60 stories** |
 
 ### Try it
 
@@ -42,6 +42,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
 | [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
 | [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, and **live instruments as queueable sources** |
+| [`data/`](data) | Apache-2.0 | **Persistence** — venue-scoped schema, append-only credit ledger, licence-class store, play log with CSV export, durable queue |
 | [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
 | [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks everything above, and permanently proves the engine is replaceable (REQ-LIC-5) |
@@ -49,7 +50,13 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**228 tests · 20 conformance checks · zero runtime dependencies.**
+**282 tests · 20 conformance checks · zero runtime dependencies.**
+
+> **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
+> `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
+> and needs **Node 22.5+**. It prints an `ExperimentalWarning` on first use, which is left visible on
+> purpose. If the API moves, the blast radius is [`data/src/db.js`](data/src/db.js); everything else talks to
+> `VenueDatabase`, not to SQLite.
 
 ### The definition of done, as an executable test
 
@@ -159,6 +166,14 @@ core/                    Apache-2.0 — the fusion core (the novelty)
   src/queue.js             lifecycle state machine with audit log
   src/scheduler.js         staging lane, modes, fallback
   src/engine-adapter.js    scheduler intents ⇄ CDEP
+  src/engine-link.js       reconnect + resync so a core crash cannot stop audio
+data/                    Apache-2.0 — persistence (node:sqlite, still zero deps)
+  src/schema.js            migrations; venue_id on every venue-scoped table
+  src/db.js                connection, migration runner, single-venue binding
+  src/ledger.js            append-only credits, derived balance, atomic spend
+  src/tracks.js            licence class per track, mandatory and un-defaulted
+  src/playlog.js           performance log + RFC 4180 CSV, no transport at all
+  src/queue-store.js       durable queue: state, voter identities, audit trail
 engine-stub/             Apache-2.0 — a conformant engine with no audio
   src/                     server, engine model, simulated sink
   bin/                     crowddeck-engine-stub

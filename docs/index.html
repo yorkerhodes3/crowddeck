@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>228 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>282 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -689,6 +689,34 @@
       <strong>unvalidated assumptions</strong>, and they are now the largest technical risk in the plan.
       Read <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/spike/SPIKE-1-REPORT.md">the full
       report</a>, including what it deliberately did <em>not</em> do.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--info);">
+      <strong>The venue now remembers.</strong> Everything above ran in memory, which meant a restart lost
+      the queue, the credits and the evidence trail. <span class="mono">data/</span> fixes that on Node's
+      built-in <span class="mono">node:sqlite</span> — so still <strong>nothing to install</strong>.
+      <br><br>
+      Three decisions are worth calling out because the obvious alternative is subtly wrong in each case.
+      <strong>Credits are an append-only ledger, enforced by SQL triggers</strong>, not a balance column: a
+      balance has no history, and a rule that lives only in a comment is one careless <span class="mono">UPDATE</span>
+      away from rewriting what a patron is owed. <strong>A track cannot be stored without a declared licence
+      class</strong> — defaulting to <span class="mono">unknown</span> would quietly turn "nobody checked"
+      into a stored fact, and <span class="mono">unknown</span> is exactly what blocks playback in a
+      commercial venue. And <strong>the durable queue stores voter identities, not just vote counts</strong>,
+      because a count would let a patron vote again after every reboot — the fairness rule would weaken a
+      little each time the venue restarted.
+      <br><br>
+      The play log has <strong>no network code at all</strong>, which a test enforces by reading the module
+      source and failing if any transport API appears in it. That is the only honest way to keep a
+      no-telemetry promise. Its CSV writer is tested against a track called
+      <span class="mono">Say "Hello", Wave Goodbye</span> — one unescaped comma shifts every later column and
+      quietly corrupts a royalty report.
+      <br><br>
+      Alongside it, <span class="mono">engine-link.js</span> finally delivers the property the whole two-plane
+      split exists for: <strong>a core crash does not stop the music.</strong> It reconnects with jittered
+      backoff and, crucially, <em>reads the deck before deciding anything</em> — a naive reconnect would
+      re-issue its last <span class="mono">load</span> and restart the track the room is dancing to. Tested
+      against a real engine process over a real socket.
     </div>
 
     <div data-render="backlog"></div>

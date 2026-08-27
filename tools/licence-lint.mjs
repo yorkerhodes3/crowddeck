@@ -34,6 +34,7 @@ const PLANES = [
   { prefix: "protocol", licence: "Apache-2.0", copyleft: false },
   { prefix: "conformance", licence: "Apache-2.0", copyleft: false },
   { prefix: "core", licence: "Apache-2.0", copyleft: false },
+  { prefix: "data", licence: "Apache-2.0", copyleft: false },
   { prefix: "crowd", licence: "Apache-2.0", copyleft: false },
   { prefix: "providers", licence: "Apache-2.0", copyleft: false },
   { prefix: "api", licence: "Apache-2.0", copyleft: false },
