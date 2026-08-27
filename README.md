@@ -103,7 +103,22 @@ produced a real amendment to CDEP (parameter space, `REQ-CDEP-12a`).
 
 Its **build-and-measure half is not done**, and cannot be done here: it needs Qt6, CMake, MSVC and real audio
 and MIDI hardware. So the §8.1 latency budgets remain **unvalidated assumptions** and are now the single
-largest technical risk in the plan. `LEGAL-1`, review of the licence boundary, runs alongside.
+largest technical risk in the plan.
+
+### What is blocked, and on what exactly
+
+Three items are blocked. None of them blocks the other ~10 open stories, which are pure JavaScript.
+
+| Item | Blocked on | Not blocked on |
+|---|---|---|
+| **`LEGAL-1`** | **Five business decisions from the project owner** — distribution shape (one installer or two separate downloads, the largest single factor), target jurisdictions, commercial model, whether Apache-2.0 venue-layer reuse is non-negotiable, and CLA/DCO. Then a lawyer. | Any engineering. Every `REQ-LIC` requirement is already implemented and CI-enforced. This gates **distribution**, not development. |
+| **`SPIKE-2`** | MSVC Build Tools + CMake. Then an **ASIO-capable audio interface** for the ASIO path, a Mac for CoreAudio, and real Linux for ALSA. | WASAPI. The dev machine meets the `REQ-NFR-11` baseline and has real audio devices, so shared *and* exclusive WASAPI are measurable there today. |
+| **`ENG-*`** | MSVC, CMake, Ninja, Qt6 and vcpkg for Mixxx's dependency tree — several GB, multi-hour first build. Plus a **USB-MIDI controller** for `AC-12`. | Design. `SPIKE-1` already resolved how `describe`, coalescing and parameter space will be implemented. |
+
+A factual brief for counsel is ready at [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) — what is built, what
+is mechanically enforced, and seven precise questions. Writing the brief is not the review; `LEGAL-1` stays
+open. If the boundary is found insufficient, the fallback costs **no engineering** — only the reuse argument
+in ADR-001, because every technical property it relies on is architecture we would want regardless.
 
 ---
 

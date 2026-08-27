@@ -74,7 +74,7 @@
             "REQ-LIC-4",
             "REQ-LIC-5"
           ],
-          "detail": "Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down.",
+          "detail": "Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down. BLOCKS DISTRIBUTION ONLY, NOT DEVELOPMENT: every REQ-LIC hard requirement is already implemented and enforced in CI. A factual brief for counsel is ready at legal/REVIEW-PACK.md — what is built, what is enforced, and seven precise questions. BLOCKED ON THE PROJECT OWNER, NOT A LAWYER, for five business inputs that change the analysis: distribution shape (one installer or two downloads — the largest single factor), target jurisdictions, commercial model, whether Apache-2.0 venue-layer reuse is non-negotiable or single-GPL is an acceptable fallback, and CLA/DCO. If the boundary fails, the fallback costs no engineering — only the reuse argument.",
           "status": "todo"
         },
         {
@@ -85,7 +85,7 @@
           "reqs": [
             "REQ-NFR-1"
           ],
-          "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts.",
+          "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts. TOOLCHAIN NEEDED: MSVC Build Tools + CMake (miniaudio is header-only; PortAudio needs a build). PARTLY DOABLE ON THE DEV MACHINE: it meets REQ-NFR-11 (4 physical cores, 8GB+, no GPU) and has real audio devices, so WASAPI shared AND exclusive are measurable there today. HARDWARE GAP: no ASIO driver registered — needs a real interface (Focusrite Scarlett, Behringer UMC, etc). ASIO4ALL exercises the code path but its latency is not representative. PLATFORM GAP: CoreAudio needs a Mac, ALSA needs real Linux. CI runners are VMs with no audio device and unreliable timing, so latency numbers from them would not be trustworthy.",
           "status": "todo"
         }
       ]
@@ -534,7 +534,7 @@
           "reqs": [
             "REQ-LIC-4"
           ],
-          "detail": "Keep engine, audio, soundio, mixer, analyzer, effects, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. SPIKE-1: effects is NOT optional — per-deck EQ is routed through [EqualizerRack1_[ChannelN]_Effect1], so the rack must be retained. SPIKE-1 also found EngineMixer includes only QtCore, so the headless strip is less risky than assumed.",
+          "detail": "Keep engine, audio, soundio, mixer, analyzer, effects, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. SPIKE-1: effects is NOT optional — per-deck EQ is routed through [EqualizerRack1_[ChannelN]_Effect1], so the rack must be retained. SPIKE-1 also found EngineMixer includes only QtCore, so the headless strip is less risky than assumed. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -548,7 +548,7 @@
             "REQ-CDEP-12",
             "REQ-CDEP-12a"
           ],
-          "detail": "Bridge ControlObject / ControlDoublePrivate::getAllInstances() to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. SPIKE-1: describe() is built from getAllInstances() + name()/description()/defaultValue(); min/max are NOT reachable, so serve parameter space via ControlDoublePrivate::getParameter/setParameter (REQ-CDEP-12a). Coalescing for REQ-CDEP-14 is inheritable from ControlObjectScript's CompressingProxy rather than built from scratch.",
+          "detail": "Bridge ControlObject / ControlDoublePrivate::getAllInstances() to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. SPIKE-1: describe() is built from getAllInstances() + name()/description()/defaultValue(); min/max are NOT reachable, so serve parameter space via ControlDoublePrivate::getParameter/setParameter (REQ-CDEP-12a). Coalescing for REQ-CDEP-14 is inheritable from ControlObjectScript's CompressingProxy rather than built from scratch. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -559,7 +559,7 @@
           "reqs": [
             "REQ-CDEP-10"
           ],
-          "detail": "Inherited from Mixxx; wire to the CDEP control set. SPIKE-1: EQ is an effects-rack unit, not a deck control — budget for wiring [EqualizerRack1_[ChannelN]_Effect1]/parameter1..3.",
+          "detail": "Inherited from Mixxx; wire to the CDEP control set. SPIKE-1: EQ is an effects-rack unit, not a deck control — budget for wiring [EqualizerRack1_[ChannelN]_Effect1]/parameter1..3. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -570,7 +570,7 @@
           "reqs": [
             "REQ-CON-2"
           ],
-          "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open.",
+          "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -581,7 +581,7 @@
           "reqs": [
             "REQ-CLK-1"
           ],
-          "detail": "The leader deck becomes the single tempo source published to every transport.",
+          "detail": "The leader deck becomes the single tempo source published to every transport. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -592,7 +592,7 @@
           "reqs": [
             "REQ-CDEP-10"
           ],
-          "detail": "Inherited from Mixxx.",
+          "detail": "Inherited from Mixxx. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
           "status": "todo"
         },
         {
@@ -604,7 +604,7 @@
             "REQ-NFR-1",
             "REQ-NFR-2"
           ],
-          "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events.",
+          "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source. HARDWARE GAP: AC-12 (MIDI → audible, p99 < 15ms) needs a real USB-MIDI controller — none is attached to the dev machine. A virtual loopback such as loopMIDI exercises the software path but cannot measure true latency, because that number includes USB transfer and the driver stack.",
           "status": "todo"
         }
       ]

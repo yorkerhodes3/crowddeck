@@ -12,6 +12,12 @@ rather than an edit in place.
 > ⚠️ **Not legal advice.** ADR-001 in particular describes a widely-practised interpretation of the GPL
 > that is not universally settled. Obtain competent legal review before first public distribution.
 > **This remains an open action item**, tracked as `LEGAL-1` in [`BACKLOG.md`](BACKLOG.md).
+>
+> A factual brief for counsel now exists — [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) — stating what is
+> built, what is mechanically enforced, and the seven questions we need answered. It also lists five
+> **business** decisions the project owner must supply first (distribution shape, jurisdictions, commercial
+> model, fallback appetite, CLA/DCO), because those change the analysis and are not legal questions.
+> Writing the brief is not the review; `LEGAL-1` stays open.
 
 ---
 
