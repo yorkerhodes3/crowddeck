@@ -549,13 +549,13 @@
     <span class="status">✅</span>
     <div class="ph">Phase 2 · complete</div>
     <h4>SPECIFICATION.md</h4>
-    <p>118 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
+    <p>120 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
       </div>
   <div class="gate done">
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>11 epics, 60 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>11 epics, 61 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -568,7 +568,7 @@
     <li><strong>Deployment</strong> — single-venue appliance, <span class="mono">venue_id</span> everywhere, multi-venue later as federation over appliances rather than shared-database multi-tenancy. Offline-first (G1) essentially forces this.</li>
     <li><strong>Client architecture</strong> — thin native engine plus web consoles. Controller input reaches the engine directly, so web UI latency is cosmetic rather than functional.</li>
   </ol>
-  <p style="margin: 12px 0 0;">All five ratified 2026-08-27. Full rationale, confidence levels and what would reverse each one are in
+  <p style="margin: 12px 0 0;">All six ratified 2026-08-27. Full rationale, confidence levels and what would reverse each one are in
   <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md">DECISIONS.md</a>.</p>
 </div>
   </div>
@@ -578,9 +578,9 @@
 <section id="spec">
   <div class="wrap">
     <div class="sec-num">11 — SPECIFICATION</div>
-    <h2>118 requirements, traced to the research</h2>
+    <h2>120 requirements, traced to the research</h2>
     <p>
-      Phase 2 converts the capability set into testable requirements against the five ratified decisions.
+      Phase 2 converts the capability set into testable requirements against the six ratified decisions.
       The first section written was the <strong>engine IPC contract</strong>, because everything else is
       built against it and because a contract must be shaped by its consumer rather than by the fork.
       This table is generated directly from
@@ -639,7 +639,7 @@
     <div class="callout">
       <strong>Traceability is enforced, not asserted.</strong> Every story cites the requirements it
       satisfies, and <span class="mono">tools/build-backlog.mjs</span> fails the build if a story references
-      a requirement that does not exist in the specification. All <strong>118 of 118</strong> requirements
+      a requirement that does not exist in the specification. All <strong>120 of 120</strong> requirements
       are currently covered.
     </div>
 
@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>286 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>305 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -719,6 +719,31 @@
       against a real engine process over a real socket.
     </div>
 
+    <div class="callout" style="border-left-color: var(--hot);">
+      <strong>The licence question is now a decision, not an open item.</strong> ADR-006 records four owner
+      choices: <strong>two separate downloads</strong>, US and EU, single-GPL accepted as a fallback, and
+      <strong>no counsel engaged</strong>.
+      <br><br>
+      Separate downloads is the part that matters. It means the project <em>never distributes a combined
+      work at all</em> — an Apache-2.0 venue layer that contains no Mixxx code, and a GPL engine, shipped as
+      distinct artifacts. Whatever combining happens, happens on the operator's machine.
+      <br><br>
+      Given that, keeping the split costs nothing. We hold copyright on every line of the Apache layer and
+      can relicense it to GPL whenever we like, so the worst case of being wrong <em>is</em> the fallback —
+      which is exactly where going single-GPL today would have landed us anyway. Abandoning it, by contrast,
+      is a one-way door: once outside contributors commit to a GPL venue layer, going back needs all of
+      their permissions. So the option is free and closing it is not.
+      <br><br>
+      The realistic threat is not a courtroom, it is a well-meaning convenience installer. Hence
+      <span class="mono">REQ-LIC-8</span> — artifacts MUST stay separate — and
+      <span class="mono">REQ-LIC-9</span>, a DCO keeping the fallback exercisable.
+      <br><br>
+      <strong>Stated plainly: no legal review was obtained and none is planned.</strong> This is knowing risk
+      acceptance with a cheap remedy, not a clearance, and it should not be read as one.
+      <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/legal/REVIEW-PACK.md">The review pack</a>
+      stays ready with seven precise questions should that change.
+    </div>
+
     <div data-render="backlog"></div>
   </div>
 </section>
@@ -726,8 +751,8 @@
 <footer>
   <div class="wrap">
     <p>
-      <strong>CrowdDeck — planning complete, build under way.</strong> Concept research, five ratified
-      decisions, 118 specified requirements, a 60-story sequenced backlog, and a working CDEP contract with
+      <strong>CrowdDeck — planning complete, build under way.</strong> Concept research, six ratified
+      decisions, 120 specified requirements, a 61-story sequenced backlog, and a working CDEP contract with
       a conformant stub engine. The Mixxx fork comes after the de-risking spike, not before it.
     </p>
     <p>

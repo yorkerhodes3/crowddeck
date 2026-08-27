@@ -74,6 +74,17 @@ Everything deferred is recorded in [`BACKLOG.md`](BACKLOG.md) so it is not silen
   GPL-configured build silently relicenses the product.
 - **REQ-LIC-7** Third-party dependency licences **MUST** be inventoried in a generated `NOTICE` file per
   release artifact.
+- **REQ-LIC-8** The Apache-2.0 venue layer and the GPL engine **MUST** be released as **separate
+  artifacts**. They **MUST NOT** be distributed together in a single installer, archive, container image or
+  package (*ADR-006*).
+- **REQ-LIC-9** Contributions **MUST** be accepted under a DCO with inbound=outbound licensing, so the
+  single-GPL fallback in ADR-006 remains exercisable without tracing every contributor (*ADR-006*).
+
+> **REQ-LIC-8 is the load-bearing one.** ADR-006 chose two separate downloads, which means the project never
+> distributes a combined work at all — whatever combining happens, happens on the operator's machine. The
+> realistic way that protection gets lost is not a court: it is someone shipping a convenience installer
+> because it is obviously nicer for users. Writing it down as a requirement is the cheapest available
+> guard, and `REPO-4` makes it a release-time check rather than a hope.
 
 ### 1.2 Repository layout
 

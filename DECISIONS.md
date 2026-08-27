@@ -9,15 +9,15 @@ Each decision below states the ratified position, a confidence level, the reason
 it**, and the consequences that flow into the specification. Superseding any of these requires a new ADR
 rather than an edit in place.
 
-> ⚠️ **Not legal advice.** ADR-001 in particular describes a widely-practised interpretation of the GPL
-> that is not universally settled. Obtain competent legal review before first public distribution.
-> **This remains an open action item**, tracked as `LEGAL-1` in [`BACKLOG.md`](BACKLOG.md).
+> ⚠️ **Not legal advice, and no legal review has been obtained.** ADR-001 describes a widely-practised
+> interpretation of the GPL that is not universally settled.
 >
-> A factual brief for counsel now exists — [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) — stating what is
-> built, what is mechanically enforced, and the seven questions we need answered. It also lists five
-> **business** decisions the project owner must supply first (distribution shape, jurisdictions, commercial
-> model, fallback appetite, CLA/DCO), because those change the analysis and are not legal questions.
-> Writing the brief is not the review; `LEGAL-1` stays open.
+> **[ADR-006](#adr-006--distribution-shape-and-the-licence-risk-position) records the project owner's
+> decision to proceed without counsel**, on two separate downloads, in the US and EU, with single-GPL
+> accepted as the fallback. That is a knowing acceptance of risk with a cheap remedy — it is *not* the same
+> as the risk having been cleared, and nothing here should be read as saying the boundary has been blessed.
+> [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) stays ready with seven precise questions should counsel
+> ever be engaged.
 
 ---
 
@@ -329,6 +329,75 @@ latency-sensitive control path in the engine where it belongs.
 
 ---
 
+## ADR-006 — Distribution shape and the licence risk position
+
+**Status:** Ratified by the project owner, 2026-08-27. Supersedes the open question in ADR-001.
+**Confidence:** High on the mechanics, *explicitly none* on the legal conclusion — see the caveat.
+
+### The four inputs
+
+ADR-001 left five business questions that materially change the licence analysis and that no lawyer can
+answer for us. Four are now answered:
+
+| Question | Decision |
+|---|---|
+| Distribution shape | **Two separate downloads.** No combined installer, ever. |
+| Jurisdictions | **US and EU.** |
+| Fallback appetite | **Single-GPL is acceptable** if the split is ever judged unsound. |
+| Counsel | **None will be engaged.** |
+
+The fifth — CLA or DCO — is unanswered and is dealt with below, because the fallback depends on it.
+
+### What follows: keep the split
+
+Two separate downloads is the strongest shape the split could have had, and it is not a small detail.
+**It means we never distribute a combined work at all.** We publish an Apache-2.0 venue layer, which is
+100% our own original code and contains no Mixxx code of any kind, and separately a GPL engine, which we
+ship in full compliance with the GPL. Whatever combining happens, happens on the operator's machine when
+they choose to run both. Aggregation by an end user is not us distributing a derivative work.
+
+Given that, and given that the fallback is acceptable, **the split costs nothing to keep**:
+
+- We hold the copyright on every line of the Apache-2.0 layer. We can relicense it to GPL at any moment.
+- Apache-2.0 is one-way compatible with GPL-3.0, so the fallback stays available even with outside
+  contributions under inbound=outbound.
+- If the position were ever judged wrong, the remedy *is* the fallback — relicense to GPL. That is exactly
+  where we would have landed by choosing single-GPL today.
+
+So the worst case of keeping the split equals the certain case of abandoning it. Meanwhile abandoning it is
+a **one-way door**: once the venue layer is GPL and outside contributors have committed to it, going back to
+Apache-2.0 needs every one of their permissions. Keeping the option costs nothing and closing it costs the
+strategic asset ADR-001 was built around.
+
+### Consequences that are now requirements, not preferences
+
+The single largest risk to this position is that someone later adds a convenience installer bundling both
+binaries, because it is obviously nicer for users, and silently destroys the only thing holding the boundary
+up. Two new requirements exist so that cannot happen quietly:
+
+- **REQ-LIC-8** — release artifacts **MUST** be separate: the Apache-2.0 venue layer and the GPL engine
+  **MUST NOT** be distributed in a single installer, archive, container image or package.
+- **REQ-LIC-9** — contributions **MUST** be accepted under a DCO with inbound=outbound licensing, so the
+  single-GPL fallback in this ADR remains exercisable without tracing every contributor.
+
+### The caveat, stated plainly
+
+**No legal review has been obtained, and none is planned.** This ADR is a business decision to proceed on an
+unreviewed interpretation, with a documented and cheap fallback. That is a legitimate way to accept a risk;
+it is not the same thing as the risk being absent, and this document must not be read as saying the boundary
+has been blessed. [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) remains ready if counsel is ever engaged,
+and lists the seven questions to ask.
+
+### What would reverse this
+
+- A credible challenge, or counsel later advising the boundary does not hold in the US or EU → execute the
+  fallback: relicense everything GPL-2.0-or-later. No architectural change is required, because every
+  property the split relies on — separate processes, a versioned protocol, a replaceable engine, crash
+  isolation — is architecture we want regardless.
+- Evidence that third parties are being materially misled about their obligations → revisit immediately.
+
+---
+
 ## Summary
 
 | # | Decision | Ratified position | Confidence |
@@ -338,6 +407,7 @@ latency-sensitive control path in the engine where it belongs.
 | 003 | Paid priority | **Model yes, rails no.** Priority ordering + credit ledger in v1; payment providers in v1.1 behind an adapter | High |
 | 004 | Deployment | **Single-venue appliance**, `venue_id` everywhere, multi-venue later as **federation of appliances** | High |
 | 005 | Client architecture | **Thin native engine + web consoles**; controller input bypasses the UI, so web latency is cosmetic | Medium-High |
+| 006 | Distribution & licence risk | **Two separate downloads**, US/EU, single-GPL fallback accepted, **no counsel engaged** — risk accepted knowingly | Mechanics high, legal conclusion unreviewed |
 
 ### Highest-value next action
 

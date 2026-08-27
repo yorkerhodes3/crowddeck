@@ -6,7 +6,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 > ## 📊 [**View the project dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
 >
 > The dashboard is the recommended way to read this project: an interactive capability matrix, a filterable
-> open-source triage table, the proposed architecture, and browsable views of all 118 requirements and 60
+> open-source triage table, the proposed architecture, and browsable views of all 120 requirements and 60
 > backlog stories.
 
 ---
@@ -17,9 +17,9 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 |---|---|---|
 | **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
-| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 118 requirements, 18 acceptance criteria |
-| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 60 stories, 118/118 traced |
-| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence, 35/60 stories** |
+| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 120 requirements, 18 acceptance criteria |
+| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 61 stories, 120/120 traced |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence, 35/61 stories** |
 
 ### Try it
 
@@ -44,13 +44,13 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, and **live instruments as queueable sources** |
 | [`data/`](data) | Apache-2.0 | **Persistence** — venue-scoped schema, append-only credit ledger, licence-class store, play log with CSV export, durable queue |
 | [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
-| [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display |
+| [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display — including a from-scratch **QR encoder** verified against a real decoder |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks everything above, and permanently proves the engine is replaceable (REQ-LIC-5) |
 | [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 20 checks |
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**286 tests · 20 conformance checks · zero runtime dependencies.**
+**305 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
@@ -107,18 +107,19 @@ largest technical risk in the plan.
 
 ### What is blocked, and on what exactly
 
-Three items are blocked. None of them blocks the other ~10 open stories, which are pure JavaScript.
+Two items are blocked. Neither blocks the ~9 remaining stories, which are pure JavaScript.
 
 | Item | Blocked on | Not blocked on |
 |---|---|---|
-| **`LEGAL-1`** | **Five business decisions from the project owner** — distribution shape (one installer or two separate downloads, the largest single factor), target jurisdictions, commercial model, whether Apache-2.0 venue-layer reuse is non-negotiable, and CLA/DCO. Then a lawyer. | Any engineering. Every `REQ-LIC` requirement is already implemented and CI-enforced. This gates **distribution**, not development. |
 | **`SPIKE-2`** | MSVC Build Tools + CMake. Then an **ASIO-capable audio interface** for the ASIO path, a Mac for CoreAudio, and real Linux for ALSA. | WASAPI. The dev machine meets the `REQ-NFR-11` baseline and has real audio devices, so shared *and* exclusive WASAPI are measurable there today. |
 | **`ENG-*`** | MSVC, CMake, Ninja, Qt6 and vcpkg for Mixxx's dependency tree — several GB, multi-hour first build. Plus a **USB-MIDI controller** for `AC-12`. | Design. `SPIKE-1` already resolved how `describe`, coalescing and parameter space will be implemented. |
 
-A factual brief for counsel is ready at [`legal/REVIEW-PACK.md`](legal/REVIEW-PACK.md) — what is built, what
-is mechanically enforced, and seven precise questions. Writing the brief is not the review; `LEGAL-1` stays
-open. If the boundary is found insufficient, the fallback costs **no engineering** — only the reuse argument
-in ADR-001, because every technical property it relies on is architecture we would want regardless.
+`LEGAL-1` is **closed** — see [ADR-006](DECISIONS.md#adr-006--distribution-shape-and-the-licence-risk-position).
+The owner chose two separate downloads, US/EU, single-GPL as an accepted fallback, and no counsel. Because
+the project therefore never distributes a combined work, and because we hold copyright on the whole
+Apache-2.0 layer and can relicense it at will, keeping the split costs nothing while abandoning it is a
+one-way door. `REQ-LIC-8` and `REQ-LIC-9` make that durable. **No legal review was obtained and none is
+planned** — this is knowing risk acceptance, not a clearance.
 
 ---
 
@@ -167,8 +168,8 @@ Raw findings are preserved in [`research/`](research/).
 ```
 CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
 DECISIONS.md             Five ratified ADRs
-SPECIFICATION.md         118 requirements, 18 acceptance criteria (source of truth)
-BACKLOG.md               Generated — 11 epics, 60 stories
+SPECIFICATION.md         120 requirements, 18 acceptance criteria (source of truth)
+BACKLOG.md               Generated — 11 epics, 61 stories
 
 protocol/                Apache-2.0 — CDEP: the engine contract
   cdep-1.schema.json       Published wire-format schema

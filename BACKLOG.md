@@ -4,10 +4,10 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 35 of 60 stories complete · 1 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 37 of 61 stories complete · 1 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
-**11 epics · 60 stories · 118 of 118 requirements covered**
+**11 epics · 61 stories · 120 of 120 requirements covered**
 
 Sizes are t-shirt estimates for a small team, not commitments: **S** ≤1 week · **M** 1-3 weeks · **L** 3-6 weeks · **XL** 6-12 weeks.
 
@@ -42,7 +42,7 @@ Two assumptions carry the plan. Both are cheap to test and expensive to get wron
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
 | ◐ **SPIKE-1** | **Headless Mixxx extraction spike**<br>Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan. PARTIAL — the source-analysis half is done and reported in spike/SPIKE-1-REPORT.md: the enumerable-control-bus assumption ADR-002 rests on is verified, EngineMixer is confirmed GUI-free, §2.10 is validated and two errors fixed, and CDEP is amended to parameter space. The build-and-measure half is NOT done — it needs Qt6/CMake/MSVC and real audio+MIDI hardware, which this environment has none of. §8.1 latency budgets therefore remain unvalidated assumptions and are the largest residual risk in the plan. | L | `FORK` | `REQ-CDEP-17` `REQ-CDEP-18` |
-| **LEGAL-1** | **Legal review of the ADR-001 IPC boundary**<br>Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down. BLOCKS DISTRIBUTION ONLY, NOT DEVELOPMENT: every REQ-LIC hard requirement is already implemented and enforced in CI. A factual brief for counsel is ready at legal/REVIEW-PACK.md — what is built, what is enforced, and seven precise questions. BLOCKED ON THE PROJECT OWNER, NOT A LAWYER, for five business inputs that change the analysis: distribution shape (one installer or two downloads — the largest single factor), target jurisdictions, commercial model, whether Apache-2.0 venue-layer reuse is non-negotiable or single-GPL is an acceptable fallback, and CLA/DCO. If the boundary fails, the fallback costs no engineering — only the reuse argument. | S | build | `REQ-LIC-2` `REQ-LIC-4` `REQ-LIC-5` |
+| ✅ **LEGAL-1** | **Licence risk position for the ADR-001 boundary**<br>RESOLVED BY OWNER DECISION, NOT BY LEGAL REVIEW — ADR-006. The project owner chose two separate downloads (so no combined work is ever distributed), US and EU as target jurisdictions, single-GPL as an accepted fallback, and no counsel. Keeping the split therefore costs nothing: we own every line of the Apache-2.0 layer and can relicense it to GPL at any time, so the worst case equals the certain case of abandoning it now — while abandoning it is a one-way door once outside contributors arrive. Two new requirements make the position durable: REQ-LIC-8 (separate release artifacts, never one installer) and REQ-LIC-9 (DCO inbound=outbound, keeping the fallback exercisable). NOTE HONESTLY: no legal review was obtained and none is planned. This is knowing risk acceptance with a cheap remedy, not a clearance. legal/REVIEW-PACK.md stays ready with seven questions if counsel is ever engaged. | S | build | `REQ-LIC-2` `REQ-LIC-4` `REQ-LIC-5` `REQ-LIC-8` `REQ-LIC-9` |
 | **SPIKE-2** | **Audio backend selection**<br>Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts. TOOLCHAIN NEEDED: MSVC Build Tools + CMake (miniaudio is header-only; PortAudio needs a build). PARTLY DOABLE ON THE DEV MACHINE: it meets REQ-NFR-11 (4 physical cores, 8GB+, no GPU) and has real audio devices, so WASAPI shared AND exclusive are measurable there today. HARDWARE GAP: no ASIO driver registered — needs a real interface (Focusrite Scarlett, Behringer UMC, etc). ASIO4ALL exercises the code path but its latency is not representative. PLATFORM GAP: CoreAudio needs a Mac, ALSA needs real Linux. CI runners are VMs with no audio device and unreliable timing, so latency numbers from them would not be trustworthy. | S | `ADOPT` | `REQ-NFR-1` |
 
 ---
@@ -72,6 +72,7 @@ The split licence is only real if it is mechanically enforced. Contributor confu
 | ✅ **REPO-1** | **Plane layout and SPDX headers**<br>Directory structure per SPECIFICATION §1.2, SPDX header on every file. | S | build | `REQ-LIC-1` |
 | ✅ **REPO-2** | **CI licence-lint gate**<br>Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16. | M | build | `REQ-LIC-2` `REQ-LIC-3` |
 | **REPO-3** | **LGPL-only FFmpeg build with component audit**<br>A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact. | M | `ADOPT` | `REQ-LIC-6` `REQ-LIC-7` |
+| **REPO-4** | **Assert release artifacts stay separate**<br>ADR-006's whole position rests on never shipping a combined installer. The realistic way that is lost is not a court but a well-meaning convenience build. Add a release-time check that no artifact contains both the Apache-2.0 venue layer and the GPL engine, plus a DCO check on pull requests. | S | build | `REQ-LIC-8` `REQ-LIC-9` |
 
 ---
 
@@ -123,7 +124,7 @@ Fork Karaoke Eternal (ISC) — it already implements QR join, rooms and a dynami
 | ✅ **CRW-4** | **Voting with one-vote-per-patron**<br>Enforced by a uniqueness constraint, not UI logic. | S | build | `REQ-SCH-17` |
 | ✅ **CRW-5** | **Staff override console**<br>Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9. | M | build | `REQ-API-5` `REQ-API-6` |
 | ✅ **CRW-6** | **Venue display screen**<br>Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms. | M | `ADOPT` | `REQ-DAT-11` |
-| **DISP-1** | **QR code on the venue display**<br>Needs a vetted QR encoder. A hand-rolled one was written and removed after a real decoder proved it did not scan; a QR that fails in a venue is worse than none, since joining is the display screen’s entire purpose. Until then the join affordance is a plain URL, which always works. | S | `ADOPT` | `REQ-DAT-11` |
+| ✅ **DISP-1** | **QR code on the venue display**<br>Needs a vetted QR encoder. A hand-rolled one was written and removed after a real decoder proved it did not scan; a QR that fails in a venue is worse than none. DONE — clients/lib/qr.js implements ISO/IEC 18004 byte mode, versions 1-10, all four ECC levels, with zero runtime dependencies. The second attempt failed too at first: format information was transposed (rows and columns swapped) and the version-information generator polynomial was ten bits instead of thirteen. Both were found by diffing against an independent encoder and solving the bit mapping empirically rather than writing it from memory again. Verified end to end: 19 tests encode, rasterise and decode with jsQR (a dev-only oracle), and the QR as actually painted by the venue display decodes at 120-300px. | S | `ADOPT` | `REQ-DAT-11` |
 
 ### E6 · Public API and clients
 
