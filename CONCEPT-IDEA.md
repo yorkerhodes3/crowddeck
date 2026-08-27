@@ -43,8 +43,8 @@ output. They land in a **staging lane**. When a DJ is present, they approve, reo
 When no DJ is present, an autonomous mixer drains the same lane with beatmatched transitions. One queue,
 two consumers. This is the part nobody has implemented.
 
-**The build/fork position.** Fork three projects, adopt roughly twenty as dependencies, study a dozen more,
-and explicitly refuse five. Details in §5.
+**The build/fork position.** Fork three projects, adopt twenty as dependencies, study eleven more, and
+explicitly refuse seven. Details in §5.
 
 **The decision that must be made first.** The most valuable code to reuse carries the strongest copyleft.
 The licence structure is an architecture decision and it must be settled in `SPECIFICATION.md` before any
@@ -312,10 +312,10 @@ dashboard. Priorities below are **proposals for `SPECIFICATION.md` review**, not
 | # | Domain | Count | P0 | Character |
 |---|---|---|---|---|
 | A | Performance Engine | 11 | 5 | Hard real-time. Native. Table stakes from the DJ tier. |
-| B | Venue & Crowd Plane | 12 | 5 | The TouchTunes half. Largely greenfield in open source. |
+| B | Venue & Crowd Plane | 12 | 6 | The TouchTunes half. Largely greenfield in open source. |
 | C | **Fusion Layer** | 6 | 3 | **The actual novelty. No prior art anywhere.** |
 | D | MIDI & Interconnection | 10 | 4 | First-class subsystem, not a settings page. |
-| E | Content & Catalog | 8 | 4 | Pluggable, because licensing differs per deployment. |
+| E | Content & Catalog | 8 | 3 | Pluggable, because licensing differs per deployment. |
 | F | Show Control | 4 | 0 | Lighting, multi-zone, video. Mostly integration work. |
 | G | Platform & Operations | 6 | 4 | What makes it deployable rather than a demo. |
 | H | Licensing & Governance | 5 | 3 | The part hobby projects skip and venues get fined for. |
