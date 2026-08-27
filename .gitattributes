@@ -1,0 +1,10 @@
+# Normalise line endings in the repository so diffs stay clean across platforms.
+* text=auto eol=lf
+
+# Third-party source is kept exactly as fetched from upstream. PROVENANCE.md claims
+# these files are byte-for-byte unmodified, so line-ending normalisation must not
+# touch them — otherwise the claim is quietly false and the citations lose their point.
+spike/mixxx-src/** -text
+
+# Generated bundle: keep it out of diffs, it is rebuilt by tools/build-data.mjs.
+docs/data/bundle.js linguist-generated=true
