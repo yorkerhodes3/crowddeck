@@ -1,15 +1,17 @@
 # DECISIONS.md — Phase 2 unblocking decisions
 
-**Status:** 🟡 **Proposed — awaiting sign-off.** These are recommendations, not ratified decisions.
-**Date:** 2026-08-27
+**Status:** ✅ **Accepted — ratified 2026-08-27.** All five recommendations approved as written.
+**Date proposed:** 2026-08-27 · **Date ratified:** 2026-08-27
 **Context:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) §11 raised five questions blocking `SPECIFICATION.md`.
+**Consequence:** [`SPECIFICATION.md`](SPECIFICATION.md) is written against this ratified set.
 
-Each decision below states a recommendation, a confidence level, the reasoning, **what would change my
-mind**, and the consequences that flow into the specification. Sign off, amend, or reject each one; the
-specification can then be written against the ratified set.
+Each decision below states the ratified position, a confidence level, the reasoning, **what would change
+it**, and the consequences that flow into the specification. Superseding any of these requires a new ADR
+rather than an edit in place.
 
 > ⚠️ **Not legal advice.** ADR-001 in particular describes a widely-practised interpretation of the GPL
 > that is not universally settled. Obtain competent legal review before first public distribution.
+> **This remains an open action item**, tracked as `LEGAL-1` in [`BACKLOG.md`](BACKLOG.md).
 
 ---
 
@@ -41,7 +43,7 @@ Both put the expensive-to-retrofit structure in v1 while leaving the expensive-t
 
 ## ADR-001 — Licence structure
 
-### ✅ Recommendation: **Split.** Apache-2.0 core, GPL-2.0-or-later engine plane, separated by IPC.
+### ✅ Ratified: **Split.** Apache-2.0 core, GPL-2.0-or-later engine plane, separated by IPC.
 
 **Confidence: High.**
 
@@ -100,7 +102,7 @@ engine/          SPDX: GPL-2.0-or-later   ← Mixxx-derived, Qt allowed, Link/Ru
 
 Physical directory separation so the boundary is visible in every diff and every PR.
 
-### What would change my mind
+### What would reverse this
 
 - If legal review finds the IPC boundary insufficiently defensible in target jurisdictions → fall back to
   single GPL and accept the loss of venue-layer reuse.
@@ -111,7 +113,7 @@ Physical directory separation so the boundary is visible in every diff and every
 
 ## ADR-002 — Engine: fork Mixxx or build new?
 
-### ✅ Recommendation: **Fork Mixxx and extract a headless engine — but build it second, not first.**
+### ✅ Ratified: **Fork Mixxx and extract a headless engine — but build it second, not first.**
 
 **Confidence: High on forking. High on the sequencing, which matters just as much.**
 
@@ -172,7 +174,7 @@ Fork **thin**. Delete the UI aggressively rather than carrying it. Contribute fi
 are general, so divergence stays manageable — which is also why ADR-001 keeps our fork at
 GPL-2.0-or-later rather than narrowing it.
 
-### What would change my mind
+### What would reverse this
 
 - If extracting headless Mixxx proves harder than a **~6-week spike** suggests, reconsider: build a
   permissive engine on miniaudio/PortAudio + SoundTouch + librosa-derived analysis, accepting no DVS and
@@ -183,7 +185,7 @@ GPL-2.0-or-later rather than narrowing it.
 
 ## ADR-003 — Is paid priority (Fast Pass) in v1?
 
-### ✅ Recommendation: **Build the priority *model* in v1. Ship no payment rails in v1.**
+### ✅ Ratified: **Build the priority *model* in v1. Ship no payment rails in v1.**
 
 **Confidence: High.**
 
@@ -209,7 +211,7 @@ Building the model without the rails also **keeps the door open for non-monetary
 deployments will prefer: staff boosts, birthday/regular perks, loyalty redemption, happy-hour multipliers.
 Those need the same ordering machinery and carry none of the payment risk.
 
-### What would change my mind
+### What would reverse this
 
 - If a launch venue partner needs revenue on day one, promote a **single** payment provider into v1 — but
   only behind the adapter interface, never inlined into the scheduler.
@@ -218,7 +220,7 @@ Those need the same ordering machinery and carry none of the payment risk.
 
 ## ADR-004 — Single-venue appliance or multi-tenant from the start?
 
-### ✅ Recommendation: **Single-venue appliance. `venue_id` in the schema from day one. Multi-venue later as *federation*, not multi-tenancy.**
+### ✅ Ratified: **Single-venue appliance. `venue_id` in the schema from day one. Multi-venue later as *federation*, not multi-tenancy.**
 
 **Confidence: High**, and the third clause is the part that matters most.
 
@@ -253,7 +255,7 @@ API (`/v1/venues/{id}/...`) from day one so client URLs never have to change.
 **Explicitly out of v1:** cross-venue queries, tenant isolation testing, per-tenant billing, the operator
 console itself.
 
-### What would change my mind
+### What would reverse this
 
 - If the first real customer is a **multi-site operator** rather than a single venue, build the federation
   aggregator earlier — but still as an aggregator over appliances, not as shared-database multi-tenancy.
@@ -262,7 +264,7 @@ console itself.
 
 ## ADR-005 — Native Qt shell or thin native engine plus web consoles?
 
-### ✅ Recommendation: **Thin native engine + web consoles.** The engine owns every real-time path; all three consoles are web.
+### ✅ Ratified: **Thin native engine + web consoles.** The engine owns every real-time path; all three consoles are web.
 
 **Confidence: Medium-High.** The lowest-confidence of the five, and the one most worth revisiting after a
 DJ console prototype.
@@ -304,7 +306,7 @@ Mitigations: serve the console **locally from the engine process** so it works w
 external browser dependency; render waveforms from engine-pushed state over WebSocket; and keep every
 latency-sensitive control path in the engine where it belongs.
 
-### What would change my mind
+### What would reverse this
 
 - If a DJ console prototype shows **visual** feedback lag bad enough to disrupt beatmatching even with
   hardware attached, reconsider a native console for the DJ surface only — keeping patron and operator on
@@ -315,7 +317,7 @@ latency-sensitive control path in the engine where it belongs.
 
 ## Summary
 
-| # | Decision | Recommendation | Confidence |
+| # | Decision | Ratified position | Confidence |
 |---|---|---|---|
 | 001 | Licence structure | **Split** — Apache-2.0 core + GPL-2.0-or-later engine across a hard IPC boundary, enforced by CI licence-lint | High |
 | 002 | Engine | **Fork Mixxx**, extract headless via its existing Control bus — but **contract-first, stub second, fork third** | High |
@@ -323,7 +325,7 @@ latency-sensitive control path in the engine where it belongs.
 | 004 | Deployment | **Single-venue appliance**, `venue_id` everywhere, multi-venue later as **federation of appliances** | High |
 | 005 | Client architecture | **Thin native engine + web consoles**; controller input bypasses the UI, so web latency is cosmetic | Medium-High |
 
-### Recommended next step before ratifying
+### Highest-value next action
 
 One **~6-week headless-Mixxx spike** (ADR-002) is the highest-value de-risking action available. It tests
 the assumption the whole plan rests on — that the engine can be extracted behind a socket protocol at

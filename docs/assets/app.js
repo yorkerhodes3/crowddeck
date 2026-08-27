@@ -6,7 +6,9 @@
     competitors: "data/competitors.json",
     oss: "data/oss-inventory.json",
     capabilities: "data/capabilities.json",
-    sources: "data/sources.json"
+    sources: "data/sources.json",
+    requirements: "data/requirements.json",
+    backlog: "data/backlog.json"
   };
 
   function el(tag, cls, text) {
@@ -65,9 +67,194 @@
     renderOss(data.oss);
     renderContentSources(data.sources);
     renderInterconnect(data.sources);
+    renderRequirements(data.requirements);
+    renderBacklog(data.backlog, data.requirements);
     document.querySelectorAll("[data-generated]").forEach(function (n) {
       n.textContent = data.competitors.generated || "";
     });
+  }
+
+  /* ------------------------ requirements ---------------------------- */
+  function renderRequirements(rq) {
+    var host = document.querySelector('[data-render="requirements"]');
+    if (!host || !rq) return;
+
+    var summary = el("div", "grid g3");
+    [
+      [String(rq.counts.total), "requirements"],
+      [String(rq.counts.must), "are MUST"],
+      [String(rq.counts.acceptance), "acceptance criteria"]
+    ].forEach(function (s) {
+      var d = el("div", "stat");
+      d.appendChild(el("b", null, s[0]));
+      d.appendChild(el("span", null, s[1]));
+      summary.appendChild(d);
+    });
+    host.appendChild(summary);
+
+    var state = { group: "ALL", q: "" };
+    var controls = el("div", "controls");
+
+    var allBtn = el("button", "chipbtn", "All groups");
+    allBtn.setAttribute("aria-pressed", "true");
+    controls.appendChild(allBtn);
+    var btns = [allBtn];
+    allBtn.addEventListener("click", function () { pick(allBtn, "ALL"); });
+
+    rq.groups.filter(function (g) { return g.count > 0; }).forEach(function (g) {
+      var b = el("button", "chipbtn", g.id + " (" + g.count + ")");
+      b.title = g.name;
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () { pick(b, g.id); });
+      controls.appendChild(b);
+      btns.push(b);
+    });
+
+    function pick(btn, g) {
+      state.group = g;
+      btns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      draw();
+    }
+
+    var search = el("input", "searchbox");
+    search.type = "search";
+    search.placeholder = "Filter requirements…";
+    search.addEventListener("input", function () { state.q = search.value.toLowerCase(); draw(); });
+    controls.appendChild(search);
+    var count = el("span", "countnote");
+    controls.appendChild(count);
+    host.appendChild(controls);
+
+    var wrap = el("div", "tablewrap");
+    var table = el("table");
+    var thead = el("thead");
+    var hr = el("tr");
+    ["ID", "Level", "Section", "Requirement", "Caps"].forEach(function (h) {
+      hr.appendChild(el("th", null, h));
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = el("tbody");
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    host.appendChild(wrap);
+
+    function draw() {
+      tbody.innerHTML = "";
+      var n = 0;
+      rq.requirements.forEach(function (r) {
+        if (state.group !== "ALL" && r.group !== state.group) return;
+        var hay = (r.id + " " + r.section + " " + r.text).toLowerCase();
+        if (state.q && hay.indexOf(state.q) === -1) return;
+        n++;
+        var tr = el("tr");
+        tr.appendChild(el("td", "name mono", r.id));
+        var lvl = el("td");
+        lvl.appendChild(chip(r.level, r.level === "MUST" ? "chip-P0" : r.level === "SHOULD" ? "chip-P1" : "chip-P2"));
+        tr.appendChild(lvl);
+        tr.appendChild(el("td", "small", r.section));
+        var txt = el("td", "small", r.text);
+        txt.style.minWidth = "420px";
+        tr.appendChild(txt);
+        tr.appendChild(el("td", "mono", r.capabilities.join(" ") || "—"));
+        tbody.appendChild(tr);
+      });
+      count.textContent = n + " of " + rq.counts.total;
+    }
+    draw();
+  }
+
+  /* --------------------------- backlog ------------------------------ */
+  function renderBacklog(bl, rq) {
+    var host = document.querySelector('[data-render="backlog"]');
+    if (!host || !bl) return;
+
+    var stories = bl.epics.reduce(function (a, e) { return a + e.stories.length; }, 0);
+    var cited = {};
+    bl.epics.forEach(function (e) {
+      e.stories.forEach(function (s) { s.reqs.forEach(function (r) { cited[r] = 1; }); });
+    });
+
+    var summary = el("div", "grid g3");
+    [
+      [String(bl.epics.length), "epics"],
+      [String(stories), "stories"],
+      [Object.keys(cited).length + " / " + (rq ? rq.counts.total : "?"), "requirements covered"]
+    ].forEach(function (s) {
+      var d = el("div", "stat");
+      d.appendChild(el("b", null, s[0]));
+      d.appendChild(el("span", null, s[1]));
+      summary.appendChild(d);
+    });
+    host.appendChild(summary);
+
+    bl.milestones.forEach(function (m) {
+      var epics = bl.epics.filter(function (e) { return e.milestone === m.id; });
+      if (!epics.length) return;
+
+      var d = el("details", "dom");
+      if (m.id === "M0" || m.id === "M2") d.open = true;
+      var sm = el("summary");
+      sm.appendChild(document.createTextNode(m.id + " — " + m.name));
+      var cnt = epics.reduce(function (a, e) { return a + e.stories.length; }, 0);
+      sm.appendChild(el("span", "cnt", cnt + " stories"));
+      d.appendChild(sm);
+
+      var db = el("div", "dombody");
+      db.appendChild(el("div", "domsum", m.goal));
+
+      epics.forEach(function (epic) {
+        var eh = el("h4");
+        eh.textContent = epic.id + " · " + epic.name;
+        eh.style.marginBottom = "4px";
+        db.appendChild(eh);
+        db.appendChild(el("div", "small", epic.why));
+
+        epic.stories.forEach(function (s) {
+          var row = el("div", "cap");
+          var head = el("div", "caphead");
+          head.appendChild(el("span", "capid", s.id));
+          head.appendChild(el("span", "capname", s.name));
+          head.appendChild(chip(s.size, "chip-tier"));
+          if (s.verdict) head.appendChild(chip(s.verdict, "chip-" + s.verdict));
+          row.appendChild(head);
+          row.appendChild(el("div", "capnote", s.detail));
+          row.appendChild(el("div", "capfrom", s.reqs.join(" · ")));
+          db.appendChild(row);
+        });
+      });
+
+      d.appendChild(db);
+      host.appendChild(d);
+    });
+
+    var defTitle = el("h3", null, "Deferred");
+    host.appendChild(defTitle);
+    host.appendChild(el("p", "small",
+      "Recorded so they are not silently forgotten, and not re-litigated during planning."));
+    var wrap = el("div", "tablewrap");
+    var table = el("table");
+    var thead = el("thead");
+    var hr = el("tr");
+    ["Item", "When", "Why"].forEach(function (h) { hr.appendChild(el("th", null, h)); });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = el("tbody");
+    bl.deferred.forEach(function (x) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "name", x.item));
+      var w = el("td");
+      w.appendChild(chip(x.when, x.when === "not planned" ? "chip-AVOID" : "chip-tier"));
+      tr.appendChild(w);
+      var why = el("td", "small", x.why);
+      why.style.minWidth = "380px";
+      tr.appendChild(why);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    host.appendChild(wrap);
   }
 
   /* ---------------------------- stats ------------------------------- */
@@ -76,15 +263,13 @@
     if (!host) return;
     var caps = 0;
     data.capabilities.domains.forEach(function (d) { caps += d.capabilities.length; });
-    var byVerdict = {};
-    data.oss.items.forEach(function (i) { byVerdict[i.verdict] = (byVerdict[i.verdict] || 0) + 1; });
 
     var stats = [
       [String(data.competitors.products.length - 1), "products analysed"],
       [String(data.oss.items.length), "open-source projects triaged"],
       [String(caps), "capabilities in the merged set"],
-      [String(byVerdict.FORK || 0) + " / " + String(byVerdict.ADOPT || 0), "to fork / to adopt"],
-      [String(byVerdict.AVOID || 0), "flagged do-not-use"]
+      [data.requirements ? String(data.requirements.counts.total) : "—", "requirements specified"],
+      [data.backlog ? String(backlogStories(data.backlog)) : "—", "stories sequenced"]
     ];
     stats.forEach(function (s) {
       var d = el("div", "stat");
@@ -92,6 +277,10 @@
       d.appendChild(el("span", null, s[1]));
       host.appendChild(d);
     });
+  }
+
+  function backlogStories(bl) {
+    return bl.epics.reduce(function (a, e) { return a + e.stories.length; }, 0);
   }
 
   /* --------------------------- matrix ------------------------------- */

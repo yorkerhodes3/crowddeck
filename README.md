@@ -3,10 +3,11 @@
 **An open-source venue runtime that runs a professional DJ deck engine and a TouchTunes-style crowd request
 jukebox on one scheduler, one library and one clock — wired together by MIDI.**
 
-> ## 📊 [**View the concept dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
+> ## 📊 [**View the project dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
 >
-> The dashboard is the recommended way to read this research: an interactive capability matrix, a filterable
-> open-source triage table, and the proposed architecture.
+> The dashboard is the recommended way to read this project: an interactive capability matrix, a filterable
+> open-source triage table, the proposed architecture, and browsable views of all 117 requirements and 59
+> backlog stories.
 
 ---
 
@@ -14,17 +15,17 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 
 | Phase | Artefact | State |
 |---|---|---|
-| **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ **Complete** |
-| **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | 🟡 **Recommendations proposed — awaiting sign-off** |
-| 2 — Specification | [`SPECIFICATION.md`](SPECIFICATION.md) | ⏳ Ready to draft once decisions are ratified |
-| 3 — Backlog | [`BACKLOG.md`](BACKLOG.md) | 🔒 Blocked on Phase 2 |
+| **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
+| **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ **Ratified 2026-08-27** |
+| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 117 requirements, 18 acceptance criteria |
+| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 59 stories, 117/117 traced |
 
-**Nothing is built yet.** This repository is a research artefact supporting a build decision, plus the
-dashboard that explains it.
+**Nothing is built yet.** This repository is the planning record for a build decision, plus the dashboard
+that explains it. The next step is `SPIKE-1`, not more documents.
 
-### The five decisions on the table
+### The five ratified decisions
 
-| ADR | Question | Recommendation |
+| ADR | Question | Decision |
 |---|---|---|
 | [001](DECISIONS.md#adr-001--licence-structure) | Licence structure | **Split** — Apache-2.0 core + GPL-2.0-or-later engine across a hard IPC boundary |
 | [002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new) | Engine | **Fork Mixxx** headless — but contract-first, stub second, fork third |
@@ -32,7 +33,15 @@ dashboard that explains it.
 | [004](DECISIONS.md#adr-004--single-venue-appliance-or-multi-tenant-from-the-start) | Deployment | **Single-venue appliance**; multi-venue later as federation, not multi-tenancy |
 | [005](DECISIONS.md#adr-005--native-qt-shell-or-thin-native-engine-plus-web-consoles) | Client architecture | **Thin native engine + web consoles** |
 
-Rationale, confidence levels and what would change each recommendation: [`DECISIONS.md`](DECISIONS.md).
+Two verified findings shaped these. Mixxx and Ableton Link are both GPL-2.0-**or-later**, which removes the
+Apache/GPL-2.0 incompatibility that would have made the split licence fragile. And Mixxx's
+`ControlObjectScript` bus already drives the whole engine from a scripting layer, so headless extraction is
+largely adding a transport over a proven abstraction.
+
+### What happens next
+
+`SPIKE-1` — a ~6-week headless-Mixxx extraction spike. It tests the one assumption the whole plan rests on,
+and its output *is* the CDEP contract. `LEGAL-1`, review of the licence boundary, runs alongside it.
 
 ---
 
@@ -80,22 +89,39 @@ Raw findings are preserved in [`research/`](research/).
 
 ```
 CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
-DECISIONS.md             Five ADRs unblocking Phase 2 — proposed, awaiting sign-off
-SPECIFICATION.md         Phase 2 — ready to draft once decisions are ratified
-BACKLOG.md               Phase 3 — gated stub
+DECISIONS.md             Five ratified ADRs
+SPECIFICATION.md         117 requirements, 18 acceptance criteria (source of truth)
+BACKLOG.md               Generated — 11 epics, 59 stories
 docs/
   index.html             Interactive dashboard explainer (GitHub Pages root)
   assets/                styles.css, app.js — no external dependencies
-  data/                  Structured research data, reusable by later phases
+  data/                  Structured data, reusable by later phases
     competitors.json       11 products x 7 capability axes
     capabilities.json      8 domains, 62 capabilities, each traced to its source
     oss-inventory.json     41 projects triaged FORK / ADOPT / REFERENCE / AVOID
     sources.json           Content sources + interconnect protocols
+    requirements.json      Generated from SPECIFICATION.md
+    backlog.json           Epics and stories (source of truth for BACKLOG.md)
     bundle.js              Generated — lets the dashboard work over file:// too
 tools/
-  build-data.mjs         Regenerates docs/data/bundle.js from the JSON
+  extract-requirements.mjs  SPECIFICATION.md  → docs/data/requirements.json
+  build-backlog.mjs         backlog.json      → BACKLOG.md, validates traceability
+  build-data.mjs            docs/data/*.json  → docs/data/bundle.js
 research/                Raw Tavily findings and GitHub API output
 ```
+
+### Generated files and the direction of truth
+
+Two flows, deliberately in opposite directions:
+
+- **`SPECIFICATION.md` → `requirements.json`.** The prose document is authoritative; the JSON is extracted
+  from it, so the dashboard can never disagree with the spec.
+- **`backlog.json` → `BACKLOG.md`.** The structured data is authoritative because the backlog is tabular;
+  the markdown is rendered from it.
+
+`build-backlog.mjs` **validates traceability** and exits non-zero if a story cites a requirement that does
+not exist in the specification, or an unknown fork/adopt verdict. All three scripts run in CI, so a broken
+reference fails the build rather than rotting quietly.
 
 The dashboard is deliberately **dependency-free** — no CDN, no build step, no framework. It renders from the
 JSON in `docs/data/`, so the same data can drive `SPECIFICATION.md` and `BACKLOG.md` tooling later.
@@ -112,13 +138,15 @@ python -m http.server -d docs 8080
 Then open <http://localhost:8080>. Opening `docs/index.html` directly from disk also works, because
 `docs/data/bundle.js` carries the data past the browser's `file://` fetch restriction.
 
-After editing anything in `docs/data/*.json`, regenerate the bundle:
+After editing `docs/data/*.json` or `SPECIFICATION.md`, regenerate:
 
 ```bash
-node tools/build-data.mjs
+node tools/extract-requirements.mjs   # SPECIFICATION.md -> requirements.json
+node tools/build-backlog.mjs          # backlog.json -> BACKLOG.md (+ traceability check)
+node tools/build-data.mjs             # *.json -> bundle.js
 ```
 
-The script validates every JSON file and fails loudly on a syntax error, so it doubles as a data linter.
+Each script validates its inputs and fails loudly, so together they act as a data linter.
 
 ---
 
@@ -126,9 +154,10 @@ The script validates every JSON file and fails loudly on a syntax error, so it d
 
 [Apache-2.0](LICENSE), covering the research, dashboard and scaffolding in this repository.
 
-The licence structure for the *product* is addressed in [`DECISIONS.md`](DECISIONS.md) ADR-001 — the
-recommendation is a split model where a Mixxx-derived performance plane is GPL-2.0-or-later and everything
-else stays Apache-2.0 across a hard IPC boundary. It is proposed, not ratified.
+The *product* licence is settled in [`DECISIONS.md`](DECISIONS.md) ADR-001: a split model where the
+Mixxx-derived performance plane is GPL-2.0-or-later and everything else stays Apache-2.0 across a hard IPC
+boundary, mechanically enforced by a CI licence-lint gate. `LEGAL-1` in the backlog tracks the outstanding
+legal review before any public distribution.
 
 ---
 

@@ -6,6 +6,7 @@ on:
     paths:
       - "docs/**"
       - "tools/**"
+      - "SPECIFICATION.md"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -28,16 +29,24 @@ jobs:
         with:
           node-version: "24"
 
-      # Validates every JSON file and regenerates the bundle the dashboard loads.
-      # Fails the build on a syntax error, so it doubles as a data linter.
+      # Regenerates requirements from SPECIFICATION.md, validates backlog
+      # traceability (fails if a story cites a requirement that doesn't exist),
+      # then bundles the JSON the dashboard loads. Doubles as a data linter.
+      - name: Extract requirements from SPECIFICATION.md
+        run: node tools/extract-requirements.mjs
+
+      - name: Build backlog and validate traceability
+        run: node tools/build-backlog.mjs
+
       - name: Build data bundle
         run: node tools/build-data.mjs
 
-      - name: Verify bundle is current
+      - name: Verify generated files are current
         run: |
-          if ! git diff --quiet -- docs/data/bundle.js; then
-            echo "::warning::docs/data/bundle.js was stale and has been regenerated for this deploy."
-            echo "Run 'node tools/build-data.mjs' and commit the result."
+          if ! git diff --quiet -- docs/data/ BACKLOG.md; then
+            echo "::warning::Generated files were stale and have been regenerated for this deploy."
+            echo "Run the tools/ scripts locally and commit the result."
+            git diff --stat -- docs/data/ BACKLOG.md
           fi
 
       - uses: actions/configure-pages@v5

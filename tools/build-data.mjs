@@ -18,7 +18,9 @@ const files = {
   competitors: "competitors.json",
   oss: "oss-inventory.json",
   capabilities: "capabilities.json",
-  sources: "sources.json"
+  sources: "sources.json",
+  requirements: "requirements.json",
+  backlog: "backlog.json"
 };
 
 const bundle = {};

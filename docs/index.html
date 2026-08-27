@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CrowdDeck — Concept Dashboard</title>
-<meta name="description" content="Competitive research and concept analysis for CrowdDeck: an open-source venue runtime that fuses a professional DJ deck engine, a TouchTunes-style crowd request jukebox, and MIDI-based systems interconnection.">
+<title>CrowdDeck — Project Dashboard</title>
+<meta name="description" content="CrowdDeck: an open-source venue runtime that fuses a professional DJ deck engine, a TouchTunes-style crowd request jukebox, and MIDI-based systems interconnection. Research, decisions, specification and backlog.">
 <link rel="stylesheet" href="assets/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%234dd4ac'/><circle cx='50' cy='50' r='12' fill='%230a0c12'/></svg>">
 </head>
@@ -16,7 +16,7 @@
     <nav class="links">
       <a href="#thesis">Thesis</a>
       <a href="#landscape">Landscape</a>
-      <a href="#jukebox">Jukebox model</a>
+      <a href="#jukebox">Jukebox</a>
       <a href="#capabilities">Capabilities</a>
       <a href="#oss">Open source</a>
       <a href="#content">Content</a>
@@ -24,6 +24,8 @@
       <a href="#architecture">Architecture</a>
       <a href="#licence">Licence</a>
       <a href="#roadmap">Decisions</a>
+      <a href="#spec">Spec</a>
+      <a href="#backlog">Backlog</a>
     </nav>
     <span class="spacer"></span>
     <a class="ghlink" href="https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md">DECISIONS.md →</a>
@@ -31,7 +33,7 @@
 </header>
 
 <div class="wrap hero">
-  <span class="eyebrow">Concept Phase · Research Complete</span>
+  <span class="eyebrow">Concept → Decisions → Spec → Backlog · All Phases Complete</span>
   <h1>The DJ booth and the jukebox have never shared <em>one machine</em>.</h1>
   <p class="lede">
     CrowdDeck is a concept for an open-source venue runtime that runs a professional multi-deck DJ engine
@@ -529,6 +531,7 @@
   <div class="wrap">
     <div class="sec-num">10 — PROJECT GATES</div>
     <h2>Where this sits in the pipeline</h2>
+    <p>All four phases are complete. What follows is the de-risking work, not more planning.</p>
     <div class="gates">
       <div class="gate done">
         <span class="status">✅</span>
@@ -537,22 +540,22 @@
         <p>Competitive research, capability synthesis, open-source triage, architecture and licence options. This dashboard is its companion.</p>
       </div>
   <div class="gate done">
-    <span class="status">🟡</span>
-    <div class="ph">Phase 1.5 · proposed</div>
+    <span class="status">✅</span>
+    <div class="ph">Phase 1.5 · ratified</div>
     <h4>DECISIONS.md</h4>
-    <p>Five ADRs answering the questions that blocked Phase 2, each with a confidence level and what would change the recommendation. Awaiting sign-off.</p>
+    <p>Five ADRs answering the questions that blocked Phase 2, each with a confidence level and what would reverse it. Ratified 2026-08-27.</p>
       </div>
-      <div class="gate locked">
-    <span class="status">⏳</span>
-    <div class="ph">Phase 2 · ready to draft</div>
+  <div class="gate done">
+    <span class="status">✅</span>
+    <div class="ph">Phase 2 · complete</div>
     <h4>SPECIFICATION.md</h4>
-    <p>Converts the capability set into testable requirements. Its first section is the engine IPC contract, because that contract is what everything else is built against.</p>
+    <p>117 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
       </div>
-  <div class="gate locked">
-    <span class="status">🔒</span>
-    <div class="ph">Phase 3 · gated on spec</div>
+  <div class="gate done">
+    <span class="status">✅</span>
+    <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>Sequenced, estimated work items derived from the specification, with fork-vs-build already settled per item.</p>
+    <p>11 epics, 59 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -565,17 +568,90 @@
     <li><strong>Deployment</strong> — single-venue appliance, <span class="mono">venue_id</span> everywhere, multi-venue later as federation over appliances rather than shared-database multi-tenancy. Offline-first (G1) essentially forces this.</li>
     <li><strong>Client architecture</strong> — thin native engine plus web consoles. Controller input reaches the engine directly, so web UI latency is cosmetic rather than functional.</li>
   </ol>
-  <p style="margin: 12px 0 0;">Full rationale, confidence levels and what would change each recommendation are in
+  <p style="margin: 12px 0 0;">All five ratified 2026-08-27. Full rationale, confidence levels and what would reverse each one are in
   <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md">DECISIONS.md</a>.</p>
 </div>
+  </div>
+</section>
+
+<!-- ========================= SPECIFICATION ========================== -->
+<section id="spec">
+  <div class="wrap">
+    <div class="sec-num">11 — SPECIFICATION</div>
+    <h2>117 requirements, traced to the research</h2>
+    <p>
+      Phase 2 converts the capability set into testable requirements against the five ratified decisions.
+      The first section written was the <strong>engine IPC contract</strong>, because everything else is
+      built against it and because a contract must be shaped by its consumer rather than by the fork.
+      This table is generated directly from
+      <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/SPECIFICATION.md">SPECIFICATION.md</a>,
+      so it cannot drift from the document.
+    </p>
+
+    <div class="grid g2">
+      <div class="card accent">
+        <h4>CDEP — the engine protocol</h4>
+        <p>Newline-delimited JSON over a local socket, addressing controls by <span class="mono">(group, item)</span>
+        exactly as Mixxx's Control bus does. It is <strong>self-describing</strong>: <span class="mono">describe</span>
+        returns every control with a full descriptor, so both the UI and the MIDI mapping target list are
+        generated with no hard-coded engine knowledge. Deliberately arms-length — no shared memory, no
+        GPL-defined structures — because that generality is a licence requirement, not a style choice.</p>
+      </div>
+      <div class="card accent">
+        <h4>The rule the architecture exists to protect</h4>
+        <p><strong>The audio thread must never block on IPC.</strong> If a client stops reading its socket,
+        the engine drops coalesced updates rather than waiting. A stalled browser tab, a crashed fusion core
+        or a wedged network client cannot glitch the room's audio. That single guarantee is why the two
+        planes are separate processes.</p>
+      </div>
+    </div>
+
+    <h3>The scheduler, in one formula</h3>
+    <p>
+      Votes and paid boosts are two inputs to <em>one</em> ordering function, which is what lets payments
+      arrive in v1.1 with no scheduler change. The aging term is not a nicety — without it an unpopular
+      request never plays, so anti-starvation is a correctness property.
+    </p>
+    <div class="archwrap" style="padding: 22px 24px;">
+      <div class="mono" style="font-size: 13.5px; line-height: 2; color: var(--txt);">
+        priority_score = (votes × <span style="color:var(--accent)">VOTE_WEIGHT</span>)
+        + (boost_units × <span style="color:var(--accent-2)">BOOST_WEIGHT</span>)
+        + <span style="color:var(--warn)">age_bonus</span><br>
+        <span style="color:var(--warn)">age_bonus</span> = floor(minutes_waiting / AGING_INTERVAL) × AGING_WEIGHT
+      </div>
+    </div>
+
+    <div data-render="requirements"></div>
+  </div>
+</section>
+
+<!-- ============================ BACKLOG ============================= -->
+<section id="backlog">
+  <div class="wrap">
+    <div class="sec-num">12 — BACKLOG</div>
+    <h2>Sequenced so the risky part comes first</h2>
+    <p>
+      Ordering follows ADR-002 — <strong>contract first, stub engine second, Mixxx fork third</strong>.
+      The fusion layer has no prior art anywhere, so it is proven against a throwaway stub engine before
+      committing to fork surgery. The stub then stays permanently as the proof that the engine is
+      replaceable, which is the property the licence split depends on.
+    </p>
+    <div class="callout">
+      <strong>Traceability is enforced, not asserted.</strong> Every story cites the requirements it
+      satisfies, and <span class="mono">tools/build-backlog.mjs</span> fails the build if a story references
+      a requirement that does not exist in the specification. All <strong>117 of 117</strong> requirements
+      are currently covered.
+    </div>
+    <div data-render="backlog"></div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
     <p>
-      <strong>CrowdDeck — CONCEPT-IDEA phase.</strong> Nothing here is built yet; this is a research artefact
-      supporting a build decision.
+      <strong>CrowdDeck — planning complete, build not started.</strong> Concept research, five ratified
+      decisions, 117 specified requirements and a 59-story sequenced backlog. No product code exists yet;
+      the next step is the de-risking spike, not another document.
     </p>
     <p>
       Competitive and technical research gathered via the Tavily search API across 56 queries. Open-source

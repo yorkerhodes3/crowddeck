@@ -1,0 +1,176 @@
+{
+  "generated": "2026-08-27",
+  "source": "BACKLOG.md",
+  "note": "Sequenced work items for CrowdDeck v1. Sizes are t-shirt estimates for a small team, not commitments. 'verdict' cites the OSS triage in oss-inventory.json; 'reqs' cite SPECIFICATION.md.",
+  "sizes": { "S": "≤1 week", "M": "1-3 weeks", "L": "3-6 weeks", "XL": "6-12 weeks" },
+  "milestones": [
+    { "id": "M0", "name": "De-risk", "goal": "Prove the two load-bearing assumptions before committing to the build." },
+    { "id": "M1", "name": "Walking skeleton", "goal": "One queue drains to audio through CDEP, with no Mixxx involved." },
+    { "id": "M2", "name": "The fusion layer", "goal": "The novelty: staging lane, autonomous drain, handoff, never-silent." },
+    { "id": "M3", "name": "Crowd plane", "goal": "Patrons can actually use it: QR join, position in line, votes, fairness." },
+    { "id": "M4", "name": "Real engine", "goal": "Swap the stub for the Mixxx-derived engine behind the same contract." },
+    { "id": "M5", "name": "Interconnect", "goal": "MIDI in, clock out, instruments in time." },
+    { "id": "M6", "name": "Venue-ready", "goal": "Policy, licensing, offline, deploy — the things that make a venue keep it switched on." }
+  ],
+  "epics": [
+    {
+      "id": "E0",
+      "milestone": "M0",
+      "name": "De-risking spikes",
+      "why": "Two assumptions carry the plan. Both are cheap to test and expensive to get wrong.",
+      "stories": [
+        { "id": "SPIKE-1", "name": "Headless Mixxx extraction spike", "size": "L", "verdict": "FORK", "reqs": ["REQ-CDEP-17", "REQ-CDEP-18"], "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan." },
+        { "id": "LEGAL-1", "name": "Legal review of the ADR-001 IPC boundary", "size": "S", "verdict": null, "reqs": ["REQ-LIC-2", "REQ-LIC-4", "REQ-LIC-5"], "detail": "Competent review of the split-licence structure before any public distribution. Carried openly from DECISIONS.md — it is not resolved by having written it down." },
+        { "id": "SPIKE-2", "name": "Audio backend selection", "size": "S", "verdict": "ADOPT", "reqs": ["REQ-NFR-1"], "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. Decide the backend before engine work starts." }
+      ]
+    },
+    {
+      "id": "E1",
+      "milestone": "M1",
+      "name": "CDEP contract and stub engine",
+      "why": "The contract is written before any engine exists so it is shaped by its consumer, not by the fork. The stub is also the permanent proof that the engine is replaceable (REQ-LIC-5).",
+      "stories": [
+        { "id": "CDEP-1", "name": "Specify and publish the CDEP schema", "size": "S", "verdict": null, "reqs": ["REQ-CDEP-1", "REQ-CDEP-2", "REQ-CDEP-3", "REQ-CDEP-7", "REQ-CDEP-8", "REQ-CDEP-9"], "detail": "JSON Schema for every message type, versioned cdep/1, with the documented error-code enumeration. Transport is arms-length by design: no shared memory, no GPL-defined structures, because that generality is a licence requirement." },
+        { "id": "CDEP-2", "name": "Stub engine: handshake, describe, get/set", "size": "M", "verdict": null, "reqs": ["REQ-CDEP-4", "REQ-CDEP-11", "REQ-CDEP-12", "REQ-CDEP-13", "REQ-CDEP-18"], "detail": "Apache-2.0 reference engine with a self-describing control set, accepting multiple concurrent clients with independent subscription state. No Mixxx dependency." },
+        { "id": "CDEP-3", "name": "Stub engine: gapless sequential playback", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-CDEP-18", "REQ-FALL-3"], "detail": "Load, transport, and gap-free track-to-track playback on the chosen audio backend. Enough to develop the entire fusion core against." },
+        { "id": "CDEP-4", "name": "Subscriptions with coalescing and back-pressure", "size": "M", "verdict": null, "reqs": ["REQ-CDEP-14", "REQ-CDEP-15", "REQ-CDEP-16"], "detail": "max_hz coalescing and bounded send queues. Includes the AC-18 test that a stalled client cannot disturb audio." },
+        { "id": "CDEP-5", "name": "Conformance suite", "size": "M", "verdict": null, "reqs": ["REQ-CDEP-17"], "detail": "Executable suite both engines must pass, wired into CI. Gates every future engine change." }
+      ]
+    },
+    {
+      "id": "E2",
+      "milestone": "M1",
+      "name": "Repository, licence enforcement and CI",
+      "why": "The split licence is only real if it is mechanically enforced. Contributor confusion is the main practical risk, and the mitigation is automation rather than documentation.",
+      "stories": [
+        { "id": "REPO-1", "name": "Plane layout and SPDX headers", "size": "S", "verdict": null, "reqs": ["REQ-LIC-1"], "detail": "Directory structure per SPECIFICATION §1.2, SPDX header on every file." },
+        { "id": "REPO-2", "name": "CI licence-lint gate", "size": "M", "verdict": null, "reqs": ["REQ-LIC-2", "REQ-LIC-3"], "detail": "Fail the build if any GPL header is reachable from Apache-2.0 code, including transitively. Satisfies AC-16." },
+        { "id": "REPO-3", "name": "LGPL-only FFmpeg build with component audit", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-LIC-6", "REQ-LIC-7"], "detail": "A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact." }
+      ]
+    },
+    {
+      "id": "E3",
+      "milestone": "M2",
+      "name": "Unified Scheduler — the novelty",
+      "why": "Domain C has no prior art in any product, open or closed. Built against the stub engine so it is proven before fork surgery begins.",
+      "stories": [
+        { "id": "SCH-1", "name": "Queue entry lifecycle state machine", "size": "M", "verdict": null, "reqs": ["REQ-SCH-1", "REQ-SCH-2", "REQ-SCH-5"], "detail": "States, guarded transitions, and an append-only event log with actor and reason." },
+        { "id": "SCH-2", "name": "Staging lane and DJ promotion", "size": "M", "verdict": null, "reqs": ["REQ-SCH-3", "REQ-SCH-4"], "detail": "The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1." },
+        { "id": "SCH-3", "name": "Priority ordering function", "size": "M", "verdict": "REFERENCE", "reqs": ["REQ-SCH-6", "REQ-SCH-7", "REQ-SCH-8", "REQ-SCH-9", "REQ-SCH-10"], "detail": "Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here." },
+        { "id": "SCH-4", "name": "Fair-queue anti-monopoly rules", "size": "M", "verdict": "REFERENCE", "reqs": ["REQ-SCH-14", "REQ-SCH-15", "REQ-SCH-16", "REQ-SCH-17", "REQ-SCH-18"], "detail": "Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6." },
+        { "id": "SCH-5", "name": "Autonomous drain with beatmatched transitions", "size": "L", "verdict": "REFERENCE", "reqs": ["REQ-MODE-4", "REQ-MODE-5"], "detail": "Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2." },
+        { "id": "SCH-6", "name": "Gapless mode handoff", "size": "M", "verdict": null, "reqs": ["REQ-MODE-1", "REQ-MODE-2", "REQ-MODE-3"], "detail": "Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3." },
+        { "id": "SCH-7", "name": "Never-silent fallback engine", "size": "M", "verdict": "REFERENCE", "reqs": ["REQ-FALL-1", "REQ-FALL-2", "REQ-FALL-3", "REQ-FALL-4"], "detail": "Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8." }
+      ]
+    },
+    {
+      "id": "E4",
+      "milestone": "M2",
+      "name": "Data model and persistence",
+      "why": "The two things that are expensive to retrofit — venue_id and the credit ledger — land now, per ADR-003 and ADR-004.",
+      "stories": [
+        { "id": "DAT-1", "name": "Schema with venue_id from the first migration", "size": "M", "verdict": null, "reqs": ["REQ-DAT-1", "REQ-DAT-2"], "detail": "Near-zero cost now; a migration across every table and query later." },
+        { "id": "DAT-2", "name": "Append-only credit ledger", "size": "M", "verdict": null, "reqs": ["REQ-DAT-3", "REQ-DAT-4", "REQ-DAT-5", "REQ-DAT-6", "REQ-DAT-7"], "detail": "Derived balances, compensating entries, non-expiring credits, atomic spend. No paid top-up path in v1." },
+        { "id": "DAT-3", "name": "Licence-class model and gating", "size": "M", "verdict": null, "reqs": ["REQ-DAT-8", "REQ-DAT-9", "REQ-DAT-10", "REQ-DAT-11"], "detail": "Answer 'may this venue legally play this now?' from track class plus venue profile. Satisfies AC-14." },
+        { "id": "DAT-4", "name": "Play log and CSV export", "size": "S", "verdict": null, "reqs": ["REQ-DAT-12", "REQ-DAT-13", "REQ-DAT-14"], "detail": "Local-only evidence trail for PRO reporting, never transmitted." },
+        { "id": "DAT-5", "name": "Durable queue across restart", "size": "M", "verdict": null, "reqs": ["REQ-NFR-4", "REQ-NFR-5"], "detail": "The queue is durable and the engine is replaceable; a core crash must not stop audio." }
+      ]
+    },
+    {
+      "id": "E5",
+      "milestone": "M3",
+      "name": "Crowd plane",
+      "why": "Fork Karaoke Eternal (ISC) — it already implements QR join, rooms and a dynamic fair queue, which is most of the TouchTunes interaction model under a licence we can freely relicense.",
+      "stories": [
+        { "id": "CRW-1", "name": "Fork Karaoke Eternal and generalise the fair queue", "size": "L", "verdict": "FORK", "reqs": ["REQ-SCH-14"], "detail": "Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1." },
+        { "id": "CRW-2", "name": "QR join and venue-scoped patron sessions", "size": "M", "verdict": "FORK", "reqs": ["REQ-API-3", "REQ-NFR-7"], "detail": "No app install, no personal data, expiring venue-scoped tokens." },
+        { "id": "CRW-3", "name": "Live queue with position in line", "size": "M", "verdict": null, "reqs": ["REQ-SCH-11", "REQ-SCH-12", "REQ-SCH-13"], "detail": "TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4." },
+        { "id": "CRW-4", "name": "Voting with one-vote-per-patron", "size": "S", "verdict": null, "reqs": ["REQ-SCH-17"], "detail": "Enforced by a uniqueness constraint, not UI logic." },
+        { "id": "CRW-5", "name": "Staff override console", "size": "M", "verdict": null, "reqs": ["REQ-API-5", "REQ-API-6"], "detail": "Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9." },
+        { "id": "CRW-6", "name": "Venue display screen", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-DAT-11"], "detail": "Now playing, up next, QR to join, attribution for CC tracks. wavesurfer.js for waveforms." }
+      ]
+    },
+    {
+      "id": "E6",
+      "milestone": "M3",
+      "name": "Public API and clients",
+      "why": "The API is the only path in (REQ-API-1). Third-party clients are how an open project out-features a closed one.",
+      "stories": [
+        { "id": "API-1", "name": "HTTP + WebSocket surface, venue-namespaced", "size": "L", "verdict": null, "reqs": ["REQ-API-1", "REQ-API-2", "REQ-API-4"], "detail": "/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI." },
+        { "id": "API-2", "name": "OpenSubsonic-compatible endpoint", "size": "L", "verdict": "ADOPT", "reqs": ["REQ-API-10", "REQ-API-11", "REQ-API-12"], "detail": "Including jukeboxControl with the jukeboxMediaTypes extension. Buys an existing client ecosystem on day one." },
+        { "id": "API-3", "name": "DJ console (web)", "size": "L", "verdict": "ADOPT", "reqs": ["REQ-API-7", "REQ-API-8", "REQ-API-9"], "detail": "Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely." }
+      ]
+    },
+    {
+      "id": "E7",
+      "milestone": "M4",
+      "name": "Mixxx-derived engine",
+      "why": "Fork now that the contract is proven. Its Control bus already drives the whole engine from a scripting layer, so this is largely adding a transport over a proven abstraction.",
+      "stories": [
+        { "id": "ENG-1", "name": "Fork and strip to headless", "size": "XL", "verdict": "FORK", "reqs": ["REQ-LIC-4"], "detail": "Keep engine, audio, soundio, mixer, analyzer, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders." },
+        { "id": "ENG-2", "name": "CDEP server over the Control bus", "size": "L", "verdict": "FORK", "reqs": ["REQ-CDEP-5", "REQ-CDEP-6", "REQ-CDEP-12"], "detail": "Bridge ControlObject/ControlModel to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17." },
+        { "id": "ENG-3", "name": "Four decks with EQ, filter, crossfader", "size": "M", "verdict": "FORK", "reqs": ["REQ-CDEP-10"], "detail": "Inherited from Mixxx; wire to the CDEP control set." },
+        { "id": "ENG-4", "name": "Beatgrid, key detection and key-lock", "size": "L", "verdict": "FORK", "reqs": ["REQ-CON-2"], "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open." },
+        { "id": "ENG-5", "name": "Sync lock with leader deck", "size": "M", "verdict": "FORK", "reqs": ["REQ-CLK-1"], "detail": "The leader deck becomes the single tempo source published to every transport." },
+        { "id": "ENG-6", "name": "Hot cues and loops", "size": "M", "verdict": "FORK", "reqs": ["REQ-CDEP-10"], "detail": "Inherited from Mixxx." },
+        { "id": "ENG-7", "name": "Real-time safety audit", "size": "M", "verdict": null, "reqs": ["REQ-NFR-1", "REQ-NFR-2"], "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events." }
+      ]
+    },
+    {
+      "id": "E8",
+      "milestone": "M4",
+      "name": "Content sources and ingest",
+      "why": "Fork Mopidy's backend abstraction (Apache-2.0) rather than inventing a provider interface. Ship legal music in the box.",
+      "stories": [
+        { "id": "CON-1", "name": "Provider interface from Mopidy's backend API", "size": "L", "verdict": "FORK", "reqs": ["REQ-CON-5"], "detail": "One interface: search, resolve, stream URL, licence class." },
+        { "id": "CON-2", "name": "Local ingest with fingerprint tagging", "size": "L", "verdict": "ADOPT", "reqs": ["REQ-CON-1"], "detail": "beets + Chromaprint/AcoustID + MusicBrainz, de-duplicating by fingerprint. Satisfies AC-15." },
+        { "id": "CON-3", "name": "Out-of-process analysis pipeline", "size": "L", "verdict": "ADOPT", "reqs": ["REQ-CON-2", "REQ-CON-3"], "detail": "One pass produces beatgrid, key, loudness, waveform, phrases. librosa (ISC) keeps the analysis path licence-safe. Never shares a process with the audio engine." },
+        { "id": "CON-4", "name": "OpenSubsonic consumer provider", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-CON-6"], "detail": "Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary." },
+        { "id": "CON-5", "name": "Creative Commons provider (Jamendo)", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-CON-6"], "detail": "So a fresh install has legally playable music on first run, with licence metadata from the API." },
+        { "id": "CON-6", "name": "Loudness normalisation across sources", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-CON-4"], "detail": "ReplayGain / EBU R128. Non-negotiable when a CC track, a local file and a live instrument follow one another." },
+        { "id": "CON-7", "name": "Assert no consumer-streaming or downloader adapters", "size": "S", "verdict": "AVOID", "reqs": ["REQ-CON-7"], "detail": "A CI check plus an architectural note. This is the flaw that makes existing open jukeboxes unusable in venues, and designing it out is a feature." }
+      ]
+    },
+    {
+      "id": "E9",
+      "milestone": "M5",
+      "name": "Interconnect",
+      "why": "MIDI as a first-class subsystem, not a settings page. A UMP-native start is a lead available only to a project beginning now.",
+      "stories": [
+        { "id": "MID-1", "name": "libremidi backend with stable port identity", "size": "L", "verdict": "ADOPT", "reqs": ["REQ-MIDI-1", "REQ-MIDI-2", "REQ-MIDI-3", "REQ-MIDI-7"], "detail": "MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10." },
+        { "id": "MID-2", "name": "MIDI learn with soft-takeover", "size": "M", "verdict": null, "reqs": ["REQ-MIDI-4"], "detail": "No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11." },
+        { "id": "MID-3", "name": "Declarative mapping format targeting CDEP controls", "size": "L", "verdict": "REFERENCE", "reqs": ["REQ-MIDI-5", "REQ-MIDI-6"], "detail": "Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge." },
+        { "id": "MID-4", "name": "MIDI Clock out at 24 PPQN from the leader deck", "size": "M", "verdict": null, "reqs": ["REQ-CLK-1", "REQ-CLK-2", "REQ-CLK-5", "REQ-CLK-6"], "detail": "≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only." },
+        { "id": "MID-5", "name": "Ableton Link integration", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-CLK-3", "REQ-CLK-4"], "detail": "GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff." },
+        { "id": "MID-6", "name": "Live MIDI instrument as a queueable source", "size": "L", "verdict": null, "reqs": ["REQ-INST-1", "REQ-INST-2"], "detail": "The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12." },
+        { "id": "MID-7", "name": "MIDI-CI Property Exchange auto-mapping", "size": "L", "verdict": null, "reqs": ["REQ-MIDI-8", "REQ-MIDI-9"], "detail": "Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead." }
+      ]
+    },
+    {
+      "id": "E10",
+      "milestone": "M6",
+      "name": "Venue readiness",
+      "why": "The difference between a demo and something a venue keeps switched on.",
+      "stories": [
+        { "id": "VEN-1", "name": "Venue policy engine", "size": "L", "verdict": null, "reqs": ["REQ-POL-1", "REQ-POL-3", "REQ-POL-4"], "detail": "Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides." },
+        { "id": "VEN-2", "name": "Policy-scoped search", "size": "M", "verdict": null, "reqs": ["REQ-POL-2"], "detail": "An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7." },
+        { "id": "VEN-3", "name": "Venue licensing profile", "size": "M", "verdict": null, "reqs": ["REQ-DAT-9"], "detail": "Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes." },
+        { "id": "VEN-4", "name": "Offline-first verification", "size": "M", "verdict": null, "reqs": ["REQ-NFR-3", "REQ-NFR-9"], "detail": "Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13." },
+        { "id": "VEN-5", "name": "No-telemetry guarantee", "size": "S", "verdict": null, "reqs": ["REQ-NFR-6", "REQ-NFR-8"], "detail": "Assert no outbound traffic beyond enabled providers; separate staff credentials." },
+        { "id": "VEN-6", "name": "Single-command container deploy", "size": "M", "verdict": "ADOPT", "reqs": ["REQ-NFR-10", "REQ-NFR-11"], "detail": "Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU." }
+      ]
+    }
+  ],
+  "deferred": [
+    { "item": "Payment provider integration", "when": "v1.1", "why": "ADR-003 — the ordering model and ledger ship in v1 so the scheduler needs no change. PCI scope, chargebacks and fraud are deliberately not v1 problems." },
+    { "item": "Operator console and multi-venue", "when": "v2", "why": "ADR-004 — and as federation over appliances, not shared-database multi-tenancy. Offline-first rules out multi-tenant SaaS." },
+    { "item": "Stem separation and per-stem deck control", "when": "v1.1", "why": "Precompute with Demucs on ingest; needs a GPU story that v1 deliberately avoids (REQ-NFR-11)." },
+    { "item": "DVS timecode vinyl", "when": "v1.1", "why": "P2, and largely inherited free from the Mixxx fork once the engine lands." },
+    { "item": "Licensed-streaming adapters", "when": "when agreements exist", "why": "Beatport/TIDAL/SoundCloud each require a commercial agreement. Ship the interface, not unauthorised implementations." },
+    { "item": "DMX lighting and show control", "when": "v2", "why": "OLA + QLC+ integration. rekordbox's phrase-aware auto-lighting is the benchmark to match." },
+    { "item": "Karaoke media and singer rotation", "when": "v2", "why": "Comes partly free from the Karaoke Eternal fork; deliberately out of v1 scope." },
+    { "item": "Multi-zone synchronised audio", "when": "v2", "why": "Snapcast as a separate process at the edge." },
+    { "item": "Mackie Control / HUI emulation", "when": "v2", "why": "P2. Unlocks motorised-fader surfaces no DJ app addresses." },
+    { "item": "Polished mouse-only scratching", "when": "not planned", "why": "ADR-005 accepts this as mediocre. The target user is a venue with hardware." }
+  ]
+}
