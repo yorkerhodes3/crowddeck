@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright 2026 CrowdDeck contributors -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrowdDeck — DJ console</title>
+<style>
+  :root {
+    --bg:#0a0c12; --panel:#151926; --panel2:#1b2030; --line:#262d42;
+    --txt:#e6e9f2; --txt2:#a4adc4; --txt3:#6f7891;
+    --accent:#4dd4ac; --accent2:#7c6cff; --hot:#ff5c7a; --warn:#ffb454;
+    --mono: ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; background:var(--bg); color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:15px;
+  }
+  header {
+    position:sticky; top:0; z-index:10; background:rgba(10,12,18,.94); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line); padding:13px 22px; display:flex; align-items:center; gap:18px;
+  }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:-.02em; }
+  .dot { width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .venue { font-size:12.5px; color:var(--txt2); }
+  .spacer { flex:1; }
+  .modes { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .modes button {
+    background:transparent; border:none; color:var(--txt2); padding:8px 15px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  }
+  .modes button.on { background:var(--accent); color:#06231b; font-weight:700; }
+  .panic { background:var(--hot); color:#2b0710; border:none; padding:9px 17px; border-radius:9px;
+           font-weight:700; font-size:13px; cursor:pointer; }
+  main { display:grid; grid-template-columns:1fr 1fr; gap:22px; padding:22px; max-width:1500px; margin:0 auto; }
+  @media (max-width:1000px){ main { grid-template-columns:1fr; } }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:18px 20px; }
+  h2 { font-family:var(--mono); font-size:11.5px; letter-spacing:.13em; text-transform:uppercase;
+       color:var(--accent); margin:0 0 14px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .deck { border:1px solid var(--line); border-radius:11px; padding:15px 17px; background:var(--panel2); }
+  .deck.playing { border-color:rgba(77,212,172,.5); background:linear-gradient(160deg,rgba(77,212,172,.1),var(--panel2)); }
+  .deck .name { font-family:var(--mono); font-size:11px; color:var(--txt3); letter-spacing:.09em; }
+  .deck .title { font-size:19px; font-weight:700; letter-spacing:-.02em; margin-top:3px; }
+  .deck .artist { font-size:13.5px; color:var(--txt2); }
+  .bar { height:5px; background:#0e1119; border-radius:99px; margin-top:12px; overflow:hidden; }
+  .bar > div { height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s linear; }
+  .stats { display:flex; gap:18px; margin-top:11px; font-family:var(--mono); font-size:11.5px; color:var(--txt3); }
+  .item { display:flex; align-items:center; gap:11px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .item:last-child { border-bottom:none; }
+  .pos { font-family:var(--mono); font-size:17px; font-weight:700; color:var(--accent); min-width:26px; }
+  .grow { flex:1; min-width:0; }
+  .t { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .a { font-size:12.5px; color:var(--txt2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  button.act { background:var(--accent); color:#06231b; border:none; padding:8px 14px; border-radius:8px;
+               font-weight:700; font-size:13px; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--txt2); border:1px solid var(--line); padding:7px 11px;
+                 border-radius:8px; font-size:12.5px; cursor:pointer; }
+  button.ghost:hover { color:var(--txt); border-color:var(--txt3); }
+  button:disabled { opacity:.4; cursor:default; }
+  .empty { color:var(--txt3); font-size:13.5px; padding:12px 0; }
+  .note { font-size:12.5px; color:var(--txt3); margin-top:14px; line-height:1.55; }
+  .note b { color:var(--txt2); }
+  .keyrow { display:flex; gap:9px; align-items:center; }
+  .keyrow input { flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+                  padding:9px 12px; border-radius:8px; font-family:var(--mono); font-size:12.5px; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--panel2);
+           border:1px solid var(--line); padding:12px 18px; border-radius:11px; font-size:14px;
+           opacity:0; transition:opacity .18s; pointer-events:none; z-index:50; }
+  .toast.show { opacity:1; }
+  .toast.err { border-color:rgba(255,92,122,.55); }
+  .badge { font-family:var(--mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase;
+           border:1px solid var(--line); border-radius:99px; padding:2px 8px; color:var(--txt3); }
+  .badge.pin { color:var(--warn); border-color:rgba(255,180,84,.45); margin-left:7px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand"><span class="dot"></span> CrowdDeck</div>
+    <div class="venue" id="venue">connecting…</div>
+  </div>
+  <span class="spacer"></span>
+  <div class="modes">
+    <button id="mAuto">Autonomous</button>
+    <button id="mAtt">Attended</button>
+  </div>
+  <button class="panic" id="panicBtn">Panic stop</button>
+</header>
+
+<main>
+  <section>
+    <h2>Deck</h2>
+    <div id="deck"><div class="empty">Nothing loaded.</div></div>
+
+    <h2 style="margin-top:26px">Staff key</h2>
+    <div class="keyrow">
+      <input id="key" type="password" placeholder="x-staff-key" autocomplete="off">
+      <button class="ghost" id="saveKey">Save</button>
+    </div>
+    <div class="note">
+      Staff credentials are separate from patron sessions (<b>REQ-NFR-8</b>), and every action here is
+      logged against the queue entry with the actor who performed it.
+    </div>
+  </section>
+
+  <section>
+    <h2>Staging lane <span id="laneMode" class="badge">—</span></h2>
+    <div id="lane"><div class="empty">Nothing waiting.</div></div>
+    <div class="note" id="laneNote">
+      <b>In attended mode nothing reaches the speakers until you cue it.</b>
+      Crowd requests land here and you decide what plays. In autonomous mode the mixer drains this same
+      lane by itself, so the room keeps going when nobody is in the booth.
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var venueId = new URLSearchParams(location.search).get("venue") || "the-anchor";
+  var base = location.origin + "/v1/venues/" + encodeURIComponent(venueId);
+  var KEY = "crowddeck.staffkey." + venueId;
+
+  var staffKey = localStorage.getItem(KEY) || "";
+  var state = { queue: [], nowPlaying: null, mode: null };
+  var startedAt = 0;
+
+  var el = function (id) { return document.getElementById(id); };
+  el("key").value = staffKey;
+
+  function toast(msg, isErr) {
+    var t = el("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (isErr ? " err" : "");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.className = "toast"; }, 3000);
+  }
+
+  async function api(method, path, body) {
+    var headers = { "content-type": "application/json" };
+    if (staffKey) headers["x-staff-key"] = staffKey;
+    var res = await fetch(base + path, {
+      method: method, headers: headers,
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.message || data.error || ("HTTP " + res.status));
+    return data;
+  }
+
+  el("saveKey").onclick = function () {
+    staffKey = el("key").value.trim();
+    localStorage.setItem(KEY, staffKey);
+    toast(staffKey ? "Staff key saved." : "Staff key cleared.");
+  };
+
+  async function setMode(mode) {
+    try {
+      await api("POST", "/mode", { mode: mode });
+      toast("Mode: " + mode);
+    } catch (e) { toast(e.message, true); }
+  }
+  el("mAuto").onclick = function () { setMode("autonomous"); };
+  el("mAtt").onclick = function () { setMode("attended"); };
+
+  el("panicBtn").onclick = async function () {
+    try { await api("POST", "/panic", {}); toast("Playback stopped."); }
+    catch (e) { toast(e.message, true); }
+  };
+
+  /* -------------------------------------------------------- rendering */
+
+  function fmt(sec) {
+    if (!sec) return "—";
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function renderDeck() {
+    var host = el("deck");
+    host.innerHTML = "";
+    if (!state.nowPlaying) {
+      host.innerHTML = '<div class="empty">Nothing loaded.</div>';
+      return;
+    }
+    var e = state.nowPlaying;
+    var d = document.createElement("div");
+    d.className = "deck playing";
+
+    var name = document.createElement("div");
+    name.className = "name";
+    name.textContent = "[Channel1] · PLAYING";
+    var title = document.createElement("div");
+    title.className = "title";
+    title.textContent = e.track.title || e.track.id;
+    var artist = document.createElement("div");
+    artist.className = "artist";
+    artist.textContent = e.track.artist || "";
+
+    var bar = document.createElement("div");
+    bar.className = "bar";
+    var fill = document.createElement("div");
+    fill.id = "fill";
+    bar.appendChild(fill);
+
+    var stats = document.createElement("div");
+    stats.className = "stats";
+    stats.innerHTML = "<span>len " + fmt(e.track.duration) + "</span>" +
+      "<span>votes " + (e.votes || 0) + "</span>" +
+      (e.boostUnits ? "<span>boost " + e.boostUnits + "</span>" : "");
+
+    var skipBtn = document.createElement("button");
+    skipBtn.className = "ghost";
+    skipBtn.textContent = "Skip";
+    skipBtn.style.marginTop = "12px";
+    skipBtn.onclick = async function () {
+      try { await api("POST", "/queue/" + e.id + "/skip", {}); toast("Skipped."); }
+      catch (err) { toast(err.message, true); }
+    };
+
+    d.appendChild(name); d.appendChild(title); d.appendChild(artist);
+    d.appendChild(bar); d.appendChild(stats); d.appendChild(skipBtn);
+    host.appendChild(d);
+  }
+
+  setInterval(function () {
+    var f = el("fill");
+    if (!f || !state.nowPlaying || !state.nowPlaying.track.duration) return;
+    var pct = Math.min(100, ((Date.now() - startedAt) / 1000 / state.nowPlaying.track.duration) * 100);
+    f.style.width = pct + "%";
+  }, 500);
+
+  function renderLane() {
+    var host = el("lane");
+    host.innerHTML = "";
+
+    var waiting = state.queue.filter(function (e) { return e.state === "staged"; });
+    if (!waiting.length) {
+      host.innerHTML = '<div class="empty">Nothing waiting.</div>';
+      return;
+    }
+
+    waiting.forEach(function (entry) {
+      var item = document.createElement("div");
+      item.className = "item";
+
+      var pos = document.createElement("div");
+      pos.className = "pos";
+      pos.textContent = entry.position;
+
+      var grow = document.createElement("div");
+      grow.className = "grow";
+      var t = document.createElement("div");
+      t.className = "t";
+      t.textContent = entry.track.title || entry.track.id;
+      if (entry.staffPinned) {
+        var badge = document.createElement("span");
+        badge.className = "badge pin";
+        badge.textContent = "pinned";
+        t.appendChild(badge);
+      }
+      var a = document.createElement("div");
+      a.className = "a";
+      a.textContent = (entry.track.artist || "") +
+        (entry.votes ? " · ▲" + entry.votes : "") +
+        (entry.boostUnits ? " · boost " + entry.boostUnits : "");
+      grow.appendChild(t); grow.appendChild(a);
+
+      var cue = document.createElement("button");
+      cue.className = "act";
+      cue.textContent = "▶ Cue";
+      cue.onclick = async function () {
+        cue.disabled = true;
+        try { await api("POST", "/staging/" + entry.id + "/promote", {}); toast("Cued."); }
+        catch (err) { toast(err.message, true); cue.disabled = false; }
+      };
+
+      var pinBtn = document.createElement("button");
+      pinBtn.className = "ghost";
+      pinBtn.textContent = entry.staffPinned ? "Unpin" : "Pin";
+      pinBtn.onclick = async function () {
+        try { await api("POST", "/queue/" + entry.id + "/pin", { pinned: !entry.staffPinned }); }
+        catch (err) { toast(err.message, true); }
+      };
+
+      var no = document.createElement("button");
+      no.className = "ghost";
+      no.textContent = "Veto";
+      no.onclick = async function () {
+        no.disabled = true;
+        try { await api("POST", "/staging/" + entry.id + "/reject", { reason: "dj" }); toast("Rejected."); }
+        catch (err) { toast(err.message, true); no.disabled = false; }
+      };
+
+      item.appendChild(pos); item.appendChild(grow);
+      item.appendChild(cue); item.appendChild(pinBtn); item.appendChild(no);
+      host.appendChild(item);
+    });
+  }
+
+  function renderMode() {
+    el("mAuto").className = state.mode === "autonomous" ? "on" : "";
+    el("mAtt").className = state.mode === "attended" ? "on" : "";
+    el("laneMode").textContent = state.mode || "—";
+    el("laneNote").style.opacity = state.mode === "attended" ? "1" : ".55";
+  }
+
+  /* --------------------------------------------------------- live feed */
+
+  function connect() {
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    var ws = new WebSocket(proto + "//" + location.host + "/v1/venues/" +
+      encodeURIComponent(venueId) + "/events");
+
+    ws.onmessage = function (ev) {
+      var msg = JSON.parse(ev.data);
+      if (msg.type === "hello") {
+        el("venue").textContent = msg.venue.name + " · DJ console";
+        document.title = msg.venue.name + " — DJ console";
+        state.mode = msg.mode; state.queue = msg.queue; state.nowPlaying = msg.nowPlaying;
+        startedAt = Date.now();
+        renderMode(); renderLane(); renderDeck();
+      } else if (msg.type === "queue") {
+        state.queue = msg.queue; renderLane();
+      } else if (msg.type === "nowPlaying") {
+        state.nowPlaying = msg.entry; startedAt = Date.now(); renderDeck();
+      } else if (msg.type === "mode") {
+        state.mode = msg.mode; renderMode();
+      } else if (msg.type === "panic") {
+        toast("Playback stopped.", true);
+      } else if (msg.type === "silent") {
+        toast("Queue empty and no fallback available.", true);
+      }
+    };
+    ws.onclose = function () { setTimeout(connect, 1500); };
+    ws.onerror = function () { ws.close(); };
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

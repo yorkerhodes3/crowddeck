@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 24 of 60 stories complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 29 of 60 stories complete · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 60 stories · 117 of 117 requirements covered**
@@ -118,7 +118,7 @@ Fork Karaoke Eternal (ISC) — it already implements QR join, rooms and a dynami
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
 | **CRW-1** | **Fork Karaoke Eternal and generalise the fair queue**<br>Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1. | L | `FORK` | `REQ-SCH-14` |
-| ✅ **CRW-2** | **QR join and venue-scoped patron sessions**<br>No app install, no personal data, expiring venue-scoped tokens. | M | `FORK` | `REQ-API-3` `REQ-NFR-7` |
+| ✅ **CRW-2** | **Venue-scoped patron sessions**<br>No app install, no personal data, expiring venue-scoped tokens. Join is by URL; QR generation is tracked separately as DISP-1 after a hand-rolled encoder failed decoder verification. | M | `FORK` | `REQ-API-3` `REQ-NFR-7` |
 | ✅ **CRW-3** | **Live queue with position in line**<br>TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4. | M | build | `REQ-SCH-11` `REQ-SCH-12` `REQ-SCH-13` |
 | ✅ **CRW-4** | **Voting with one-vote-per-patron**<br>Enforced by a uniqueness constraint, not UI logic. | S | build | `REQ-SCH-17` |
 | ✅ **CRW-5** | **Staff override console**<br>Skip, veto, pin, lock, mute, panic-stop within 500ms. Satisfies AC-9. | M | build | `REQ-API-5` `REQ-API-6` |
@@ -181,12 +181,12 @@ MIDI as a first-class subsystem, not a settings page. A UMP-native start is a le
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **MID-1** | **libremidi backend with stable port identity**<br>MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10. | L | `ADOPT` | `REQ-MIDI-1` `REQ-MIDI-2` `REQ-MIDI-3` `REQ-MIDI-7` |
-| **MID-2** | **MIDI learn with soft-takeover**<br>No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11. | M | build | `REQ-MIDI-4` |
-| **MID-3** | **Declarative mapping format targeting CDEP controls**<br>Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge. | L | `REFERENCE` | `REQ-MIDI-5` `REQ-MIDI-6` |
-| **MID-4** | **MIDI Clock out at 24 PPQN from the leader deck**<br>≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only. | M | build | `REQ-CLK-1` `REQ-CLK-2` `REQ-CLK-5` `REQ-CLK-6` |
+| ✅ **MID-1** | **libremidi backend with stable port identity**<br>MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10. | L | `ADOPT` | `REQ-MIDI-1` `REQ-MIDI-2` `REQ-MIDI-3` `REQ-MIDI-7` |
+| ✅ **MID-2** | **MIDI learn with soft-takeover**<br>No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11. | M | build | `REQ-MIDI-4` |
+| ✅ **MID-3** | **Declarative mapping format targeting CDEP controls**<br>Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge. | L | `REFERENCE` | `REQ-MIDI-5` `REQ-MIDI-6` |
+| ✅ **MID-4** | **MIDI Clock out at 24 PPQN from the leader deck**<br>≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only. | M | build | `REQ-CLK-1` `REQ-CLK-2` `REQ-CLK-5` `REQ-CLK-6` |
 | **MID-5** | **Ableton Link integration**<br>GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff. | M | `ADOPT` | `REQ-CLK-3` `REQ-CLK-4` |
-| **MID-6** | **Live MIDI instrument as a queueable source**<br>The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12. | L | build | `REQ-INST-1` `REQ-INST-2` |
+| ✅ **MID-6** | **Live MIDI instrument as a queueable source**<br>The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12. | L | build | `REQ-INST-1` `REQ-INST-2` |
 | **MID-7** | **MIDI-CI Property Exchange auto-mapping**<br>Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead. | L | build | `REQ-MIDI-8` `REQ-MIDI-9` |
 
 ---

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "node api/bin/crowddeck-server.js",
-    "test": "node --test \"protocol/test/**/*.test.js\" \"engine-stub/test/**/*.test.js\" \"core/test/**/*.test.js\" \"api/test/**/*.test.js\"",
+    "test": "node --test \"protocol/test/**/*.test.js\" \"engine-stub/test/**/*.test.js\" \"core/test/**/*.test.js\" \"api/test/**/*.test.js\" \"interconnect/test/**/*.test.js\"",
     "conformance": "node conformance/bin/cdep-conformance.js --engine engine-stub",
     "lint:licence": "node tools/licence-lint.mjs",
     "build:data": "node tools/extract-requirements.mjs && node tools/build-backlog.mjs && node tools/build-data.mjs",

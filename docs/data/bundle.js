@@ -3634,14 +3634,14 @@ window.__CROWDDECK_DATA__ = {
           },
           {
             "id": "CRW-2",
-            "name": "QR join and venue-scoped patron sessions",
+            "name": "Venue-scoped patron sessions",
             "size": "M",
             "verdict": "FORK",
             "reqs": [
               "REQ-API-3",
               "REQ-NFR-7"
             ],
-            "detail": "No app install, no personal data, expiring venue-scoped tokens.",
+            "detail": "No app install, no personal data, expiring venue-scoped tokens. Join is by URL; QR generation is tracked separately as DISP-1 after a hand-rolled encoder failed decoder verification.",
             "status": "done"
           },
           {
@@ -3943,7 +3943,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-7"
             ],
             "detail": "MIDI 1.0 + 2.0/UMP, hot-plug, identity-bound mappings that survive reboot. RtMidi as fallback behind our own port interface. HID for high-resolution jog wheels is a SHOULD in v1 — 7-bit MIDI's 128 steps per rotation is not enough for credible feel. Satisfies AC-10.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "MID-2",
@@ -3954,7 +3954,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-4"
             ],
             "detail": "No parameter jumps when a physical control is out of sync with software state. Satisfies AC-11.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "MID-3",
@@ -3966,7 +3966,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-6"
             ],
             "detail": "Reference Mixxx's XML+JS model. Target list generated from CDEP describe, so mappings need no hard-coded engine knowledge.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "MID-4",
@@ -3980,7 +3980,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-CLK-6"
             ],
             "detail": "≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "MID-5",
@@ -4004,7 +4004,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-INST-2"
             ],
             "detail": "The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "MID-7",

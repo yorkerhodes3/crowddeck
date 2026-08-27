@@ -644,14 +644,13 @@
     </div>
 
     <div class="callout" style="border-left-color: var(--accent);">
-      <strong>Build has started — and it runs.</strong> M1, M2 and M3 are complete: the CDEP contract, a
-      conformant stub engine, the conformance suite, the licence-lint gate, the <strong>Unified
-      Scheduler</strong>, the venue API with live WebSocket push, and working patron and venue-display
-      clients. <strong>153 tests, 19 conformance checks</strong>, zero dependencies, all green in CI.
-      <code>npm start</code> gives you a venue you can queue songs into from a phone and watch on a screen —
-      though <strong>nothing is audible yet</strong>, because the engine is still the stub.
-      <span class="mono">engine/</span> stays deliberately empty until <span class="mono">SPIKE-1</span>,
-      per ADR-002.
+      <strong>Build has started — and it runs.</strong> The CDEP contract, a conformant stub engine, the
+      conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
+      live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
+      identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
+      instruments as queueable sources. <strong>211 tests, 19 conformance checks</strong>, zero
+      dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
+      <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
 
     <div data-render="backlog"></div>

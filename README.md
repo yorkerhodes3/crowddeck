@@ -19,7 +19,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 117 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 59 stories, 117/117 traced |
-| **4 — Build** | `protocol/` `core/` `api/` `clients/` `engine-stub/` | 🚧 **In progress — M1–M3, 24/60 stories** |
+| **4 — Build** | `protocol/` `core/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI, 29/60 stories** |
 
 ### Try it
 
@@ -27,9 +27,9 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 npm start
 ```
 
-Open the **patron** page on a phone and the **display** on a screen. Search a licence-tagged demo
-catalogue, queue a song, watch your position in line update live, and vote tracks up the queue while the
-autonomous mixer keeps the room from going silent.
+Open the **patron** page on a phone, the **DJ console** in the booth, and the **display** on a screen.
+Search a licence-tagged demo catalogue, queue a song, watch your position in line update live, vote tracks
+up — and in attended mode watch requests sit in the staging lane until the DJ cues them.
 
 > **Nothing is audible yet.** The engine is the stub, so deck state is real but no sound is produced.
 > Audio arrives with the Mixxx-derived engine (epic E7), and nothing above the engine adapter changes when
@@ -37,24 +37,19 @@ autonomous mixer keeps the room from going silent.
 
 ### What is built
 
-Milestones **M1 (walking skeleton)**, **M2 (the fusion layer)** and **M3 (crowd plane and API)** —
-contract first, per [ADR-002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new):
-
 | Module | Licence | What it is |
 |---|---|---|
 | [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
 | [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
+| [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, and **live instruments as queueable sources** |
 | [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
-| [`clients/`](clients) | Apache-2.0 | Patron PWA and venue display screen |
+| [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks everything above, and permanently proves the engine is replaceable (REQ-LIC-5) |
 | [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 19 checks |
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**153 tests · 19 conformance checks · zero runtime dependencies.**
-
-A patron request travels through policy screening and fairness rules, into the priority queue and the
-staging lane, out through the scheduler, across the CDEP socket, and onto a real (if silent) engine deck.
+**211 tests · 19 conformance checks · zero runtime dependencies.**
 
 ```bash
 npm run check      # licence lint + tests + conformance
