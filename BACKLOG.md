@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 7 of 59 stories complete · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 16 of 59 stories complete · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 59 stories · 117 of 117 requirements covered**
@@ -85,13 +85,13 @@ Domain C has no prior art in any product, open or closed. Built against the stub
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **SCH-1** | **Queue entry lifecycle state machine**<br>States, guarded transitions, and an append-only event log with actor and reason. | M | build | `REQ-SCH-1` `REQ-SCH-2` `REQ-SCH-5` |
-| **SCH-2** | **Staging lane and DJ promotion**<br>The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1. | M | build | `REQ-SCH-3` `REQ-SCH-4` |
-| **SCH-3** | **Priority ordering function**<br>Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here. | M | `REFERENCE` | `REQ-SCH-6` `REQ-SCH-7` `REQ-SCH-8` `REQ-SCH-9` `REQ-SCH-10` |
-| **SCH-4** | **Fair-queue anti-monopoly rules**<br>Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6. | M | `REFERENCE` | `REQ-SCH-14` `REQ-SCH-15` `REQ-SCH-16` `REQ-SCH-17` `REQ-SCH-18` |
-| **SCH-5** | **Autonomous drain with beatmatched transitions**<br>Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2. | L | `REFERENCE` | `REQ-MODE-4` `REQ-MODE-5` |
-| **SCH-6** | **Gapless mode handoff**<br>Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3. | M | build | `REQ-MODE-1` `REQ-MODE-2` `REQ-MODE-3` |
-| **SCH-7** | **Never-silent fallback engine**<br>Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8. | M | `REFERENCE` | `REQ-FALL-1` `REQ-FALL-2` `REQ-FALL-3` `REQ-FALL-4` |
+| ✅ **SCH-1** | **Queue entry lifecycle state machine**<br>States, guarded transitions, and an append-only event log with actor and reason. | M | build | `REQ-SCH-1` `REQ-SCH-2` `REQ-SCH-5` |
+| ✅ **SCH-2** | **Staging lane and DJ promotion**<br>The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1. | M | build | `REQ-SCH-3` `REQ-SCH-4` |
+| ✅ **SCH-3** | **Priority ordering function**<br>Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here. | M | `REFERENCE` | `REQ-SCH-6` `REQ-SCH-7` `REQ-SCH-8` `REQ-SCH-9` `REQ-SCH-10` |
+| ✅ **SCH-4** | **Fair-queue anti-monopoly rules**<br>Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6. | M | `REFERENCE` | `REQ-SCH-14` `REQ-SCH-15` `REQ-SCH-16` `REQ-SCH-17` `REQ-SCH-18` |
+| ✅ **SCH-5** | **Autonomous drain with beatmatched transitions**<br>Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2. | L | `REFERENCE` | `REQ-MODE-4` `REQ-MODE-5` |
+| ✅ **SCH-6** | **Gapless mode handoff**<br>Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3. | M | build | `REQ-MODE-1` `REQ-MODE-2` `REQ-MODE-3` |
+| ✅ **SCH-7** | **Never-silent fallback engine**<br>Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8. | M | `REFERENCE` | `REQ-FALL-1` `REQ-FALL-2` `REQ-FALL-3` `REQ-FALL-4` |
 
 ### E4 · Data model and persistence
 
@@ -200,8 +200,8 @@ The difference between a demo and something a venue keeps switched on.
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **VEN-1** | **Venue policy engine**<br>Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides. | L | build | `REQ-POL-1` `REQ-POL-3` `REQ-POL-4` |
-| **VEN-2** | **Policy-scoped search**<br>An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7. | M | build | `REQ-POL-2` |
+| ✅ **VEN-1** | **Venue policy engine**<br>Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides. | L | build | `REQ-POL-1` `REQ-POL-3` `REQ-POL-4` |
+| ✅ **VEN-2** | **Policy-scoped search**<br>An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7. | M | build | `REQ-POL-2` |
 | **VEN-3** | **Venue licensing profile**<br>Which PRO licences the venue holds. Post-JLO, operators need separate ASCAP, BMI and SESAC licences, so the software tracks rather than assumes. | M | build | `REQ-DAT-9` |
 | **VEN-4** | **Offline-first verification**<br>Run the full day-in-the-life scenario with WAN disconnected in CI. Satisfies AC-13. | M | build | `REQ-NFR-3` `REQ-NFR-9` |
 | **VEN-5** | **No-telemetry guarantee**<br>Assert no outbound traffic beyond enabled providers; separate staff credentials. | S | build | `REQ-NFR-6` `REQ-NFR-8` |

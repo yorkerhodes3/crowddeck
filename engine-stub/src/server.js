@@ -356,6 +356,20 @@ export class Server {
         return;
       }
 
+      case MessageType.QUEUE: {
+        const group = requireString(msg, "group");
+        const track = msg.track;
+        const normalised = typeof track === "string" ? { id: track } : track;
+        if (!normalised || typeof normalised !== "object") {
+          throw new CdepError(ErrorCode.INVALID_FIELD, `"track" must be an object or string id`);
+        }
+        // Deliberately does not touch the playing track — that is the whole
+        // difference between `queue` and `load`.
+        this.engine.queueNext(group, normalised);
+        conn.reply(ok(id));
+        return;
+      }
+
       default:
         throw new CdepError(ErrorCode.UNKNOWN_TYPE, `unknown message type "${type}"`);
     }

@@ -644,11 +644,13 @@
     </div>
 
     <div class="callout" style="border-left-color: var(--accent);">
-      <strong>Build has started.</strong> M1 is complete: the CDEP contract, a conformant stub engine, the
-      conformance suite and the licence-lint gate are implemented and green in CI —
-      <strong>50 tests, 18 conformance checks</strong>, zero dependencies.
-      <span class="mono">engine/</span> is still deliberately empty; per ADR-002 the Mixxx fork comes after
-      <span class="mono">SPIKE-1</span>.
+      <strong>Build has started.</strong> M1 and M2 are complete: the CDEP contract, a conformant stub
+      engine, the conformance suite, the licence-lint gate, and the <strong>Unified Scheduler</strong> —
+      staging lane, priority ordering, fair-queue rules, policy engine, autonomous drain, gapless handoff
+      and never-silent fallback. <strong>132 tests, 19 conformance checks</strong>, zero dependencies, all
+      green in CI. A patron request now travels through policy and fairness into the staging lane, across
+      the CDEP socket, and onto a real engine deck. <span class="mono">engine/</span> is still deliberately
+      empty; per ADR-002 the Mixxx fork comes after <span class="mono">SPIKE-1</span>.
     </div>
 
     <div data-render="backlog"></div>

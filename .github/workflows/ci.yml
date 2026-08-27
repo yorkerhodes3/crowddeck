@@ -23,7 +23,7 @@ jobs:
         run: node tools/licence-lint.mjs
 
       - name: Unit and integration tests
-        run: node --test "protocol/test/**/*.test.js" "engine-stub/test/**/*.test.js"
+        run: node --test "protocol/test/**/*.test.js" "engine-stub/test/**/*.test.js" "core/test/**/*.test.js"
 
       # Any conforming engine must pass this. Today only the stub exists; when
       # the Mixxx-derived engine lands it runs against that too (REQ-CDEP-17,

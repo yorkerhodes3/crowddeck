@@ -3456,7 +3456,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-5"
             ],
             "detail": "States, guarded transitions, and an append-only event log with actor and reason.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-2",
@@ -3468,7 +3468,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-4"
             ],
             "detail": "The core design decision: requests never reach audio without a DJ or the autonomous mixer. Satisfies AC-1.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-3",
@@ -3483,7 +3483,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-10"
             ],
             "detail": "Votes and boost units as two inputs to one score, plus the anti-starvation aging term. Reference Raveberry for vote decay. Payments in v1.1 need no change here.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-4",
@@ -3498,7 +3498,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-SCH-18"
             ],
             "detail": "Per-patron limits, artist/track cooldown, rate limiting, one-vote-per-entry as a DB constraint. Reference Karaoke Eternal's fair queue and Mopidy-Party throttling. Satisfies AC-5, AC-6.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-5",
@@ -3510,7 +3510,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MODE-5"
             ],
             "detail": "Auto-mix the queue when no DJ is present, using beatgrid confidence with a timed-crossfade fallback. Satisfies AC-2.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-6",
@@ -3523,7 +3523,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MODE-3"
             ],
             "detail": "Attended ⇄ autonomous with no interruption to audio. Satisfies AC-3.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "SCH-7",
@@ -3537,7 +3537,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-FALL-4"
             ],
             "detail": "Fallback rotation, policy-screened, ≤2s dead air in every state including engine reconnect. Reference Liquidsoap. Satisfies AC-8.",
-            "status": "todo"
+            "status": "done"
           }
         ]
       },
@@ -4026,7 +4026,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-POL-4"
             ],
             "detail": "Explicit filter, allow/block lists, dayparting, licence gating, logged staff overrides.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "VEN-2",
@@ -4037,7 +4037,7 @@ window.__CROWDDECK_DATA__ = {
               "REQ-POL-2"
             ],
             "detail": "An unrequestable track is never offered. Filtering only at request time is a defect. Satisfies AC-7.",
-            "status": "todo"
+            "status": "done"
           },
           {
             "id": "VEN-3",

@@ -450,6 +450,31 @@ export const checks = [
         `expected not_handshaken, got ${reply.code}`
       );
     }
+  },
+  {
+    id: "C19",
+    requirement: "REQ-FALL-3",
+    title: "queue sets a follower without restarting the playing track",
+    async run({ connect }) {
+      const c = await connect();
+      if (!c.welcome.capabilities.includes("gapless")) return;
+
+      await c.load("[Channel3]", { id: "queue-current", duration: 10 });
+      await c.set("[Channel3]", "play", 1);
+      await waitFor(async () => (await c.get("[Channel3]", "playposition")) > 0);
+      const before = await c.get("[Channel3]", "playposition");
+
+      await c.queueNext("[Channel3]", { id: "queue-follower", duration: 5 });
+      await sleep(60);
+
+      const after = await c.get("[Channel3]", "playposition");
+      assert(after >= before, `queue must not rewind the playing track (${before} -> ${after})`);
+      assert(
+        (await c.get("[Channel3]", "duration")) === 10,
+        "queue must not swap the loaded track"
+      );
+      assert((await c.get("[Channel3]", "play")) === 1, "playback must continue");
+    }
   }
 ];
 

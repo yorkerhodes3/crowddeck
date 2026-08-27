@@ -252,6 +252,21 @@
       "additionalProperties": true
     },
     {
+      "title": "queue (client → engine)",
+      "description": "Set the deck's gapless follower without disturbing the playing track. Distinct from `load`, which replaces what is on the deck now. Only valid when the engine advertises the \"gapless\" capability.",
+      "type": "object",
+      "required": ["t", "group", "track"],
+      "properties": {
+        "t": { "const": "queue" },
+        "id": { "$ref": "#/$defs/id" },
+        "group": { "$ref": "#/$defs/group" },
+        "track": {
+          "oneOf": [{ "$ref": "#/$defs/track" }, { "type": "string", "minLength": 1 }]
+        }
+      },
+      "additionalProperties": true
+    },
+    {
       "title": "event (engine → client)",
       "type": "object",
       "required": ["t", "event"],

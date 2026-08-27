@@ -19,22 +19,26 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 117 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 59 stories, 117/117 traced |
-| **4 — Build** | `protocol/` `engine-stub/` `conformance/` | 🚧 **In progress — M1 complete, 7/59 stories** |
+| **4 — Build** | `protocol/` `engine-stub/` `core/` `conformance/` | 🚧 **In progress — M1 + M2 complete, 16/59 stories** |
 
 ### What is built
 
-Milestone **M1 (walking skeleton)** is done — contract first, per
+Milestones **M1 (walking skeleton)** and **M2 (the fusion layer)** are done — contract first, per
 [ADR-002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new):
 
 | Module | Licence | What it is |
 |---|---|---|
 | [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
+| [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks the fusion core, and permanently proves the engine is replaceable (REQ-LIC-5) |
-| [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 18 checks |
+| [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 19 checks |
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**50 tests · 18 conformance checks · zero runtime dependencies.**
+**132 tests · 19 conformance checks · zero runtime dependencies.**
+
+A patron request now travels through policy screening and fairness rules, into the priority queue and the
+staging lane, out through the scheduler, across the CDEP socket, and onto a real (if silent) engine deck.
 
 ```bash
 npm run check      # licence lint + tests + conformance
@@ -114,6 +118,13 @@ protocol/                Apache-2.0 — CDEP: the engine contract
   cdep-1.schema.json       Published wire-format schema
   src/                     messages, controls, framing, errors, client
   test/                    node --test
+core/                    Apache-2.0 — the fusion core (the novelty)
+  src/priority.js          ordering: votes + boosts + anti-starvation aging
+  src/fairness.js          per-patron limits, cooldowns, rate limiting
+  src/policy.js            explicit filter, allow/block, dayparting, licensing
+  src/queue.js             lifecycle state machine with audit log
+  src/scheduler.js         staging lane, modes, fallback
+  src/engine-adapter.js    scheduler intents ⇄ CDEP
 engine-stub/             Apache-2.0 — a conformant engine with no audio
   src/                     server, engine model, simulated sink
   bin/                     crowddeck-engine-stub

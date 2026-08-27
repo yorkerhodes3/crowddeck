@@ -27,6 +27,7 @@ export const MessageType = Object.freeze({
   UNSUBSCRIBE: "unsubscribe",
   CHANGED: "changed",
   LOAD: "load",
+  QUEUE: "queue",
   EVENT: "event",
   PING: "ping",
   PONG: "pong",

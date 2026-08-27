@@ -195,6 +195,23 @@ export class CdepClient extends EventEmitter {
     await this.request({ t: MessageType.LOAD, group, track });
   }
 
+  /**
+   * Set the deck's gapless follower without disturbing what is playing.
+   *
+   * Distinct from `load` on purpose: `load` replaces what is on the deck now and
+   * restarts playback, which is exactly what must NOT happen when arranging a
+   * seamless transition. Only use when the engine advertises the `gapless`
+   * capability (REQ-CDEP-11).
+   */
+  async queueNext(group, track) {
+    await this.request({ t: MessageType.QUEUE, group, track });
+  }
+
+  get supportsGapless() {
+    return Array.isArray(this.welcome?.capabilities)
+      && this.welcome.capabilities.includes("gapless");
+  }
+
   async ping() {
     return this.request({ t: MessageType.PING });
   }
