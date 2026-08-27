@@ -14,12 +14,25 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 
 | Phase | Artefact | State |
 |---|---|---|
-| **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ **Complete — awaiting review** |
-| 2 — Specification | [`SPECIFICATION.md`](SPECIFICATION.md) | 🔒 Blocked on Phase 1 review |
+| **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ **Complete** |
+| **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | 🟡 **Recommendations proposed — awaiting sign-off** |
+| 2 — Specification | [`SPECIFICATION.md`](SPECIFICATION.md) | ⏳ Ready to draft once decisions are ratified |
 | 3 — Backlog | [`BACKLOG.md`](BACKLOG.md) | 🔒 Blocked on Phase 2 |
 
 **Nothing is built yet.** This repository is a research artefact supporting a build decision, plus the
 dashboard that explains it.
+
+### The five decisions on the table
+
+| ADR | Question | Recommendation |
+|---|---|---|
+| [001](DECISIONS.md#adr-001--licence-structure) | Licence structure | **Split** — Apache-2.0 core + GPL-2.0-or-later engine across a hard IPC boundary |
+| [002](DECISIONS.md#adr-002--engine-fork-mixxx-or-build-new) | Engine | **Fork Mixxx** headless — but contract-first, stub second, fork third |
+| [003](DECISIONS.md#adr-003--is-paid-priority-fast-pass-in-v1) | Paid priority | **Model yes, rails no** — ordering + ledger in v1, payments in v1.1 |
+| [004](DECISIONS.md#adr-004--single-venue-appliance-or-multi-tenant-from-the-start) | Deployment | **Single-venue appliance**; multi-venue later as federation, not multi-tenancy |
+| [005](DECISIONS.md#adr-005--native-qt-shell-or-thin-native-engine-plus-web-consoles) | Client architecture | **Thin native engine + web consoles** |
+
+Rationale, confidence levels and what would change each recommendation: [`DECISIONS.md`](DECISIONS.md).
 
 ---
 
@@ -67,7 +80,8 @@ Raw findings are preserved in [`research/`](research/).
 
 ```
 CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
-SPECIFICATION.md         Phase 2 — gated stub
+DECISIONS.md             Five ADRs unblocking Phase 2 — proposed, awaiting sign-off
+SPECIFICATION.md         Phase 2 — ready to draft once decisions are ratified
 BACKLOG.md               Phase 3 — gated stub
 docs/
   index.html             Interactive dashboard explainer (GitHub Pages root)
@@ -112,9 +126,9 @@ The script validates every JSON file and fails loudly on a syntax error, so it d
 
 [Apache-2.0](LICENSE), covering the research, dashboard and scaffolding in this repository.
 
-The licence structure for the *product* is an open question deliberately raised in `CONCEPT-IDEA.md` §8 —
-the recommendation is a split model where a Mixxx-derived performance plane is GPL-2.0-or-later and
-everything else stays Apache-2.0 across an IPC boundary. That decision belongs to `SPECIFICATION.md`.
+The licence structure for the *product* is addressed in [`DECISIONS.md`](DECISIONS.md) ADR-001 — the
+recommendation is a split model where a Mixxx-derived performance plane is GPL-2.0-or-later and everything
+else stays Apache-2.0 across a hard IPC boundary. It is proposed, not ratified.
 
 ---
 

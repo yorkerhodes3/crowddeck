@@ -497,14 +497,24 @@ lighting, visuals and other apps in the room are all on the same timeline for fr
 
 ## 11. Open questions for review
 
-These five block `SPECIFICATION.md`:
+These five blocked `SPECIFICATION.md`. **Recommendations for all five are now in
+[`DECISIONS.md`](DECISIONS.md)**, proposed and awaiting sign-off:
 
 1. **Licence structure** — split Apache-2.0 / GPL-2.0-or-later as recommended in §8, or a single GPL product?
+   → *ADR-001: split. Both Mixxx and Ableton Link are GPL-2.0-**or-later**, which removes the Apache/GPL-2.0
+   incompatibility that would have made this fragile.*
 2. **Engine** — fork Mixxx, or build a new engine against permissive libraries only (slower, more freedom)?
+   → *ADR-002: fork, but contract-first, stub second, fork third. Mixxx's `ControlObjectScript` bus is
+   already an IPC surface in all but transport.*
 3. **Monetisation** — is paid priority (Fast Pass) in scope for v1, or is v1 vote-only with payments deferred?
+   → *ADR-003: build the ordering model and credit ledger; ship no payment rails until v1.1.*
 4. **Deployment shape** — single-venue appliance first, or multi-tenant operator console from the start?
+   → *ADR-004: single-venue appliance; multi-venue later as federation over appliances, since offline-first
+   (G1) rules out multi-tenant SaaS.*
 5. **Client architecture** — native desktop shell (Qt) for the DJ console, or a thin native engine with web
    consoles for everything?
+   → *ADR-005: thin engine + web consoles. Controller input reaches the engine directly, so web latency is
+   cosmetic.*
 
 ---
 

@@ -23,10 +23,10 @@
       <a href="#midi">MIDI</a>
       <a href="#architecture">Architecture</a>
       <a href="#licence">Licence</a>
-      <a href="#roadmap">Roadmap</a>
+      <a href="#roadmap">Decisions</a>
     </nav>
     <span class="spacer"></span>
-    <a class="ghlink" href="https://github.com/yorkerhodes3/crowddeck/blob/main/CONCEPT-IDEA.md">CONCEPT-IDEA.md →</a>
+    <a class="ghlink" href="https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md">DECISIONS.md →</a>
   </div>
 </header>
 
@@ -536,30 +536,38 @@
         <h4>CONCEPT-IDEA.md</h4>
         <p>Competitive research, capability synthesis, open-source triage, architecture and licence options. This dashboard is its companion.</p>
       </div>
-      <div class="gate locked">
-        <span class="status">🔒</span>
-        <div class="ph">Phase 2 · gated on review</div>
-        <h4>SPECIFICATION.md</h4>
-        <p>Locks the licence structure, the plane boundary and the IPC contract; converts the capability set into testable requirements with acceptance criteria.</p>
+  <div class="gate done">
+    <span class="status">🟡</span>
+    <div class="ph">Phase 1.5 · proposed</div>
+    <h4>DECISIONS.md</h4>
+    <p>Five ADRs answering the questions that blocked Phase 2, each with a confidence level and what would change the recommendation. Awaiting sign-off.</p>
       </div>
       <div class="gate locked">
-        <span class="status">🔒</span>
-        <div class="ph">Phase 3 · gated on spec</div>
-        <h4>BACKLOG.md</h4>
-        <p>Sequenced, estimated work items derived from the specification, with fork-vs-build already settled per item.</p>
+    <span class="status">⏳</span>
+    <div class="ph">Phase 2 · ready to draft</div>
+    <h4>SPECIFICATION.md</h4>
+    <p>Converts the capability set into testable requirements. Its first section is the engine IPC contract, because that contract is what everything else is built against.</p>
       </div>
-    </div>
+  <div class="gate locked">
+    <span class="status">🔒</span>
+    <div class="ph">Phase 3 · gated on spec</div>
+    <h4>BACKLOG.md</h4>
+    <p>Sequenced, estimated work items derived from the specification, with fork-vs-build already settled per item.</p>
+  </div>
+</div>
 
-    <div class="callout">
-      <strong>Five decisions needed to unblock Phase 2.</strong>
-      <ol style="margin: 10px 0 0; padding-left: 20px;">
-        <li>Licence structure — split Apache-2.0 / GPL as recommended, or single GPL?</li>
-        <li>Fork Mixxx, or build a new engine against permissive libraries only?</li>
-        <li>Is paid priority (Fast Pass) in scope for v1, or is v1 vote-only?</li>
-        <li>Single-venue appliance first, or multi-tenant operator console from the start?</li>
-        <li>Native desktop shell (Qt) vs. thin native engine plus web consoles?</li>
-      </ol>
-    </div>
+<div class="callout">
+  <strong>The five decisions, and the recommendations on the table.</strong>
+  <ol style="margin: 10px 0 0; padding-left: 20px;">
+    <li><strong>Licence structure</strong> — split Apache-2.0 core + GPL-2.0-or-later engine across a hard IPC boundary. Both Mixxx and Ableton Link turned out to be GPL-2.0-<em>or-later</em>, which removes the compatibility problem that would have made this fragile.</li>
+    <li><strong>Engine</strong> — fork Mixxx, but contract-first, stub second, fork third. Its <span class="mono">ControlObjectScript</span> bus already drives the whole engine from a scripting layer, so a socket transport is far less work than a cold extraction.</li>
+    <li><strong>Paid priority</strong> — build the ordering model and credit ledger in v1; ship no payment rails until v1.1.</li>
+    <li><strong>Deployment</strong> — single-venue appliance, <span class="mono">venue_id</span> everywhere, multi-venue later as federation over appliances rather than shared-database multi-tenancy. Offline-first (G1) essentially forces this.</li>
+    <li><strong>Client architecture</strong> — thin native engine plus web consoles. Controller input reaches the engine directly, so web UI latency is cosmetic rather than functional.</li>
+  </ol>
+  <p style="margin: 12px 0 0;">Full rationale, confidence levels and what would change each recommendation are in
+  <a href="https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md">DECISIONS.md</a>.</p>
+</div>
   </div>
 </section>
 
