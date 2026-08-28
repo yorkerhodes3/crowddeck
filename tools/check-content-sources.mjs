@@ -119,11 +119,33 @@ const EXEMPT = new Set([
   "tools/test/check-content-sources.test.js"
 ]);
 
+/**
+ * Walk the tree, tolerating a file that disappears mid-walk.
+ *
+ * `readdirSync` is a snapshot, so an entry can be gone by the time we stat it —
+ * an editor saving, a build cleaning up, another test removing its fixture.
+ * Crashing then reports a content-source failure that has nothing to do with
+ * content sources, and a file that no longer exists cannot violate REQ-CON-7.
+ */
 function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  for (const entry of entries) {
     if (SKIP_DIRS.has(entry)) continue;
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) yield* walk(full);
+    let st;
+    try {
+      st = statSync(full);
+    } catch (err) {
+      if (err.code === "ENOENT") continue;
+      throw err;
+    }
+    if (st.isDirectory()) yield* walk(full);
     else yield full;
   }
 }

@@ -17,6 +17,8 @@
 import { LicenceClass } from "../../core/src/policy.js";
 
 const TRACKS = [
+  // `duration` is seconds here for readability; the constructor converts to the
+  // milliseconds a track carries everywhere else.
   { id: "cc-001", title: "Neon Harbour",     artist: "Wavelet",        genre: "House",     duration: 212, bpm: 124, licenceClass: LicenceClass.CC_ATTRIBUTION },
   { id: "cc-002", title: "Slow Transit",     artist: "Wavelet",        genre: "Deep House",duration: 245, bpm: 120, licenceClass: LicenceClass.CC_ATTRIBUTION },
   { id: "cc-003", title: "Paper Lanterns",   artist: "Kite Season",    genre: "Indie",     duration: 198, bpm: 112, licenceClass: LicenceClass.CC_ATTRIBUTION },
@@ -39,8 +41,19 @@ const TRACKS = [
 ];
 
 export class DemoCatalog {
+  /**
+   * The table above lists `duration` in seconds because that is what a human
+   * writing a catalogue entry means. A *track* carries milliseconds everywhere
+   * else — `duration_ms` in the schema, and what every provider emits — so the
+   * conversion happens once, here, rather than leaving the demo catalogue as the
+   * one source in the system speaking a different unit.
+   */
   constructor(tracks = TRACKS) {
-    this.tracks = tracks.map((t) => ({ explicit: false, ...t }));
+    this.tracks = tracks.map((t) => ({
+      explicit: false,
+      ...t,
+      duration: Number.isFinite(t.duration) ? t.duration * 1000 : null
+    }));
     this.byId = new Map(this.tracks.map((t) => [t.id, t]));
   }
 

@@ -459,10 +459,34 @@ age_bonus = floor(minutes_waiting / AGING_INTERVAL) × AGING_WEIGHT
 
 - **REQ-API-10** The appliance **MUST** expose an OpenSubsonic-compatible subset at `/rest/`: `ping`,
   `getLicense`, `search3`, `getAlbumList2`, `getPlaylists`, `stream`, `getCoverArt`.
-- **REQ-API-11** `jukeboxControl` **MUST** be implemented, and **MUST** support the `jukeboxMediaTypes`
-  extension rather than song IDs only.
+- **REQ-API-11** `jukeboxControl` **MUST** be implemented. Its playlist **MUST** be able to represent queue
+  entries that are not Subsonic library songs — a Creative Commons provider track, or a live MIDI instrument
+  (REQ-INST-1) — because a queue that can only express song IDs cannot describe this product's queue.
+- **REQ-API-11a** That capability **MUST** be advertised through `getOpenSubsonicExtensions` under a
+  **vendor-namespaced** name, and entries a stock client cannot understand **MUST** still be returned as
+  valid `Child` objects, so an unmodified Subsonic client shows a coherent queue rather than failing.
 - **REQ-API-12** Subsonic-authenticated clients **MUST** be treated as staff-level, since the Subsonic
-  auth model has no patron concept.
+  auth model has no patron concept. The Subsonic surface **MUST** be disabled unless explicitly configured
+  with its own credential, and that credential **MUST NOT** default to the staff key.
+
+> **Amended by API-2.** REQ-API-11 originally required "the `jukeboxMediaTypes` extension". **No such
+> extension exists.** The OpenSubsonic extension registry
+> ([`open-subsonic-api`](https://github.com/opensubsonic/open-subsonic-api), `content/en/docs/Extensions/`)
+> defines exactly ten: `transcodeOffset`, `apiKeyAuthentication`, `formPost`, `getPodcastEpisode`,
+> `indexBasedQueue`, `playbackReport`, `songLyrics`, `sonicSimilarity`, `topSongsByArtistId` and
+> `transcoding`. The name came from the concept-phase research and was never verified — the same failure mode
+> that put non-existent projects in the first Tavily pass, which is why every repository in that pass was
+> re-checked against the GitHub API.
+>
+> The *intent* was sound and is kept: a stock `jukeboxControl` playlist is a list of library song IDs, and
+> this product's queue contains things that are not library songs. Inventing a private field and calling it a
+> published standard would have been worse than the original error, so the extension is namespaced
+> `crowddeck.mediaTypes` — unmistakably ours — and declared through the real extension mechanism.
+>
+> REQ-API-12 also gained a constraint. Making Subsonic clients staff-level is correct, but it means an
+> `md5(password + salt)` credential grants skip, mode and panic. Defaulting that to the staff key would put
+> the main staff credential behind an offline-crackable hash, so the surface is off until an operator gives
+> it a separate password of its own.
 
 ---
 

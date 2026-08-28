@@ -22,6 +22,26 @@ import { computeGain, dbToLinear } from "./loudness.js";
 /** The deck the autonomous mixer drives by default. */
 export const PRIMARY_DECK = "[Channel1]";
 
+/**
+ * Track durations are milliseconds; CDEP `load` takes seconds.
+ *
+ * Two units, both deliberate: the data model stores `duration_ms` (SPECIFICATION
+ * §4) and every provider emits milliseconds, while `cdep-1.schema.json` documents
+ * `track.duration` as seconds because that is the unit an audio engine works in.
+ * This function is the one place the boundary is crossed.
+ *
+ * It was missing. A 245,000 ms Jamendo track was loaded as a 245,000 *second*
+ * track — sixty-eight hours — so the deck never reached the end and `track_ended`
+ * never fired. Nothing threw, which is exactly why it went unnoticed: the symptom
+ * is a track that simply never finishes.
+ *
+ * @param {number|null|undefined} ms
+ */
+export function toCdepSeconds(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return undefined;
+  return ms / 1000;
+}
+
 export class EngineAdapter {
   /**
    * @param {object} opts
@@ -92,7 +112,7 @@ export class EngineAdapter {
 
       await this.client.load(this.deck, {
         id: entry.track.id,
-        duration: entry.track.duration,
+        duration: toCdepSeconds(entry.track.duration),
         bpm: entry.track.bpm,
         key: entry.track.key
       });
@@ -134,7 +154,7 @@ export class EngineAdapter {
     try {
       await this.client.queueNext(this.deck, {
         id: entry.track.id,
-        duration: entry.track.duration
+        duration: toCdepSeconds(entry.track.duration)
       });
       this.queuedNext = entry;
     } catch (err) {

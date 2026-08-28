@@ -64,6 +64,11 @@ export class InstrumentSource extends EventEmitter {
    * A track-shaped view, so the scheduler and every client can treat a live
    * performance exactly like a recording without special cases.
    *
+   * `duration` is milliseconds, because that is what a track carries everywhere
+   * else (`duration_ms` in the schema, and what every provider emits). The slot
+   * itself is booked in seconds, which reads better for a human setting it, so the
+   * conversion happens here rather than leaking a second unit into the queue.
+   *
    * Licence class is `owned_local`: an original live performance needs no
    * recording licence, though the venue's live-performance licensing is a
    * separate matter it already tracks.
@@ -74,7 +79,7 @@ export class InstrumentSource extends EventEmitter {
       title: this.name,
       artist: this.performer ?? "Live",
       genre: "Live",
-      duration: this.durationSec,
+      duration: this.durationSec * 1000,
       explicit: false,
       licenceClass: LicenceClass.OWNED_LOCAL,
       isLive: true,

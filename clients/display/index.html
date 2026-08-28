@@ -163,7 +163,7 @@ import { encodeQr, toSvg } from "../lib/qr.js";
 
   setInterval(function () {
     if (!current || !current.track.duration) { el("progress").style.width = "0"; return; }
-    var pct = Math.min(100, ((Date.now() - startedAt) / 1000 / current.track.duration) * 100);
+    var pct = Math.min(100, ((Date.now() - startedAt) / current.track.duration) * 100);
     el("progress").style.width = pct + "%";
   }, 900);
 

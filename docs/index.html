@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>528 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>574 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -891,6 +891,40 @@
       venue with a search box that never finds anything and no explanation. Probing the guards also found a
       test passing for an incidental reason: it checked one shape of lookalike host and missed the case where
       the real domain is embedded in a <em>path</em>. Now all three shapes are covered.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--hot);">
+      <strong>Speaking Subsonic — and finding that a requirement cited an extension that does not
+      exist.</strong> <span class="mono">API-2</span> exposes an OpenSubsonic surface, which buys an existing
+      client ecosystem on day one. The fit is unusually good: Subsonic's <span class="mono">jukeboxControl</span>
+      means <em>"playback on the server's own audio hardware"</em>, which is exactly what this product is.
+      <br><br>
+      <strong>REQ-API-11 required "the <span class="mono">jukeboxMediaTypes</span> extension". There is no such
+      extension.</strong> The registry defines exactly ten, and that is not among them — the name came from
+      concept-phase research and was never verified, the same failure that put non-existent projects in the
+      first Tavily pass. The requirement's <em>intent</em> was sound and is kept: a stock jukebox playlist is a
+      list of library song IDs, and this queue contains live MIDI instruments and CC provider tracks that are
+      not library songs. Inventing a private field and implying it was a standard would have been worse than
+      the original error, so it ships as <span class="mono">crowddeck.mediaTypes</span> — unmistakably ours —
+      and a test asserts every non-namespaced extension we advertise is a real, published one.
+      <br><br>
+      Subsonic clients are staff, because the Subsonic auth model has no patron concept and mapping one to a
+      patron would let it walk around credit limits. That has a consequence: an
+      <span class="mono">md5(password + salt)</span> credential can skip and clear. So the surface is
+      <strong>off until an operator gives it a password of its own</strong>, and refuses to start if that is
+      the staff key. Staff are exempt from the patron quota but never from policy —
+      <em>fairness is a courtesy rule, licensing is a legal control that binds the venue whoever pressed the
+      button.</em>
+      <br><br>
+      Building it surfaced three bugs. Queue removal used <span class="mono">skip()</span>, but
+      <span class="mono">skipped</span> is only reachable from <em>cued</em> or <em>playing</em> — so every
+      <span class="mono">clear</span> silently failed, and <span class="mono">skip()</span> also records the
+      track in <span class="mono">recentPlays</span>, which would have put a track nobody heard into cooldown.
+      And a cross-module unit mismatch: providers and the data layer emit <strong>milliseconds</strong> while
+      CDEP documents <span class="mono">load.duration</span> in <strong>seconds</strong>, so a 245,000 ms track
+      was loaded as <strong>sixty-eight hours</strong> and the deck never reached the end. Nothing threw —
+      which is exactly why it survived — and all three clients were quietly formatting the wrong unit too. One
+      conversion now sits at the boundary, and tests pin it in the engine, the clients and the queue.
     </div>
 
     <div class="callout" style="border-left-color: var(--info);">

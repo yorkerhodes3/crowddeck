@@ -164,8 +164,10 @@
 
   /* --------------------------------------------------------- rendering */
 
-  function fmtDuration(sec) {
-    if (!sec) return "";
+  function fmtDuration(ms) {
+    // Track durations are milliseconds throughout the system (`duration_ms`).
+    if (!ms) return "";
+    var sec = ms / 1000;
     var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return m + ":" + (s < 10 ? "0" : "") + s;
   }

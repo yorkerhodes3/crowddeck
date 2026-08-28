@@ -48,7 +48,9 @@ const track = (id, over = {}) => ({
   id,
   title: `Title ${id}`,
   artist: `Artist ${id}`,
-  duration: 0.4,
+  // Milliseconds, like every track in the system. Deliberately short so the stub
+  // engine reaches the end of a "song" within a test.
+  duration: 400,
   genre: "House",
   explicit: false,
   licenceClass: LicenceClass.OWNED_LOCAL,
@@ -86,7 +88,7 @@ test("a patron request reaches a real engine deck and plays", async (t) => {
   const h = await boot();
   t.after(() => h.stop());
 
-  const r = h.scheduler.request({ track: track("a", { duration: 5 }), patronId: "p1" });
+  const r = h.scheduler.request({ track: track("a", { duration: 5000 }), patronId: "p1" });
   assert.equal(r.ok, true);
 
   h.scheduler.tick();
@@ -104,7 +106,7 @@ test("in attended mode nothing reaches the deck until a DJ promotes — AC-1", a
   const h = await boot({ mode: Mode.ATTENDED });
   t.after(() => h.stop());
 
-  const r = h.scheduler.request({ track: track("a", { duration: 5 }), patronId: "p1" });
+  const r = h.scheduler.request({ track: track("a", { duration: 5000 }), patronId: "p1" });
   h.scheduler.tick();
   await sleep(200);
 
@@ -156,7 +158,7 @@ test("an empty queue pulls fallback so the room never goes quiet — AC-8", asyn
 });
 
 test("a patron request pre-empts the fallback rotation", async (t) => {
-  const h = await boot({ fallbackProvider: () => track("filler", { duration: 0.3 }) });
+  const h = await boot({ fallbackProvider: () => track("filler", { duration: 300 }) });
   t.after(() => h.stop());
 
   h.scheduler.tick();
@@ -178,7 +180,7 @@ test("votes reorder what the engine plays next", async (t) => {
 
   // Get one track playing first, so the reordering applies to what follows.
   const first = h.scheduler.request({
-    track: track("first", { duration: 1.2 }),
+    track: track("first", { duration: 1200 }),
     patronId: "p1"
   }).entry;
   h.scheduler.tick();
@@ -209,7 +211,7 @@ test("a mode handoff mid-track does not interrupt audio — AC-3", async (t) => 
   const h = await boot();
   t.after(() => h.stop());
 
-  const e = h.scheduler.request({ track: track("a", { duration: 10 }), patronId: "p1" }).entry;
+  const e = h.scheduler.request({ track: track("a", { duration: 10000 }), patronId: "p1" }).entry;
   h.scheduler.tick();
 
   await waitFor(async () => (await h.client.get(PRIMARY_DECK, "play")) === 1);

@@ -77,11 +77,33 @@ function planeFor(relPath) {
   return best;
 }
 
+/**
+ * Walk the tree, tolerating a file that disappears mid-walk.
+ *
+ * `readdirSync` gives a snapshot; by the time we `stat` an entry it may be gone —
+ * an editor saving, a build cleaning up, a git checkout, or another test removing
+ * its fixture. Crashing on that is wrong twice over: the lint result is unrelated
+ * to the vanished file, and in CI it surfaces as a licence failure, which is
+ * alarming for no reason. A file that no longer exists cannot violate anything.
+ */
 function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  for (const entry of entries) {
     if (SKIP_DIRS.has(entry)) continue;
     const full = join(dir, entry);
-    const st = statSync(full);
+    let st;
+    try {
+      st = statSync(full);
+    } catch (err) {
+      if (err.code === "ENOENT") continue;
+      throw err;
+    }
     if (st.isDirectory()) yield* walk(full);
     else yield full;
   }
@@ -172,6 +194,23 @@ for (const file of walk(root)) {
 }
 
 const json = process.argv.includes("--json");
+
+/**
+ * A walk that finds almost nothing means the tool is broken, not that the tree is
+ * clean. Now that the walker tolerates a vanishing file, a wrong root or an
+ * unreadable tree could otherwise report "0 files checked, no violations" and pass
+ * — the exact fail-open this tool exists to prevent.
+ */
+const MIN_EXPECTED_FILES = 50;
+if (checked < MIN_EXPECTED_FILES) {
+  violations.push({
+    rule: "REQ-LIC-1",
+    file: "(the tree itself)",
+    message:
+      `only ${checked} source files were found, expected at least ${MIN_EXPECTED_FILES}. ` +
+      `The scan is broken; "no violations" here would mean nothing.`
+  });
+}
 
 if (json) {
   console.log(JSON.stringify({ checked, violations }, null, 2));

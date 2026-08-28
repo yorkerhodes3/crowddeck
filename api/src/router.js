@@ -81,6 +81,22 @@ export async function readJson(req, { maxBytes = 64 * 1024 } = {}) {
   }
 }
 
+/** Read a body as text, with the same size cap. Used for form POSTs. */
+export async function readText(req, { maxBytes = 64 * 1024 } = {}) {
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of req) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      const err = new Error("request body too large");
+      err.statusCode = 413;
+      throw err;
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 /** An error carrying an HTTP status, so handlers can fail declaratively. */
 export class HttpError extends Error {
   constructor(statusCode, code, message) {

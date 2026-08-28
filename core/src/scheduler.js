@@ -104,10 +104,17 @@ export class Scheduler extends EventEmitter {
    * Runs the policy gate then the fairness gate, and either enqueues or returns
    * a specific reason (REQ-SCH-18).
    *
-   * @param {{track: object, patronId: string, context?: object}} args
+   * `actor: Actor.STAFF` skips the **fairness** gate but never the **policy**
+   * gate, and the difference is the whole point. Fairness limits exist so one
+   * patron cannot monopolise the queue — a courtesy rule, and applying it to
+   * staff would stop a bartender queueing the next hour, which is a normal thing
+   * to want. Policy is a legal control: licensing and explicit-content rules bind
+   * a venue no matter who pressed the button, so no actor is exempt from them.
+   *
+   * @param {{track: object, patronId: string, context?: object, actor?: string}} args
    * @returns {{ok: true, entry: QueueEntry, position: number} | {ok: false, reason: string, detail: string, retryAfterMs?: number}}
    */
-  request({ track, patronId, context = {} }) {
+  request({ track, patronId, context = {}, actor = Actor.PATRON }) {
     const nowMs = this.now();
 
     const policyDecision = screen({ track, policy: this.policy, context });
@@ -120,15 +127,20 @@ export class Scheduler extends EventEmitter {
       .filter((e) => e.pending)
       .map((e) => ({ trackId: e.trackId, patronId: e.patronId, state: e.state }));
 
-    const fairnessDecision = checkRequest({
-      track,
-      patronId,
-      nowMs,
-      pending,
-      recentPlays: this.recentPlays,
-      patronRequestTimes: this.requestTimes.get(patronId) ?? [],
-      config: this.fairness
-    });
+    // Staff and DJs are not subject to the patron quota — see the note above.
+    const exemptFromFairness = actor === Actor.STAFF || actor === Actor.DJ;
+
+    const fairnessDecision = exemptFromFairness
+      ? { allowed: true }
+      : checkRequest({
+          track,
+          patronId,
+          nowMs,
+          pending,
+          recentPlays: this.recentPlays,
+          patronRequestTimes: this.requestTimes.get(patronId) ?? [],
+          config: this.fairness
+        });
     if (!fairnessDecision.allowed) {
       this.emit("rejected", { track, patronId, ...fairnessDecision });
       return {

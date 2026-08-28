@@ -14,11 +14,12 @@
  */
 
 import http from "node:http";
-import { HttpError, Router, readJson, sendJson } from "./router.js";
+import { HttpError, Router, readJson, readText, sendJson } from "./router.js";
 import { Role, SessionStore, tokenFrom } from "./sessions.js";
 import { isWebSocketUpgrade, upgrade } from "./ws.js";
 import { filterSearch } from "../../core/src/policy.js";
 import { Mode } from "../../core/src/scheduler.js";
+import { SubsonicSurface } from "./subsonic.js";
 
 export class VenueApi {
   /**
@@ -60,6 +61,19 @@ export class VenueApi {
     this.sessions = new SessionStore();
     /** @type {Set<{ws: import("./ws.js").WebSocketConnection, session: object}>} */
     this.subscribers = new Set();
+
+    // API-2. A second protocol with its own error model, so it lives in its own
+    // module and is mounted ahead of the router rather than woven into it. Off
+    // unless an operator gives it a credential of its own — see REQ-API-12.
+    this.subsonic = new SubsonicSurface({
+      scheduler: this.scheduler,
+      adapter: this.adapter,
+      catalog: this.catalog,
+      venueName: this.venueName,
+      staffKey: this.staffKey,
+      policyContext: () => this.#policyContext(),
+      ...(opts.subsonic ?? {})
+    });
 
     this.router = this.#buildRoutes();
     this.server = http.createServer((req, res) => this.#onRequest(req, res));
@@ -368,6 +382,18 @@ export class VenueApi {
 
     const route = this.router.match(req.method, url.pathname);
     if (!route) {
+      // The Subsonic surface answers with 200 + an error envelope and authenticates
+      // by query string, so it is dispatched before the 404 rather than through the
+      // router — two protocols, two error models, kept apart.
+      if (url.pathname.startsWith("/rest/")) {
+        const form =
+          req.method === "POST" &&
+          String(req.headers["content-type"] ?? "").includes("application/x-www-form-urlencoded")
+            ? Object.fromEntries(new URLSearchParams(await readText(req)))
+            : null;
+        if (await this.subsonic.handle(req, res, url, form)) return;
+      }
+
       if (this.staticHandler) {
         const asset = this.staticHandler(url.pathname);
         if (asset) {

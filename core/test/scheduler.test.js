@@ -28,7 +28,7 @@ const track = (id, over = {}) => ({
   id,
   title: `Title ${id}`,
   artist: `Artist ${id}`,
-  duration: 180,
+  duration: 180_000,
   genre: "House",
   explicit: false,
   licenceClass: LicenceClass.OWNED_LOCAL,

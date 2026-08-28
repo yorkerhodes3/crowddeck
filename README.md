@@ -19,7 +19,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 120 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 61 stories, 120/120 traced |
-| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 44/61 stories** |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 45/61 stories** |
 
 ### Try it
 
@@ -44,14 +44,14 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, and **live instruments as queueable sources** |
 | [`providers/`](providers) | Apache-2.0 | Where music comes from — one interface, a router that **isolates a dead source**, an **OpenSubsonic client** where the operator declares the licence, a **Creative Commons classifier** that refuses to guess, and a CI guard that no consumer-streaming or downloader adapter can enter |
 | [`data/`](data) | Apache-2.0 | **Persistence** — venue-scoped schema, append-only credit ledger, licence-class store, play log with CSV export, durable queue |
-| [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
+| [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket, and an **OpenSubsonic surface** so existing clients drive the jukebox |
 | [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display — including a from-scratch **QR encoder** verified against a real decoder |
 | [`engine-stub/`](engine-stub) | Apache-2.0 | A **conformant engine with no audio**. Unblocks everything above, and permanently proves the engine is replaceable (REQ-LIC-5) |
 | [`conformance/`](conformance) | Apache-2.0 | The suite **any** engine must pass — 20 checks |
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**528 tests · 20 conformance checks · zero runtime dependencies.**
+**574 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node

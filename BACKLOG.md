@@ -4,10 +4,10 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 44 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 45 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
-**11 epics · 61 stories · 120 of 120 requirements covered**
+**11 epics · 61 stories · 121 of 121 requirements covered**
 
 Sizes are t-shirt estimates for a small team, not commitments: **S** ≤1 week · **M** 1-3 weeks · **L** 3-6 weeks · **XL** 6-12 weeks.
 
@@ -133,7 +133,7 @@ The API is the only path in (REQ-API-1). Third-party clients are how an open pro
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
 | ✅ **API-1** | **HTTP + WebSocket surface, venue-namespaced**<br>/v1/venues/{id}/... from the start so client URLs survive the move to federation. OpenAPI 3.1 generated in CI. | L | build | `REQ-API-1` `REQ-API-2` `REQ-API-4` |
-| **API-2** | **OpenSubsonic-compatible endpoint**<br>Including jukeboxControl with the jukeboxMediaTypes extension. Buys an existing client ecosystem on day one. | L | `ADOPT` | `REQ-API-10` `REQ-API-11` `REQ-API-12` |
+| ✅ **API-2** | **OpenSubsonic-compatible endpoint**<br>Including jukeboxControl. Buys an existing client ecosystem on day one. DONE — api/src/subsonic.js. Subsonic's jukeboxControl means 'playback on the server's own audio hardware', which is exactly what this product is, so the mapping is unusually natural. It is a separate module because Subsonic answers HTTP 200 with the failure inside the envelope and authenticates by query string; interleaving that with a REST API that uses status codes properly would corrupt both. REQ-API-11 named a 'jukeboxMediaTypes' extension. NO SUCH EXTENSION EXISTS — the registry defines exactly ten and that is not among them; the name came from unverified concept-phase research. The intent was right, so the capability ships as crowddeck.mediaTypes, namespaced so it cannot be mistaken for a standard, and a test asserts every non-namespaced extension we advertise is a real published one. Subsonic clients are staff (REQ-API-12), which means an md5(password+salt) credential can skip and clear. The surface is therefore off until an operator gives it a password of its own, and refuses to start if that is the staff key. Staff are exempt from the patron fairness quota but never from policy: fairness is a courtesy rule, licensing is a legal control that binds the venue whoever pressed the button. Three real bugs surfaced. Queue removal used skip(), but 'skipped' is only reachable from cued or playing, so every clear silently failed — and skip() records the track in recentPlays, which would have put a track nobody heard into cooldown; removal now uses reject(). And a cross-module unit mismatch: providers and the data layer emit milliseconds while CDEP documents load.duration as seconds, so a 245,000 ms track was loaded as sixty-eight hours and the deck never reached the end. Nothing threw, which is why it survived. 37 protocol tests over a real socket, plus 6 pinning the duration boundary. | L | `ADOPT` | `REQ-API-10` `REQ-API-11` `REQ-API-11a` `REQ-API-12` |
 | ✅ **API-3** | **DJ console (web)**<br>Per ADR-005. Served locally, works with no WAN, streams deck state at ≥20Hz. Controller input bypasses the UI entirely. | L | `ADOPT` | `REQ-API-7` `REQ-API-8` `REQ-API-9` |
 
 ---

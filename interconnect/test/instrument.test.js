@@ -45,7 +45,10 @@ test("an instrument presents itself as a track — REQ-INST-1", () => {
   assert.equal(track.id, "live:akai:mpk-mini:1");
   assert.equal(track.title, "Live — Nina's SP-404");
   assert.equal(track.artist, "Nina");
-  assert.equal(track.duration, 300);
+  // A slot is booked in seconds because that is what a human sets, but a *track*
+  // carries milliseconds everywhere in the system. The conversion belongs in
+  // toTrack(), not in every consumer.
+  assert.equal(track.duration, 300_000);
   assert.equal(track.isLive, true);
   assert.equal(track.licenceClass, LicenceClass.OWNED_LOCAL);
   assert.equal(track.explicit, false);
@@ -208,7 +211,7 @@ test("a live instrument is scheduled by the real scheduler like any track", () =
     id: "cc-001",
     title: "Neon Harbour",
     artist: "Wavelet",
-    duration: 200,
+    duration: 200_000,
     genre: "House",
     explicit: false,
     licenceClass: LicenceClass.OWNED_LOCAL

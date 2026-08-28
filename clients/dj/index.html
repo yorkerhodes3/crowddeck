@@ -176,8 +176,10 @@
 
   /* -------------------------------------------------------- rendering */
 
-  function fmt(sec) {
-    if (!sec) return "—";
+  function fmt(ms) {
+    // Track durations are milliseconds throughout the system (`duration_ms`).
+    if (!ms) return "—";
+    var sec = ms / 1000;
     var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
@@ -232,7 +234,7 @@
   setInterval(function () {
     var f = el("fill");
     if (!f || !state.nowPlaying || !state.nowPlaying.track.duration) return;
-    var pct = Math.min(100, ((Date.now() - startedAt) / 1000 / state.nowPlaying.track.duration) * 100);
+    var pct = Math.min(100, ((Date.now() - startedAt) / state.nowPlaying.track.duration) * 100);
     f.style.width = pct + "%";
   }, 500);
 

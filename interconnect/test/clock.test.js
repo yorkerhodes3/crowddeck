@@ -212,18 +212,31 @@ test("jitter is measured and reported, not assumed", async () => {
   // pretended otherwise would be dishonest. The budget belongs to the native
   // engine plane. What is asserted is that the clock measures itself, so the
   // shortfall is visible rather than hidden.
+  const MIN_SAMPLES = 6;
   const sent = [];
   const clock = new MidiClock({ bpm: 120, send: (d) => sent.push(d) });
   clock.start();
-  await new Promise((r) => setTimeout(r, 300));
+
+  // Waits for the samples rather than sleeping a fixed 300 ms. At 120 BPM and 24
+  // PPQN that window is ~14 pulses with a core to spare, but the suite runs ten
+  // files in parallel and a starved Node timer delivered one — a failure caused by
+  // the machine being busy, not by the clock being wrong. A generous deadline
+  // keeps the test honest: a clock that genuinely never ticks still fails.
+  const deadline = Date.now() + 5000;
+  while (clock.jitter().samples <= MIN_SAMPLES && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 20));
+  }
   clock.stop();
 
   const j = clock.jitter();
-  assert.ok(j.samples > 5, `expected jitter samples, got ${j.samples}`);
+  assert.ok(j.samples > MIN_SAMPLES, `expected jitter samples, got ${j.samples}`);
   assert.equal(typeof j.rmsMs, "number");
   assert.equal(typeof j.maxMs, "number");
   assert.equal(typeof j.withinBudget, "boolean");
-  assert.ok(sent.filter((m) => m[0] === Status.CLOCK).length > 5, "pulses were emitted");
+  assert.ok(
+    sent.filter((m) => m[0] === Status.CLOCK).length > MIN_SAMPLES,
+    "pulses were emitted"
+  );
 });
 
 test("jitter on a fresh clock reports zero samples rather than NaN", () => {
