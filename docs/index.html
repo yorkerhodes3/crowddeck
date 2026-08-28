@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>372 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>384 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -812,6 +812,30 @@
       That is stated rather than hidden — though a 10 ms budget dominated by the OS audio stack is not
       something a compiler choice moves. ASIO, CoreAudio and ALSA remain unmeasured and need hardware or
       platforms that aren't here.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--hot);">
+      <strong>The flaw that makes existing open-source jukeboxes unshippable, designed out.</strong>
+      Several are well-built and legally unusable in a venue: they play a member of staff's personal Spotify
+      account through a PA system. Every consumer streaming licence forbids public performance in plain
+      terms, and <strong>no amount of PRO licensing fixes it</strong> — a venue can hold every ASCAP, BMI,
+      SESAC and GMR licence going and still breach the <em>service's</em> terms. Two different permissions,
+      two different parties.
+      <br><br>
+      So <span class="mono">REQ-CON-7</span> is a build check rather than a paragraph.
+      <span class="mono">check-content-sources.mjs</span> fails on any import of a consumer-streaming client
+      or a downloader, and on any source reference to their API hosts. The rule is <em>not</em> "no
+      streaming" — licensed B2B services that sell public-performance rights are exactly what a venue should
+      use, and remain welcome, as do OpenSubsonic, Creative Commons repertoire and record pools.
+      <br><br>
+      It is enforced because <em>"we decided not to integrate Spotify"</em> is precisely the kind of decision
+      that erodes: someone wires up a downloader one evening because it genuinely improves the demo, nobody
+      remembers the reasoning, and a load-bearing property quietly stops being true.
+      <br><br>
+      Writing the tests found the guard was <strong>silently inert</strong>. The comment stripper treated the
+      <span class="mono">//</span> in <span class="mono">https://</span> as a line comment, so every banned
+      host inside a URL was invisible — it would have passed a codebase full of Spotify calls. Reading the
+      regex would not have shown that; constructing the violation did.
     </div>
 
     <div data-render="backlog"></div>

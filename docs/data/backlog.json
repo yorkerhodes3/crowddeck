@@ -704,8 +704,8 @@
           "reqs": [
             "REQ-CON-7"
           ],
-          "detail": "A CI check plus an architectural note. This is the flaw that makes existing open jukeboxes unusable in venues, and designing it out is a feature.",
-          "status": "todo"
+          "detail": "A CI check plus an architectural note. This is the flaw that makes existing open jukeboxes unusable in venues, and designing it out is a feature. DONE — tools/check-content-sources.mjs fails the build on any import of a consumer-streaming client or a downloader, and on any source reference to their API hosts. Documentation may discuss them freely; source may not call them. The rule is NOT 'no streaming': licensed B2B services that sell public-performance rights (Soundtrack Your Brand and peers) are exactly what a venue should use and remain welcome — as do OpenSubsonic, Creative Commons repertoire and record pools. Writing the tests found a bug that had made the guard silently inert: the comment stripper treated the // in https:// as a line comment, so every banned host inside a URL was invisible. It now tracks quote state, and a test pins that.",
+          "status": "done"
         }
       ]
     },
