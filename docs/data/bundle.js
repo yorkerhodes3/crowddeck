@@ -3945,8 +3945,8 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CON-6"
             ],
-            "detail": "So a fresh install has legally playable music on first run, with licence metadata from the API.",
-            "status": "todo"
+            "detail": "So a fresh install has legally playable music on first run, with licence metadata from the API. DONE — providers/src/jamendo.js plus cc-licence.js, which is kept separate because deciding what a Creative Commons URL permits is the most legally consequential parsing in the product. The rule: any licence containing 'nc' is blocked in a commercial venue; 'nd' and 'sa' constrain derivative works, not performance, so an unmodified playback is unaffected by either — treating by-nd as unsafe would discard a large slice of legitimate catalogue for no legal reason, and treating by-nc as safe would be a breach. Anything not positively recognised is 'unknown', which policy blocks. Non-commercial tracks are filtered twice, server-side and client-side, because a silent API change would otherwise put unplayable music in front of patrons and the consequence lands on the venue. The API signals failure inside a 200 response, so checking res.ok alone would turn an invalid client ID into a silently empty catalogue; that is handled and tested. Probing the guards found the lookalike-host test was passing for an incidental reason and missing the path-embedded case, which is now covered.",
+            "status": "done"
           },
           {
             "id": "CON-6",

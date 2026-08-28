@@ -42,7 +42,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
 | [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
 | [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, and **live instruments as queueable sources** |
-| [`providers/`](providers) | Apache-2.0 | Where music comes from — one interface (search, resolve, stream URL, licence class), a router that **isolates a dead source**, and a CI guard that no consumer-streaming or downloader adapter can enter |
+| [`providers/`](providers) | Apache-2.0 | Where music comes from — one interface, a router that **isolates a dead source**, a **Creative Commons classifier** that refuses to guess, and a CI guard that no consumer-streaming or downloader adapter can enter |
 | [`data/`](data) | Apache-2.0 | **Persistence** — venue-scoped schema, append-only credit ledger, licence-class store, play log with CSV export, durable queue |
 | [`api/`](api) | Apache-2.0 | The venue API — patron and staff surfaces over HTTP, live push over a hand-written WebSocket |
 | [`clients/`](clients) | Apache-2.0 | Patron PWA, DJ console and venue display — including a from-scratch **QR encoder** verified against a real decoder |
@@ -51,7 +51,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**415 tests · 20 conformance checks · zero runtime dependencies.**
+**444 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node

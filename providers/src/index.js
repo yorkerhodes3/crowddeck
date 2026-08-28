@@ -21,3 +21,5 @@ export {
 
 export { ProviderRouter, DEFAULT_TIMEOUT_MS } from "./router.js";
 export { LocalProvider } from "./local.js";
+export { JamendoProvider } from "./jamendo.js";
+export { parseCcUrl, classifyCc, ccAttribution } from "./cc-licence.js";

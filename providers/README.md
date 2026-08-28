@@ -76,9 +76,38 @@ and it's fine" must never be the same value.
 |---|---|
 | `CON-7` — assert no consumer-streaming or downloader adapters | ✅ Done — enforced in CI |
 | `CON-1` — the provider interface | ✅ Done — `Provider`, `ProviderRouter`, `LocalProvider` |
+| `CON-5` — Creative Commons (Jamendo) | ✅ Done — `JamendoProvider`, `cc-licence.js` |
 | `CON-4` — OpenSubsonic consumer | ⏳ |
-| `CON-5` — Creative Commons (Jamendo) | ⏳ |
 | `CON-6` — loudness normalisation across sources | ⏳ |
+
+## Reading a Creative Commons licence
+
+`cc-licence.js` is separate from any one provider because deciding what a CC URL
+permits is the most legally consequential parsing in the product: a permissive
+mistake means a venue publicly performing a track it may not.
+
+**The rule, in one line: if the licence contains `nc`, a commercial venue may not
+perform it.** That is the whole of the commercial question. `nd` (no derivatives)
+and `sa` (share-alike) constrain *derivative works*, not performance — a venue
+playing a track unmodified is unaffected by either.
+
+That distinction is worth stating because the two possible errors are not
+symmetric. Treating `by-nd` as unsafe would discard a large slice of legitimately
+playable catalogue for no legal reason; treating `by-nc` as safe would be a licence
+breach. "Just be cautious about everything" is not a free option.
+
+| Licence | Class | Venue may perform |
+|---|---|---|
+| `CC0`, Public Domain Mark | `owned_local` | Yes, no attribution needed |
+| `by`, `by-nd` | `cc_attribution` | Yes, with attribution on the display |
+| `by-sa`, | `cc_sharealike` | Yes, with attribution on the display |
+| `by-nc`, `by-nc-sa`, `by-nc-nd` | `cc_noncommercial` | **No** |
+| anything unrecognised | `unknown` | **No** |
+
+The mapping is lossy by design, and lossy in one direction: it keeps exactly the
+distinctions that change what a venue may do. If remixing or stem separation is
+ever added, `nd` starts to matter and this must be revisited — which is why
+`classifyCc()` returns the full parse alongside the class rather than discarding it.
 
 ## Two decisions in the router worth knowing
 

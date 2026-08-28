@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>415 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>444 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -862,6 +862,35 @@
       for its HTTP route table — so assigning a provider router replaced the routing wholesale and every
       endpoint returned 500. The names are now distinct and a test pins them apart, checking the endpoint
       end to end rather than just the wiring.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--accent);">
+      <strong>A fresh install now has music it may lawfully play.</strong> An appliance that arrives with an
+      empty catalogue cannot be evaluated — you cannot tell whether the queue, the fairness rules or the
+      crossfade work until something is playing. <span class="mono">CON-5</span> ships a Jamendo provider, so
+      the first ten minutes are "it works" rather than "now import your library".
+      <br><br>
+      The interesting part is not the HTTP client, it is
+      <strong>deciding what a Creative Commons licence actually permits</strong> — the most legally
+      consequential parsing in the product, so it lives in its own module and is exhaustively tested. The
+      rule in one line: <strong>if the licence contains <span class="mono">nc</span>, a commercial venue may
+      not perform it.</strong> That is the whole of the commercial question. <span class="mono">nd</span> and
+      <span class="mono">sa</span> constrain <em>derivative works</em>, not performance, so an unmodified
+      playback is unaffected by either.
+      <br><br>
+      That distinction matters because the two possible errors are not symmetric. Treating
+      <span class="mono">by-nd</span> as unsafe would discard a large slice of legitimately playable
+      catalogue for no legal reason; treating <span class="mono">by-nc</span> as safe would be a breach.
+      Anything not positively recognised becomes <span class="mono">unknown</span>, which policy blocks.
+      Non-commercial tracks are filtered <em>twice</em> — server-side and client-side — because a silent API
+      change would otherwise put unplayable music in front of patrons, and that consequence lands on the
+      venue rather than on us.
+      <br><br>
+      One API behaviour was worth handling carefully: Jamendo signals failure <em>inside</em> a 200 response,
+      so checking the HTTP status alone would turn an invalid client ID into a silently empty catalogue — a
+      venue with a search box that never finds anything and no explanation. Probing the guards also found a
+      test passing for an incidental reason: it checked one shape of lookalike host and missed the case where
+      the real domain is embedded in a <em>path</em>. Now all three shapes are covered.
     </div>
 
     <div data-render="backlog"></div>
