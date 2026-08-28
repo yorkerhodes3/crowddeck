@@ -46,7 +46,32 @@ test("CI does not inline the test globs", () => {
 test("CI invokes the same entry points a developer does", () => {
   assert.ok(/npm run check/.test(ci), "CI must run `npm run check`");
   assert.ok(/npm run build:data/.test(ci), "CI must run `npm run build:data`");
-  assert.ok(/npm run lint:artifacts/.test(ci), "CI must run the REQ-LIC-8 artifact check");
+});
+
+test("npm run check covers every gate, so CI cannot drift from a local run", () => {
+  // CI calls `npm run check` and nothing else. That is only safe if `check` really
+  // does cover everything — otherwise a gate can be added to the repo and silently
+  // never run, which is precisely what happened when CI kept its own copy of the
+  // test-glob list.
+  const check = pkg.scripts.check;
+  for (const [gate, why] of [
+    ["lint:licence", "the ADR-001 licence boundary"],
+    ["lint:artifacts", "REQ-LIC-8 release artifact separation"],
+    ["lint:sources", "REQ-CON-7 no consumer-streaming or downloader adapters"],
+    ["test", "the test suite"],
+    ["conformance", "CDEP conformance"]
+  ]) {
+    assert.ok(check.includes(gate), `npm run check must run ${gate} — ${why}`);
+  }
+});
+
+test("every declared lint script exists as a file", () => {
+  for (const [name, cmd] of Object.entries(pkg.scripts)) {
+    if (!name.startsWith("lint:")) continue;
+    const m = /node\s+(\S+)/.exec(cmd);
+    assert.ok(m, `${name} does not invoke a script`);
+    assert.ok(existsSync(join(root, m[1])), `${name} points at missing ${m[1]}`);
+  }
 });
 
 test("every test directory in the repository is covered by npm test", () => {

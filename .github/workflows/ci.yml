@@ -34,19 +34,19 @@ jobs:
       # quietly stopped running three whole directories — 76 tests were passing
       # locally and never executing in CI. `tools/test/ci-workflow.test.js` now
       # fails if that duplication comes back.
-      - name: Licence lint, tests and CDEP conformance
+      # `npm run check` is the single gate: licence boundary, release-artifact
+      # separation, content sources, tests and CDEP conformance. Each sub-check
+      # prints its own name, so a failure is still attributable. Keeping one
+      # entry point means CI and a developer's local run cannot diverge — which
+      # they already did once, when an inlined test-glob list silently stopped
+      # running three directories.
+      - name: Licence, artifacts, content sources, tests and conformance
         run: npm run check
 
       # Regenerates requirements from SPECIFICATION.md and validates that every
       # backlog story cites a requirement that actually exists.
       - name: Requirements and backlog traceability
         run: npm run build:data
-
-      # ADR-006 / REQ-LIC-8: the Apache-2.0 layer and the GPL engine must never
-      # ship as one artifact. The realistic way that protection is lost is a
-      # well-meaning convenience installer, so it is checked rather than trusted.
-      - name: Release artifact separation
-        run: npm run lint:artifacts
 
       - name: Verify generated files are committed
         run: |
