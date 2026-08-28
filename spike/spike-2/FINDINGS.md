@@ -79,12 +79,48 @@ REQ-NFR-2, and this heuristic should be retired then.
 
 ## What was not measured
 
+**Can CoreAudio and ALSA be replaced with something platform-independent? No, and the
+reason is definitional.** CoreAudio *is* macOS audio — PortAudio, miniaudio, SDL and JACK all
+call it underneath, and Apple provides no alternative low-level path. ALSA *is* the Linux
+kernel audio interface; PipeWire, PulseAudio and JACK sit above it. Substituting them is not a
+library choice, it is a platform choice.
+
+But that only closes the question as asked. Three distinct things were being conflated as
+"we need a Mac":
+
+| Question | Needs hardware? | Status |
+|---|---|---|
+| Does it **compile** against the platform's real audio headers? | No | ✅ **Verified in CI** — Linux and macOS |
+| Does it **open a stream** and drive callbacks? | No — a null device suffices | ✅ **Verified** — Linux and macOS |
+| What **latency** does it achieve? | **Yes** | ❌ Windows only |
+
+Only the third needs hardware, and it is the only one still outstanding.
+[`spike2-portability.yml`](../../.github/workflows/spike2-portability.yml) compiles the probe on
+`ubuntu-latest` against real ALSA headers and on `macos-latest` against the real CoreAudio
+frameworks, then runs the callback loop on both, on every push. That converts "unknown, blocked
+on hardware" into "known to build and run; latency still unmeasured" — most of the *will it work
+at all* risk, for free.
+
+It earned its place before it first ran: the POSIX branch of `probe.c` called `clock_gettime`
+with no `<time.h>` include and had never been compiled anywhere, because Windows preprocesses
+that branch away.
+
+### Still genuinely blocked
+
 | Path | Blocker |
 |---|---|
-| **ASIO** | No ASIO interface on this machine. miniaudio ships no ASIO backend (SDK redistribution terms), so this needs PortAudio built with `PA_USE_ASIO` plus the Steinberg SDK, or measuring inside the Mixxx build during `ENG-1`. ASIO4ALL is not a substitute — it wraps the ordinary driver stack, so its numbers describe the wrapper. |
-| **CoreAudio** | Needs a Mac. |
-| **ALSA / JACK** | Needs real Linux. CI runners are unsuitable: no audio device, virtualised clocks. |
-| **PortAudio comparison** | Buildable here but not yet run; miniaudio alone answered the load-bearing question, which was whether the budget is reachable at all. |
+| **ASIO latency** | No ASIO interface. miniaudio ships no ASIO backend (the Steinberg SDK is not redistributable), so this needs PortAudio with `PA_USE_ASIO` plus the SDK, or measurement inside the Mixxx build during `ENG-1`. **ASIO4ALL is not a substitute** — it wraps the ordinary driver stack, so its numbers describe the wrapper. |
+| **CoreAudio latency** | A Mac with audio hardware. GitHub's macOS runners have no audio device, so CI can compile and smoke-test but never time anything. |
+| **ALSA latency** | Real Linux with a sound card. CI runners ship no card and no `snd-dummy` module, and are virtualised, so their clocks would not be trustworthy even if they did. |
+| **PortAudio comparison** | Buildable but not yet run; miniaudio alone answered the load-bearing question, which was whether the budget is reachable at all. |
+
+### A scope note worth raising
+
+For the **venue appliance**, Linux is the deployment target (`VEN-6` specifies a container on
+4-core/8 GB) and Windows is the likely DJ-laptop target. macOS is a convenience, not a
+requirement. If a Mac never becomes available, shipping without measured CoreAudio latency is a
+defensible scope decision *provided it is stated rather than left implied*. Shipping a Linux
+appliance on unmeasured ALSA would not be, because that is the product.
 
 ## How this was built
 

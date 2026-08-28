@@ -50,7 +50,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**366 tests · 20 conformance checks · zero runtime dependencies.**
+**372 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
@@ -111,7 +111,7 @@ Two items are blocked. Neither blocks the ~9 remaining stories, which are pure J
 
 | Item | Blocked on | Not blocked on |
 |---|---|---|
-| **`SPIKE-2`** | An **ASIO interface** for the ASIO path, a Mac for CoreAudio, real Linux for ALSA. | **WASAPI is measured.** p99 callback interval **3.667 ms** against a 10 ms budget — see [`spike/spike-2/FINDINGS.md`](spike/spike-2/FINDINGS.md). |
+| **`SPIKE-2`** | **Latency** on other platforms: an ASIO interface, a Mac, real Linux with a sound card. Hardware, unavoidably. | **WASAPI is measured** (p99 **3.667 ms** vs a 10 ms budget), and the probe is **verified to compile and run on Linux and macOS in CI** — so only the timing is outstanding, not correctness. See [`FINDINGS.md`](spike/spike-2/FINDINGS.md). |
 | **`ENG-*`** | MSVC, CMake, Ninja, Qt6 and vcpkg for Mixxx's dependency tree — several GB, multi-hour first build. Plus a **USB-MIDI controller** for `AC-12`. | Design. `SPIKE-1` already resolved how `describe`, coalescing and parameter space will be implemented. |
 
 `LEGAL-1` is **closed** — see [ADR-006](DECISIONS.md#adr-006--distribution-shape-and-the-licence-risk-position).
