@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>574 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>611 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -959,6 +959,39 @@
       is the assurance a stubbed <span class="mono">fetch</span> can never give. That probe also exposed a
       flaw in the harness: a failing test <em>hung</em> rather than failing, because one server was closed
       outside a <span class="mono">finally</span>. A red test that hangs CI is worse than one that reports.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--accent-2);">
+      <strong>Controllers that map themselves — and reading the actual spec instead of trusting a
+      search.</strong> Every incumbent DJ application ships hand-authored mapping files, one per controller,
+      maintained forever. <span class="mono">MID-7</span> implements <strong>MIDI-CI Property Exchange</strong>
+      so a capable device describes its own controls and needs no file. It is the clearest lead in the plan
+      over the closed products.
+      <br><br>
+      The wire format is taken from the primary documents — <span class="mono">M2-101-UM</span> (MIDI-CI v1.2)
+      Appendix D for the Sub-ID#2 assignments, Table 33 for the chunked <span class="mono">Get Property
+      Data</span> layout. <strong>That care was immediately warranted.</strong> A web search stated plainly
+      that <span class="mono">0x35</span> was <em>Set Property Data</em>. It is <em>Reply to Get Property
+      Data</em>; <span class="mono">0x36</span> is Set. Building on that would have produced a client that
+      talked past every real device while looking entirely correct, so the tests now assert those constants
+      longhand rather than deriving them from the encoder — a test that builds its expectation from the code
+      it tests proves only self-consistency, and self-consistency with a wrong constant is the failure mode
+      in question.
+      <br><br>
+      <strong>The controller-list resource is deliberately not hard-coded, because neither document defines
+      one.</strong> Coming straight off a requirement that cited an extension which never existed, inventing a
+      schema here would have been the same mistake twice. It is discovered from the device's own
+      <span class="mono">ResourceList</span>, and any control whose type or number cannot be confidently
+      interpreted produces <strong>no binding at all</strong> — returned in <span class="mono">skipped</span>
+      with a reason. In a venue, a fader silently bound to the wrong deck control is far worse than a fader
+      that is not bound yet: an unmapped control costs a five-second MIDI-learn, a mis-mapped one costs a
+      mistake in front of people.
+      <br><br>
+      <span class="mono">REQ-MIDI-9</span> — the human always wins — is why merging happens <strong>per
+      physical control, not per file</strong>. A DJ who re-binds one knob keeps the other forty-nine the
+      device described; lose those and nobody would use auto-mapping again. And a user binding
+      <em>replaces</em> the auto one rather than joining it, or a single knob would drive two engine controls
+      at once.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

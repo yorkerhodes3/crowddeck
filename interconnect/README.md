@@ -15,6 +15,7 @@ surface** — a way to read knobs. Domain D takes it literally and treats MIDI a
 | `mapping.js` | Declarative mappings targeting CDEP controls, MIDI learn, **soft-takeover** |
 | `clock.js` | MIDI Clock at 24 PPQN from the leader deck, with jitter measurement |
 | `instrument.js` | **Live instruments as queueable sources** — the distinguishing idea |
+| `midi-ci.js` | **MIDI-CI Property Exchange** — devices that describe themselves need no hand-written mapping |
 
 ## Four design positions
 
@@ -86,3 +87,47 @@ node --test "interconnect/test/**/*.test.js"
 
 A virtual clock and timer are injected throughout, so pulse timing is exact and the suite runs instantly.
 The one test on real timers measures jitter and reports it rather than asserting a budget it cannot meet.
+
+## Devices that describe themselves
+
+Every incumbent DJ application ships hand-authored mapping files, one per
+controller, maintained forever. `MID-7` implements **MIDI-CI Property Exchange**
+(`REQ-MIDI-8`) so a capable device can describe its own controls and be mapped
+without a file.
+
+### The wire format is taken from the specification
+
+Not from memory, and not from a search result. The Sub-ID#2 assignments come from
+**M2-101-UM, MIDI-CI v1.2, Appendix D**, and the chunked `Get Property Data`
+layout from its Table 33. `ResourceList`, `DeviceInfo` and `ChannelList` are the
+Foundational Resources of **M2-105-UM v1.01**.
+
+That care was warranted: a web search confidently reported `0x35` as *Set Property
+Data*. It is **Reply to Get Property Data** — `0x36` is Set. Building on it would
+have produced a client that talked past every real device, and the tests assert the
+constants longhand so nobody can 'fix' them back.
+
+### A known gap, stated rather than papered over
+
+**The controller-list resource is not hard-coded, because neither document defines
+one.** `findControllerResource()` discovers it from the device's own
+`ResourceList`, including the `X-` manufacturer-specific names the spec reserves.
+
+Any control whose type or number cannot be confidently interpreted produces **no
+binding at all**, and is returned in `skipped` with a reason. That is the whole
+discipline of this module: in a venue, a fader silently bound to the wrong deck
+control is far worse than a fader that is not bound yet. An unmapped control costs
+a five-second MIDI-learn; a mis-mapped one costs a mistake in front of people.
+
+`autoMap()` also refuses to run without a `resolveTarget` callback. Deciding which
+engine control a device's "filter" means is not a decision this layer may make on
+its own — the mapping layer holds no hard-coded knowledge of any engine
+(`REQ-CDEP-13`).
+
+### The human always wins — REQ-MIDI-9
+
+`mergeMappings(auto, user)` overrides **per physical control, not per file**. A DJ
+who re-binds one knob must not lose the other forty-nine the device described, or
+they will stop using auto-mapping altogether. A user binding *replaces* the auto
+binding for that control rather than sitting beside it — otherwise one turn of a
+knob would drive two engine controls.

@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 45 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 46 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 61 stories · 121 of 121 requirements covered**
@@ -188,7 +188,7 @@ MIDI as a first-class subsystem, not a settings page. A UMP-native start is a le
 | ✅ **MID-4** | **MIDI Clock out at 24 PPQN from the leader deck**<br>≤1ms RMS jitter at the output. Short clock path, no Thru daisy-chains. MTC is explicitly excluded from musical sync — its ~0.6ms resolution and traffic sensitivity make it a positional reference only. | M | build | `REQ-CLK-1` `REQ-CLK-2` `REQ-CLK-5` `REQ-CLK-6` |
 | **MID-5** | **Ableton Link integration**<br>GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff. | M | `ADOPT` | `REQ-CLK-3` `REQ-CLK-4` |
 | ✅ **MID-6** | **Live MIDI instrument as a queueable source**<br>The brief's distinguishing idea: a groovebox is scheduled in the queue like a track, in time with the decks. Satisfies AC-12. | L | build | `REQ-INST-1` `REQ-INST-2` |
-| **MID-7** | **MIDI-CI Property Exchange auto-mapping**<br>Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead. | L | build | `REQ-MIDI-8` `REQ-MIDI-9` |
+| ✅ **MID-7** | **MIDI-CI Property Exchange auto-mapping**<br>Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead. DONE — interconnect/src/midi-ci.js. The wire format is taken from the primary specification rather than from memory: Sub-ID#2 assignments from M2-101-UM (MIDI-CI v1.2) Appendix D, and the chunked Get Property Data layout from its Table 33. That care was warranted — a web search confidently reported 0x35 as 'Set Property Data'; it is Reply to Get Property Data, and 0x36 is Set. Building on that would have produced a client that talked past every real device, so the tests assert the constants longhand. The controller-list resource is deliberately NOT hard-coded, because neither M2-101 nor M2-105 defines one. It is discovered from the device's own ResourceList, including the X- manufacturer names the spec reserves, and any control whose type or number cannot be confidently interpreted produces no binding at all and is returned in 'skipped' with a reason an operator can act on. In a venue a fader silently bound to the wrong deck control is far worse than one not bound yet: an unmapped control costs a five-second MIDI-learn, a mis-mapped one costs a mistake in front of people. autoMap() also refuses to run without a resolveTarget callback, because which engine control a device's 'filter' means is not a decision this layer may make (REQ-CDEP-13). REQ-MIDI-9 is satisfied by merging per physical control rather than per file: a DJ who rebinds one knob keeps the other forty-nine the device described, and a user binding replaces rather than joins the auto one so a single knob cannot drive two controls. 37 tests, including chunk reassembly that is by chunk number and not arrival order — verified by reversing it, which turns that test red. | L | build | `REQ-MIDI-8` `REQ-MIDI-9` |
 
 ---
 

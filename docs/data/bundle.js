@@ -4074,8 +4074,8 @@ window.__CROWDDECK_DATA__ = {
               "REQ-MIDI-8",
               "REQ-MIDI-9"
             ],
-            "detail": "Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead.",
-            "status": "todo"
+            "detail": "Let capable controllers describe themselves. Every incumbent still hand-authors mapping files; this is the defensible lead. DONE — interconnect/src/midi-ci.js. The wire format is taken from the primary specification rather than from memory: Sub-ID#2 assignments from M2-101-UM (MIDI-CI v1.2) Appendix D, and the chunked Get Property Data layout from its Table 33. That care was warranted — a web search confidently reported 0x35 as 'Set Property Data'; it is Reply to Get Property Data, and 0x36 is Set. Building on that would have produced a client that talked past every real device, so the tests assert the constants longhand. The controller-list resource is deliberately NOT hard-coded, because neither M2-101 nor M2-105 defines one. It is discovered from the device's own ResourceList, including the X- manufacturer names the spec reserves, and any control whose type or number cannot be confidently interpreted produces no binding at all and is returned in 'skipped' with a reason an operator can act on. In a venue a fader silently bound to the wrong deck control is far worse than one not bound yet: an unmapped control costs a five-second MIDI-learn, a mis-mapped one costs a mistake in front of people. autoMap() also refuses to run without a resolveTarget callback, because which engine control a device's 'filter' means is not a decision this layer may make (REQ-CDEP-13). REQ-MIDI-9 is satisfied by merging per physical control rather than per file: a DJ who rebinds one knob keeps the other forty-nine the device described, and a user binding replaces rather than joins the auto one so a single knob cannot drive two controls. 37 tests, including chunk reassembly that is by chunk number and not arrival order — verified by reversing it, which turns that test red.",
+            "status": "done"
           }
         ]
       },
