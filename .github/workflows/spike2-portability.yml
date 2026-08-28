@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# SPIKE-2 cross-platform verification.
+#
+# CoreAudio and ALSA cannot be substituted — CoreAudio *is* macOS audio and ALSA
+# *is* the Linux kernel audio API, so every library on those platforms calls them
+# underneath. What can be substituted is the *question*. Three distinct things get
+# conflated as "we need a Mac":
+#
+#   1. Does the probe compile against the platform's real audio headers?
+#   2. Does it open a stream and drive callbacks?
+#   3. What latency does it achieve?
+#
+# Only (3) needs hardware. This workflow answers (1) on both platforms and (2) on
+# Linux, for free, on every push — which is most of the "will it work at all" risk.
+#
+# It earned its place immediately: the POSIX branch of probe.c used clock_gettime
+# with no <time.h> include, and had never been compiled anywhere.
+
+name: SPIKE-2 portability
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "spike/spike-2/**"
+      - ".github/workflows/spike2-portability.yml"
+  pull_request:
+    paths:
+      - "spike/spike-2/**"
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux — compile against real ALSA, smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ALSA and PulseAudio headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpulse-dev
+
+      - name: Fetch miniaudio
+        run: |
+          mkdir -p spike/spike-2/vendor
+          curl -fsSL -o spike/spike-2/vendor/miniaudio.h \
+            https://raw.githubusercontent.com/mackron/miniaudio/0.11.21/miniaudio.h
+
+      - name: Compile
+        working-directory: spike/spike-2
+        run: |
+          gcc -O2 -Wall -Wextra -DMA_NO_DECODING -DMA_NO_ENCODING \
+            -Ivendor src/probe.c -o probe -lpthread -lm -ldl
+          ls -la probe
+
+      # The null backend is entirely userspace: no kernel module, no device, no
+      # audio hardware. It cannot tell us anything about latency, but it does
+      # prove the callback loop, the ring buffer and the CSV writer all work on
+      # this platform — which is the part most likely to be broken by a portability
+      # bug rather than by the audio stack.
+      - name: Smoke-test the callback loop
+        working-directory: spike/spike-2
+        run: |
+          ./probe --api null --frames 128 --seconds 5 --out smoke.csv
+          head -8 smoke.csv
+          lines=$(grep -vc '^#' smoke.csv)
+          echo "captured $lines callbacks"
+          if [ "$lines" -lt 1000 ]; then
+            echo "::error::expected 1000+ callbacks, got $lines"
+            exit 1
+          fi
+
+      - name: Analyse — the same code path used on real measurements
+        working-directory: spike/spike-2
+        run: node report.mjs smoke.csv
+
+      # Does ALSA initialise at all here? Recorded, not asserted: GitHub's runners
+      # ship no sound card and no snd-dummy module, so a failure here is expected
+      # and is information about the runner rather than about our code.
+      - name: Probe for an ALSA device (informational)
+        working-directory: spike/spike-2
+        continue-on-error: true
+        run: |
+          echo "--- aplay -l ---"
+          aplay -l 2>&1 || echo "(no sound cards, as expected on a CI runner)"
+          echo "--- probe --api alsa --list ---"
+          ./probe --api alsa --list 2>&1 || echo "(ALSA has no devices to enumerate here)"
+
+  macos:
+    name: macOS — compile against real CoreAudio
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch miniaudio
+        run: |
+          mkdir -p spike/spike-2/vendor
+          curl -fsSL -o spike/spike-2/vendor/miniaudio.h \
+            https://raw.githubusercontent.com/mackron/miniaudio/0.11.21/miniaudio.h
+
+      - name: Compile
+        working-directory: spike/spike-2
+        run: |
+          clang -O2 -Wall -Wextra -DMA_NO_DECODING -DMA_NO_ENCODING \
+            -Ivendor src/probe.c -o probe \
+            -framework CoreFoundation -framework CoreAudio -framework AudioToolbox \
+            -lpthread -lm
+          ls -la probe
+
+      - name: Smoke-test the callback loop
+        working-directory: spike/spike-2
+        run: |
+          ./probe --api null --frames 128 --seconds 5 --out smoke.csv
+          lines=$(grep -vc '^#' smoke.csv)
+          echo "captured $lines callbacks"
+          test "$lines" -ge 1000
+
+      - name: Analyse
+        working-directory: spike/spike-2
+        run: node report.mjs smoke.csv
+
+      # Expected to find nothing: GitHub's macOS runners have no audio device.
+      # Run anyway, because "CoreAudio initialised but enumerated zero devices" and
+      # "CoreAudio failed to initialise" are different facts and only one of them
+      # would be our bug.
+      - name: Probe for a CoreAudio device (informational)
+        working-directory: spike/spike-2
+        continue-on-error: true
+        run: |
+          ./probe --api coreaudio --list 2>&1 || echo "(no CoreAudio devices on a CI runner, as expected)"

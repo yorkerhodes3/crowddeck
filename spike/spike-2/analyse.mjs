@@ -190,6 +190,22 @@ export function analyse(parsed) {
 export function verdict(result) {
   const failures = [];
 
+  // The null backend is a software timer with no device behind it. Its timing
+  // says nothing about any audio stack, so judging it against an audio budget
+  // would produce a confident FAIL that means nothing — and a misleading red
+  // mark in CI logs, where the null backend is exactly what gets used to prove
+  // the callback loop works on a machine with no sound card.
+  if (result.api === "null" || result.backend === "null") {
+    return {
+      pass: null,
+      notMeasurable: true,
+      failures: [],
+      detail:
+        "the null backend has no device behind it, so its timing cannot be judged " +
+        "against an audio budget — this run proves the callback loop works, nothing more"
+    };
+  }
+
   if (result.callbacks < MIN_CALLBACKS) {
     failures.push(
       `only ${result.callbacks} callbacks captured; ${MIN_CALLBACKS}+ are needed before a p99 means anything`
@@ -237,7 +253,11 @@ export function verdict(result) {
  * @param {Array<ReturnType<typeof analyse>>} results
  */
 export function compare(results) {
-  const scored = results
+  // A run that cannot be judged must not be ranked against ones that can. The
+  // null backend in particular has no device behind it, so including it would put
+  // a meaningless number in a table people use to choose a backend.
+  const judged = results.filter((r) => !verdict(r).notMeasurable);
+  const scored = judged
     .map((r) => ({ result: r, verdict: verdict(r) }))
     .sort((a, b) => {
       // Anything with xruns loses outright, whatever its percentiles say.
@@ -250,7 +270,11 @@ export function compare(results) {
   const runnerUp = scored[1];
 
   let recommendation;
-  if (!best) {
+  if (results.length > 0 && judged.length === 0) {
+    recommendation =
+      "none — no run had a real device behind it, so nothing here can be judged " +
+      "against the §8.1 budget";
+  } else if (!best) {
     recommendation = "none — no runs supplied";
   } else if (passing.length === 0) {
     recommendation =
@@ -280,6 +304,8 @@ export function formatResult(r) {
     `  interval    p50 ${ms(r.interval.p50)}  p95 ${ms(r.interval.p95)}  p99 ${ms(r.interval.p99)}  max ${ms(r.interval.max)}`,
     `  jitter      p50 ${ms(r.jitter.p50)}  p95 ${ms(r.jitter.p95)}  p99 ${ms(r.jitter.p99)}  max ${ms(r.jitter.max)}`,
     `  xruns       ${r.xruns}`,
-    `  verdict     ${v.pass ? "PASS" : "FAIL"}${v.failures.length ? "\n              - " + v.failures.join("\n              - ") : ""}`
+    `  verdict     ${v.notMeasurable ? "NOT MEASURABLE" : v.pass ? "PASS" : "FAIL"}` +
+      (v.notMeasurable ? `\n              ${v.detail}` : "") +
+      (v.failures.length ? "\n              - " + v.failures.join("\n              - ") : "")
   ].join("\n");
 }

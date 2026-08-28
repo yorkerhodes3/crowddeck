@@ -264,6 +264,46 @@ test("a clear winner is named", () => {
   assert.equal(recommendation, "good/wasapi_exclusive");
 });
 
+test("the null backend is reported as not measurable, not as a failure", () => {
+  // The null backend is a software timer with no device behind it. Judging it
+  // against an audio budget produces a confident FAIL that means nothing — and in
+  // CI, where the null backend is exactly what proves the callback loop works on a
+  // machine with no sound card, that red mark would be a pure red herring.
+  const r = analyse(parseProbeOutput(synth({ backend: "miniaudio", api: "null" })));
+  const v = verdict(r);
+
+  assert.equal(v.pass, null, "neither pass nor fail — unjudgeable");
+  assert.equal(v.notMeasurable, true);
+  assert.deepEqual(v.failures, []);
+  assert.match(v.detail, /no device behind it/);
+  assert.match(formatResult(r), /NOT MEASURABLE/);
+});
+
+test("an unmeasurable run is excluded from ranking", () => {
+  // Otherwise a meaningless number appears in the table people use to pick a
+  // backend, ranked against real ones.
+  const real = analyse(parseProbeOutput(synth({ backend: "miniaudio", api: "wasapi_shared" })));
+  const nullRun = analyse(parseProbeOutput(synth({ backend: "miniaudio", api: "null" })));
+
+  const { ranked, recommendation } = compare([nullRun, real]);
+  assert.equal(ranked.length, 1, "only the judgeable run is ranked");
+  assert.equal(ranked[0].result.api, "wasapi_shared");
+  assert.equal(recommendation, "miniaudio/wasapi_shared");
+});
+
+test("when nothing was measurable, that is said rather than blamed on the machine", () => {
+  const nullRun = analyse(parseProbeOutput(synth({ backend: "miniaudio", api: "null" })));
+  const { ranked, recommendation } = compare([nullRun]);
+
+  assert.equal(ranked.length, 0);
+  assert.match(recommendation, /no run had a real device behind it/);
+  assert.doesNotMatch(
+    recommendation,
+    /budget or the approach needs revisiting/,
+    "an unmeasurable run is not evidence that the budget is wrong"
+  );
+});
+
 test("when nothing passes, that is said plainly", () => {
   const bad = {};
   for (let i = 0; i < 2000; i++) bad[i] = 15;

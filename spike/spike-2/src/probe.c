@@ -25,6 +25,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if !defined(_WIN32)
+/* clock_gettime and struct timespec. Absent here, this file happened to compile
+   on Windows only because the POSIX branch below is preprocessed away — the kind
+   of portability bug that hides until the first non-Windows build. */
+#include <time.h>
+#endif
+
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
@@ -130,9 +137,20 @@ int main(int argc, char **argv) {
     if (!strcmp(api_name, "wasapi") || !strcmp(api_name, "wasapi_shared")) {
         backends[0] = ma_backend_wasapi;
         shared = !strcmp(api_name, "wasapi_shared");
-    } else if (!strcmp(api_name, "asio"))       backends[0] = ma_backend_custom; /* see README */
+    } else if (!strcmp(api_name, "asio")) {
+        /* miniaudio ships no ASIO backend: the Steinberg SDK cannot be
+           redistributed. Say so rather than failing obscurely later. */
+        fprintf(stderr,
+            "miniaudio has no ASIO backend (the Steinberg SDK is not redistributable).\n"
+            "Measure ASIO with PortAudio built with PA_USE_ASIO plus the SDK from\n"
+            "Steinberg, or inside the Mixxx build during ENG-1. Note that ASIO4ALL is\n"
+            "not a substitute: it wraps the ordinary driver stack, so its numbers\n"
+            "describe the wrapper rather than a real ASIO path.\n");
+        return 2;
+    }
     else if (!strcmp(api_name, "coreaudio"))    backends[0] = ma_backend_coreaudio;
     else if (!strcmp(api_name, "alsa"))         backends[0] = ma_backend_alsa;
+    else if (!strcmp(api_name, "pulse"))        backends[0] = ma_backend_pulseaudio;
     else if (!strcmp(api_name, "jack"))         backends[0] = ma_backend_jack;
     else if (!strcmp(api_name, "null"))         backends[0] = ma_backend_null;
     else { fprintf(stderr, "unknown --api %s\n", api_name); return 2; }

@@ -55,7 +55,9 @@ ranked.forEach((s, i) => {
 
 console.log(`\nRecommendation: ${recommendation}`);
 
-if (!ranked.some((s) => s.verdict.pass)) {
+// Only offer the "check the machine" hint when there were judgeable runs that all
+// failed. If nothing was measurable, the machine is not the explanation.
+if (ranked.length > 0 && !ranked.some((s) => s.verdict.pass)) {
   console.log(
     "\nNothing passed. Before concluding the backends are at fault, check that the\n" +
       "machine was otherwise idle and not on battery — power management alone can\n" +
