@@ -693,8 +693,8 @@
           "reqs": [
             "REQ-CON-4"
           ],
-          "detail": "ReplayGain / EBU R128. Non-negotiable when a CC track, a local file and a live instrument follow one another.",
-          "status": "todo"
+          "detail": "ReplayGain / EBU R128. Non-negotiable when a CC track, a local file and a live instrument follow one another. DONE — core/src/loudness.js, targeting -14 LUFS to match what patrons hear on streaming services, applied to the deck's pregain (never the DJ's volume fader, which belongs to whoever is mixing). The real work is the clipping guard: the naive gain = target - measured introduces distortion, which is WORSE than the inconsistency it fixes — uneven loudness is a comfort issue, digital clipping through a PA is audible damage. Gain is clamped by true-peak headroom under a -1 dBTP ceiling (lossy codecs overshoot 0 dBFS on decode), so a peaky track plays slightly under target rather than clipping, and says so. An unmeasured track plays as mastered rather than being guessed at, and pregain is rewritten for every track so one track's correction cannot leak onto the next. A live instrument gets an explicit soundcheck trim, labelled as not a measurement, because a performance that has not happened cannot be analysed.",
+          "status": "done"
         },
         {
           "id": "CON-7",

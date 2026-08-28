@@ -17,6 +17,7 @@
  */
 
 import { State } from "./queue.js";
+import { computeGain, dbToLinear } from "./loudness.js";
 
 /** The deck the autonomous mixer drives by default. */
 export const PRIMARY_DECK = "[Channel1]";
@@ -32,6 +33,10 @@ export class EngineAdapter {
     this.scheduler = opts.scheduler;
     this.client = opts.client;
     this.deck = opts.deck ?? PRIMARY_DECK;
+    // REQ-CON-4. On by default: a venue mixing heterogeneous sources needs this,
+    // and an operator who wants raw levels can opt out explicitly.
+    this.normaliseLoudness = opts.normaliseLoudness ?? true;
+    this.loudnessOptions = opts.loudnessOptions ?? {};
     this.started = false;
 
     /** Entry currently loaded on the deck. */
@@ -92,6 +97,12 @@ export class EngineAdapter {
         key: entry.track.key
       });
 
+      // REQ-CON-4: match the level before it becomes audible. Set after `load`
+      // and before `play`, so the deck's gain is already correct when the track
+      // starts rather than jumping a moment later — a correction the room would
+      // hear is not a correction, it is a second problem.
+      await this.#applyLoudness(entry);
+
       await this.client.set(this.deck, "play", 1);
       if (entry.state === State.CUED) this.scheduler.markPlaying(entry.id);
     } catch (err) {
@@ -129,6 +140,36 @@ export class EngineAdapter {
     } catch (err) {
       this.scheduler.emit("engineError", { entry, error: err });
     }
+  }
+
+  /**
+   * Apply the track's normalisation gain to the deck — REQ-CON-4.
+   *
+   * `pregain` rather than `volume`: volume is the DJ's fader and belongs to
+   * whoever is mixing. Writing to it would fight a human hand and undo their
+   * moves. Pregain is the per-deck trim, which is exactly what a normalisation
+   * offset is.
+   *
+   * A failure here is logged, not thrown: a track at the wrong level is a lesser
+   * problem than a track that does not play, and REQ-FALL-3 says the room must
+   * not go silent for a recoverable fault.
+   *
+   * @param {import("./queue.js").QueueEntry} entry
+   */
+  async #applyLoudness(entry) {
+    if (!this.normaliseLoudness) return null;
+
+    const result = computeGain(entry.track, this.loudnessOptions);
+    try {
+      // Always written, including 0 dB: the deck may still carry the previous
+      // track's trim, and leaving it there would apply one track's correction to
+      // the next — worse than not normalising at all.
+      await this.client.set(this.deck, "pregain", dbToLinear(result.gainDb));
+      this.scheduler.emit("loudness", { entry, ...result });
+    } catch (err) {
+      this.scheduler.emit("engineError", { entry, error: err });
+    }
+    return result;
   }
 
   /* --------------------------------------------------- engine → scheduler */

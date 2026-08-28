@@ -19,7 +19,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 120 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 61 stories, 120/120 traced |
-| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence, 35/61 stories** |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 43/61 stories** |
 
 ### Try it
 
@@ -51,7 +51,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**444 tests · 20 conformance checks · zero runtime dependencies.**
+**477 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
@@ -108,7 +108,7 @@ largest technical risk in the plan.
 
 ### What is blocked, and on what exactly
 
-Two items are blocked. Neither blocks the ~9 remaining stories, which are pure JavaScript.
+Two items are blocked. Neither blocks the remaining stories, which are pure JavaScript.
 
 | Item | Blocked on | Not blocked on |
 |---|---|---|
@@ -184,6 +184,7 @@ core/                    Apache-2.0 — the fusion core (the novelty)
   src/scheduler.js         staging lane, modes, fallback
   src/engine-adapter.js    scheduler intents ⇄ CDEP
   src/engine-link.js       reconnect + resync so a core crash cannot stop audio
+  src/loudness.js          EBU R128 gain with a true-peak guard, so it cannot clip
 data/                    Apache-2.0 — persistence (node:sqlite, still zero deps)
   src/schema.js            migrations; venue_id on every venue-scoped table
   src/db.js                connection, migration runner, single-venue binding

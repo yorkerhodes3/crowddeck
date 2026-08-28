@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>444 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>477 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -891,6 +891,34 @@
       venue with a search box that never finds anything and no explanation. Probing the guards also found a
       test passing for an incidental reason: it checked one shape of lookalike host and missed the case where
       the real domain is embedded in a <em>path</em>. Now all three shapes are covered.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--warn);">
+      <strong>Levelling the room, without ever making it clip.</strong> A jukebox queue is the worst case for
+      loudness: a 2010 loudness-war master, a quiet Creative Commons home recording and a live guitar can
+      follow one another inside four minutes. <span class="mono">CON-6</span> normalises to
+      <strong>−14 LUFS</strong> — the target Spotify and YouTube use, so a track sounds the same in the venue
+      as it did in the patron's headphones on the way there.
+      <br><br>
+      The obvious implementation is <span class="mono">gain = target − measured</span>, and it is wrong. A
+      track mastered to −6 LUFS gets −8 dB and is fine, but a quiet track with an untamed peak gets
+      <em>boosted into the ceiling</em> and clips. <strong>That trade is not close.</strong> Uneven loudness
+      is a comfort problem a human fixes with the master fader; digital clipping through a venue PA is
+      audible distortion, and at volume it damages drivers. So gain is clamped by the track's true-peak
+      headroom under a <span class="mono">−1.0 dBTP</span> ceiling — lossy codecs routinely reconstruct above
+      0 dBFS on decode, so a file that measures 0.0 dBFS is genuinely over after decoding. A peaky track plays
+      slightly under target instead, and reports <span class="mono">peakLimited</span> so the console can show
+      <em>"−2.1 dB (peak-limited)"</em> rather than leaving an operator to wonder why one track is quiet.
+      <br><br>
+      Three smaller decisions carry most of the correctness. The trim is written to
+      <span class="mono">pregain</span>, <strong>never to <span class="mono">volume</span></strong> — volume
+      is the fader the DJ has a hand on, and software that fights a human hand loses. It is written for
+      <em>every</em> track, including the 0 dB case, because otherwise the previous track's −8 dB silently
+      leaks onto the next one. And an unmeasured track gets <strong>exactly 0 dB, never a guess</strong>:
+      "we don't know" and "we measured it and it's fine" have to stay distinguishable, which is the same
+      principle <span class="mono">licenceClass</span> follows. A live instrument gets an explicit soundcheck
+      trim labelled as an operator setting, not a measurement, because a performance that hasn't happened
+      cannot be analysed.
     </div>
 
     <div data-render="backlog"></div>
