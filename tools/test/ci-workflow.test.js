@@ -79,7 +79,7 @@ test("every test directory in the repository is covered by npm test", () => {
   // exactly how the previous gap happened.
   const testScript = pkg.scripts.test;
   const dirsWithTests = [
-    "protocol", "engine-stub", "core", "data", "api", "interconnect", "clients", "tools"
+    "protocol", "engine-stub", "core", "data", "providers", "api", "interconnect", "clients", "tools"
   ];
   for (const dir of dirsWithTests) {
     assert.ok(

@@ -75,7 +75,29 @@ and it's fine" must never be the same value.
 | Story | State |
 |---|---|
 | `CON-7` — assert no consumer-streaming or downloader adapters | ✅ Done — enforced in CI |
-| `CON-1` — the provider interface | ⏳ Next |
+| `CON-1` — the provider interface | ✅ Done — `Provider`, `ProviderRouter`, `LocalProvider` |
 | `CON-4` — OpenSubsonic consumer | ⏳ |
 | `CON-5` — Creative Commons (Jamendo) | ⏳ |
 | `CON-6` — loudness normalisation across sources | ⏳ |
+
+## Two decisions in the router worth knowing
+
+**A slow provider must not stall the venue.** Every provider is searched
+concurrently under a per-provider timeout, and whatever arrives in time is
+returned. `REQ-NFR-3` says the appliance must be fully functional with no WAN
+connectivity — a router that awaited each provider in turn would hand that
+guarantee straight back, because one unreachable remote service would hang search
+and take the local library down with it. That is precisely the cloud-jukebox
+failure mode this product exists to avoid.
+
+**Failures are reported, never swallowed.** The tempting implementation drops the
+rejections and returns fewer results, which gives a venue whose catalogue silently
+shrinks and staff who conclude the jukebox is broken. `search()` returns
+`{ tracks, errors, degraded }` so the console can say *"Jamendo is unreachable,
+showing 3 of 4 sources"*. A partial answer labelled as partial is useful; a partial
+answer presented as complete is a lie the software is telling.
+
+Results are grouped by provider priority rather than interleaved by relevance.
+Cross-source relevance ranking needs score normalisation nobody has built, and a
+plausible-looking merge would be quietly arbitrary — priority order is at least
+honest about what it is.

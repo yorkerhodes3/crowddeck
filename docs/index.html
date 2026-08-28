@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>386 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>415 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -836,6 +836,32 @@
       <span class="mono">//</span> in <span class="mono">https://</span> as a line comment, so every banned
       host inside a URL was invisible — it would have passed a codebase full of Spotify calls. Reading the
       regex would not have shown that; constructing the violation did.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--accent-2);">
+      <strong>One interface for every source, and a dead source can't take the venue with it.</strong>
+      <span class="mono">CON-1</span> lands the provider contract — search, resolve, stream URL, licence
+      class — shaped after Mopidy's backend API, with two deliberate differences.
+      <br><br>
+      <strong><span class="mono">licenceClass</span> is part of the contract, with no default.</strong> A
+      provider that cannot establish a licence returns <span class="mono">unknown</span>, which policy blocks
+      in a commercial venue. That looks pedantic until you picture the alternative: a provider omits the
+      field, a router fills in something reasonable, and a venue publicly performs music nobody ever checked.
+      "Nobody checked" and "checked and it's fine" must never be the same value.
+      <br><br>
+      <strong>Providers are searched concurrently, under a timeout.</strong> A router that awaited each in
+      turn would hand back the whole no-WAN guarantee — one unreachable remote service and search hangs,
+      taking the local library down with it, which is exactly the cloud-jukebox failure this product exists
+      to avoid. Failures are returned as <span class="mono">{ tracks, errors, degraded }</span> rather than
+      swallowed, so the console can say <em>"Jamendo is unreachable, showing 3 of 4 sources"</em>. A partial
+      answer labelled as partial is useful; a partial answer presented as complete is a lie the software is
+      telling.
+      <br><br>
+      Wiring it in exposed a one-line mistake that broke <em>every</em> API request: the option was called
+      <span class="mono">router</span>, and the API class already used <span class="mono">this.router</span>
+      for its HTTP route table — so assigning a provider router replaced the routing wholesale and every
+      endpoint returned 500. The names are now distinct and a test pins them apart, checking the endpoint
+      end to end rather than just the wiring.
     </div>
 
     <div data-render="backlog"></div>

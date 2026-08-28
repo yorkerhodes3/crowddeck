@@ -4,7 +4,7 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 40 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 41 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
 **11 epics · 61 stories · 120 of 120 requirements covered**
@@ -162,7 +162,7 @@ Fork Mopidy's backend abstraction (Apache-2.0) rather than inventing a provider 
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **CON-1** | **Provider interface from Mopidy's backend API**<br>One interface: search, resolve, stream URL, licence class. | L | `FORK` | `REQ-CON-5` |
+| ✅ **CON-1** | **Provider interface from Mopidy's backend API**<br>One interface: search, resolve, stream URL, licence class. Shaped after Mopidy's backend API. DONE — providers/src: Provider (the contract), ProviderRouter (fan-out) and LocalProvider (the venue's own library, no network at all). Two decisions carry the weight. licenceClass is part of the contract with no default: a provider that cannot establish one returns 'unknown', which policy blocks in a commercial venue — 'nobody checked' and 'checked and it's fine' must never be the same value. And a slow provider must not stall the venue: providers are searched concurrently under a per-provider timeout, and failures are reported as {tracks, errors, degraded} rather than swallowed, so the console can say which source is down instead of silently offering a smaller catalogue. That is what keeps REQ-NFR-3 real — an internet outage must not take the local library with it. Wiring it into the API exposed a name collision: the option was called 'router' and VenueApi already used this.router for its HTTP route table, so every endpoint returned 500. Renamed, and a test now pins both names apart and checks the endpoint end to end. | L | `FORK` | `REQ-CON-5` |
 | **CON-2** | **Local ingest with fingerprint tagging**<br>beets + Chromaprint/AcoustID + MusicBrainz, de-duplicating by fingerprint. Satisfies AC-15. | L | `ADOPT` | `REQ-CON-1` |
 | **CON-3** | **Out-of-process analysis pipeline**<br>One pass produces beatgrid, key, loudness, waveform, phrases. librosa (ISC) keeps the analysis path licence-safe. Never shares a process with the audio engine. | L | `ADOPT` | `REQ-CON-2` `REQ-CON-3` |
 | **CON-4** | **OpenSubsonic consumer provider**<br>Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary. | M | `ADOPT` | `REQ-CON-6` |

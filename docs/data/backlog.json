@@ -637,8 +637,8 @@
           "reqs": [
             "REQ-CON-5"
           ],
-          "detail": "One interface: search, resolve, stream URL, licence class.",
-          "status": "todo"
+          "detail": "One interface: search, resolve, stream URL, licence class. Shaped after Mopidy's backend API. DONE — providers/src: Provider (the contract), ProviderRouter (fan-out) and LocalProvider (the venue's own library, no network at all). Two decisions carry the weight. licenceClass is part of the contract with no default: a provider that cannot establish one returns 'unknown', which policy blocks in a commercial venue — 'nobody checked' and 'checked and it's fine' must never be the same value. And a slow provider must not stall the venue: providers are searched concurrently under a per-provider timeout, and failures are reported as {tracks, errors, degraded} rather than swallowed, so the console can say which source is down instead of silently offering a smaller catalogue. That is what keeps REQ-NFR-3 real — an internet outage must not take the local library with it. Wiring it into the API exposed a name collision: the option was called 'router' and VenueApi already used this.router for its HTTP route table, so every endpoint returned 500. Renamed, and a test now pins both names apart and checks the endpoint end to end.",
+          "status": "done"
         },
         {
           "id": "CON-2",

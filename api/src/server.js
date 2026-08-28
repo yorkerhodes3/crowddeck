@@ -40,6 +40,15 @@ export class VenueApi {
     this.adapter = opts.adapter ?? null;
     this.staticHandler = opts.staticHandler ?? null;
 
+    // CON-1. When present, search fans out across providers instead of using the
+    // single catalogue. Optional so the stub catalogue keeps working.
+    //
+    // Named `providers`, not `router`: `this.router` is already the HTTP route
+    // table, and assigning a provider router to it silently replaced the routing
+    // and broke every request. Two different things called "router" in one class
+    // is a collision waiting to happen.
+    this.providers = opts.providers ?? null;
+
     // VEN-3 / REQ-DAT-9. Anything with an `assess(track, nowMs)` method — in
     // practice a VenueLicenceProfile from data/. Structural typing keeps api/
     // from having to depend on the persistence layer.
@@ -141,13 +150,36 @@ export class VenueApi {
       };
     });
 
-    r.get(`${V}/search`, (ctx) => {
+    r.get(`${V}/search`, async (ctx) => {
       this.#requireVenue(ctx);
       const q = ctx.url.searchParams.get("q") ?? "";
-      const raw = this.catalog.search(q);
+
+      // The provider router fans out and may come back degraded; the older
+      // single-catalogue path is kept so existing deployments and tests keep
+      // working (CON-1 adds providers, it does not force them).
+      let raw;
+      let degraded = false;
+      let sources;
+
+      if (this.providers) {
+        const res = await this.providers.search(q, { limit: 50 });
+        raw = res.tracks;
+        degraded = res.degraded;
+        // Surfaced so a venue console can say *which* source is down. A catalogue
+        // that silently shrinks makes staff think the jukebox is broken.
+        sources = {
+          queried: res.providersQueried,
+          answered: res.providersAnswered,
+          unavailable: res.errors.map((e) => ({ provider: e.provider, name: e.name }))
+        };
+      } else {
+        raw = this.catalog.search(q);
+      }
+
       // Scoped by the same policy used at request time — REQ-POL-2, AC-7.
       // An unrequestable track is never offered.
-      return { results: filterSearch(raw, this.scheduler.policy, this.#policyContext()) };
+      const results = filterSearch(raw, this.scheduler.policy, this.#policyContext());
+      return degraded ? { results, degraded, sources } : { results };
     });
 
     r.get(`${V}/queue`, (ctx) => {
