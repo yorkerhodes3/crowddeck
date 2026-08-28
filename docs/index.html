@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>611 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>622 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -992,6 +992,32 @@
       device described; lose those and nobody would use auto-mapping again. And a user binding
       <em>replaces</em> the auto one rather than joining it, or a single knob would drive two engine controls
       at once.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--warn);">
+      <strong>The queue was fair by every rule it had, and still felt rigged.</strong>
+      <span class="mono">CRW-1</span> is the one story with a <span class="mono">FORK</span> verdict, and the
+      question was what Karaoke Eternal actually contributes when the Unified Scheduler already has a fair
+      queue. The answer is the single property a pure score sort cannot produce: <strong>rotation</strong>.
+      <br><br>
+      Two entries from one patron can outscore the room and play <em>back to back</em>, while somebody who
+      queued once waits behind both. No rule is broken — staff-pinned first, then score, then FIFO, exactly as
+      specified. The queue does precisely what it was told. And the patron who waited concludes it is rigged,
+      which is the perception the scheduler's own aging term exists to prevent. That gap was demonstrated with
+      a <em>failing</em> test before anything was written, and the old behaviour is still pinned by a test so
+      the change stays visible rather than becoming folklore.
+      <br><br>
+      Karaoke Eternal's singer rotation is the prior art: a singer with three songs queued does not get three
+      turns in a row. Generalised from "singers" to "patrons with priority", the queue is dealt out one entry
+      per patron per round. Crucially, <strong>rotation orders turns, not outcomes</strong> — the
+      highest-scoring entry still plays first, or voting would stop meaning anything.
+      <br><br>
+      Two details would otherwise have been quiet bugs. Staff-pinned entries are held out of the rotation, or
+      a patron would be interleaved between two pinned tracks and break the one override staff have. And an
+      entry with <em>no</em> patron is treated as its own queue rather than merged — anonymous entries, like
+      never-silent fallback tracks, would otherwise collapse into a single pseudo-patron taking one slot for
+      all of them, starving the room of filler at exactly the wrong moment. It is on by default, because the
+      default has to be the fair one: a venue opts <em>out</em> of patrons taking turns, not in.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

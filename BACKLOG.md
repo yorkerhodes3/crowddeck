@@ -4,10 +4,10 @@
 > Traceability is validated at build time: every `REQ-*` cited below exists in
 > [`SPECIFICATION.md`](SPECIFICATION.md), and every fork/adopt verdict matches the OSS triage.
 
-**Status:** 🚧 In progress — 46 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
+**Status:** 🚧 In progress — 47 of 61 stories complete · 2 partial (◐) · **Date:** 2026-08-27
 **Upstream:** [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) → [`DECISIONS.md`](DECISIONS.md) → [`SPECIFICATION.md`](SPECIFICATION.md) → **this document**
 
-**11 epics · 61 stories · 121 of 121 requirements covered**
+**11 epics · 61 stories · 122 of 122 requirements covered**
 
 Sizes are t-shirt estimates for a small team, not commitments: **S** ≤1 week · **M** 1-3 weeks · **L** 3-6 weeks · **XL** 6-12 weeks.
 
@@ -118,7 +118,7 @@ Fork Karaoke Eternal (ISC) — it already implements QR join, rooms and a dynami
 
 | ID | Story | Size | Source | Requirements |
 |---|---|---|---|---|
-| **CRW-1** | **Fork Karaoke Eternal and generalise the fair queue**<br>Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1. | L | `FORK` | `REQ-SCH-14` |
+| ✅ **CRW-1** | **Fork Karaoke Eternal and generalise the fair queue**<br>Generalise from 'singers' to 'patrons with priority'. Strip karaoke-specific media handling for v1. DONE — core/src/priority.js, rotateByPatron(), and the new REQ-SCH-19. The Unified Scheduler already had a fair queue, so what Karaoke Eternal actually contributes is the one property a pure score sort cannot give: ROTATION. Two entries from one patron can outscore the room and play back to back while someone who queued once waits behind both. No rule was violated — the queue did exactly what it was told — and the patron who waited concludes it is rigged, which priority.js itself already identifies as a correctness problem rather than a cosmetic one. That gap was demonstrated with a failing test before it was closed, and the pre-rotation behaviour is still pinned by a test so the change stays visible. Karaoke Eternal's singer rotation is the prior art: a singer with three songs queued does not get three turns in a row. Generalised, the queue is dealt out one entry per patron per round. Rotation orders TURNS, not outcomes: the highest-scoring entry still plays first, or voting would stop meaning anything. Two details would otherwise have been quiet bugs. Staff-pinned entries are excluded from the rotation and kept at the front, because interleaving a patron between two pinned tracks would break REQ-SCH-6 — the one override staff have. And an entry with no patron id is treated as its own queue rather than merged: anonymous entries (a fallback track, an imported set) would otherwise collapse into a single pseudo-patron taking one slot for all of them, starving the queue of fallback material. On by default, because the default has to be the fair one — a venue opts out of patrons taking turns, not in. 11 tests; all 610 pre-existing tests pass unchanged. | L | `FORK` | `REQ-SCH-14` `REQ-SCH-19` |
 | ✅ **CRW-2** | **Venue-scoped patron sessions**<br>No app install, no personal data, expiring venue-scoped tokens. Join is by URL; QR generation is tracked separately as DISP-1 after a hand-rolled encoder failed decoder verification. | M | `FORK` | `REQ-API-3` `REQ-NFR-7` |
 | ✅ **CRW-3** | **Live queue with position in line**<br>TouchTunes' single most-cited feature, and what makes paid priority meaningful later. Satisfies AC-4. | M | build | `REQ-SCH-11` `REQ-SCH-12` `REQ-SCH-13` |
 | ✅ **CRW-4** | **Voting with one-vote-per-patron**<br>Enforced by a uniqueness constraint, not UI logic. | S | build | `REQ-SCH-17` |

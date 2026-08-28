@@ -29,7 +29,10 @@ export const DEFAULT_WEIGHTS = Object.freeze({
   voteWeight: 10,
   boostWeight: 25,
   agingIntervalMs: 5 * 60 * 1000,
-  agingWeight: 3
+  agingWeight: 3,
+  // REQ-SCH-19. On by default, because the default has to be the fair one: a
+  // venue should have to opt *out* of patrons taking turns, not opt in.
+  rotatePatrons: true
 });
 
 /**
@@ -38,6 +41,7 @@ export const DEFAULT_WEIGHTS = Object.freeze({
  * @property {number} boostWeight
  * @property {number} agingIntervalMs
  * @property {number} agingWeight
+ * @property {boolean} rotatePatrons
  */
 
 /**
@@ -108,9 +112,13 @@ export function priorityScore(entry, nowMs, w) {
  * 3. Then FIFO by enqueue time, so equal-scoring entries are fair.
  * 4. Then by id, to make the sort total and therefore deterministic.
  *
+ * Finally, unless disabled, the unpinned entries are **rotated between patrons**
+ * (REQ-SCH-19) so nobody holds consecutive positions while somebody else is still
+ * waiting for a first turn.
+ *
  * Returns a new array; the input is not mutated.
  *
- * @template {{id: string, enqueuedAt: number, staffPinned?: boolean}} T
+ * @template {{id: string, enqueuedAt: number, staffPinned?: boolean, patronId?: string}} T
  * @param {T[]} entries
  * @param {number} nowMs
  * @param {Weights} [weights]
@@ -119,7 +127,7 @@ export function priorityScore(entry, nowMs, w) {
 export function orderQueue(entries, nowMs, weights) {
   const w = weights ?? resolveWeights();
 
-  return entries
+  const scored = entries
     .map((e) => ({ ...e, priorityScore: priorityScore(e, nowMs, w) }))
     .sort((a, b) => {
       const pinned = Number(b.staffPinned ?? false) - Number(a.staffPinned ?? false);
@@ -132,6 +140,66 @@ export function orderQueue(entries, nowMs, weights) {
       if (fifo !== 0) return fifo;
 
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-    })
-    .map((e, i) => ({ ...e, position: i + 1 })); // 1-based — REQ-SCH-11
+    });
+
+  const ordered = w.rotatePatrons ? rotateByPatron(scored) : scored;
+
+  return ordered.map((e, i) => ({ ...e, position: i + 1 })); // 1-based — REQ-SCH-11
+}
+
+/**
+ * Deal the queue out one entry per patron per round — REQ-SCH-19.
+ *
+ * Generalised from Karaoke Eternal's singer rotation. The array arrives already
+ * sorted, so this only ever *reorders between patrons*: within one patron the
+ * relative order is untouched, and the first round is taken in the order the
+ * patrons' best entries already had. The strongest entry therefore still plays
+ * first — rotation decides turn order, not who wins, or voting would stop meaning
+ * anything.
+ *
+ * Two details that would otherwise be quiet bugs:
+ *
+ * - **Pinned entries are excluded and kept at the front.** Interleaving a patron
+ *   between two staff-pinned tracks would break REQ-SCH-6, which is the one
+ *   override staff have.
+ * - **An entry with no patron is its own queue.** Anonymous entries — a fallback
+ *   track, an imported set — would otherwise collapse into a single pseudo-patron
+ *   who then takes one rotation slot for all of them, starving the real queue of
+ *   fallback material.
+ */
+function rotateByPatron(scored) {
+  const pinned = scored.filter((e) => e.staffPinned);
+  const rest = scored.filter((e) => !e.staffPinned);
+
+  /** @type {Map<string, object[]>} insertion-ordered, so round 1 follows the sort */
+  const byPatron = new Map();
+  let anonymous = 0;
+  for (const e of rest) {
+    // `undefined` and `null` are not one patron, they are unattributed entries.
+    const key = e.patronId === undefined || e.patronId === null
+      ? `\u0000anon:${anonymous++}`
+      : `p:${e.patronId}`;
+    const bucket = byPatron.get(key);
+    if (bucket) bucket.push(e);
+    else byPatron.set(key, [e]);
+  }
+
+  const out = [];
+  const queues = [...byPatron.values()];
+  let round = 0;
+  while (out.length < rest.length) {
+    let placed = false;
+    for (const q of queues) {
+      if (round < q.length) {
+        out.push(q[round]);
+        placed = true;
+      }
+    }
+    // Cannot happen while out.length < rest.length, but an infinite loop here
+    // would hang the scheduler rather than misorder it.
+    if (!placed) break;
+    round++;
+  }
+
+  return [...pinned, ...out];
 }

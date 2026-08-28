@@ -323,9 +323,24 @@ age_bonus = floor(minutes_waiting / AGING_INTERVAL) × AGING_WEIGHT
 - **REQ-SCH-17** A patron **MUST NOT** vote twice for the same entry, enforced by a uniqueness constraint
   rather than UI logic.
 - **REQ-SCH-18** Every rejection **MUST** return a specific reason so the client can explain it.
+- **REQ-SCH-19** The effective play order **MUST** rotate between patrons: where several patrons have
+  pending entries, a patron **MUST NOT** occupy consecutive positions while another patron with a pending
+  entry has not yet had a turn. Rotation orders *turns*, not outcomes — the highest-scoring entry still
+  plays first, and staff-pinned entries (REQ-SCH-6) are unaffected. It **MUST** be venue-configurable
+  (`ROTATE_PATRONS=true`) under REQ-SCH-9.
 
 > Without §3.4 one patron plays the same song six times and the venue switches the system off. These are
 > P0 for adoption, not polish.
+
+> **REQ-SCH-19 added by CRW-1.** A pure score sort satisfies every other rule in §3.2 and still produces
+> the outcome §3.4 exists to prevent: two entries from one patron outscore the room and play back to back
+> while someone who queued once waits behind both. No rule is violated — the queue does exactly what it was
+> told — and the patron who waited concludes it is rigged, which is the perception REQ-SCH-8 already
+> identifies as a correctness problem rather than a cosmetic one.
+>
+> The mechanism is generalised from **Karaoke Eternal** (MIT, `docs/data/oss.json`), whose singer rotation
+> is the best prior art: a singer with three songs queued does not get three turns in a row. "Singers"
+> becomes "patrons with priority", which is the whole of the `FORK` verdict recorded for this story.
 
 ### 3.5 Venue policy engine (*B7*)
 

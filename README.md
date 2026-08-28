@@ -19,7 +19,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 120 requirements, 18 acceptance criteria |
 | **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 61 stories, 120/120 traced |
-| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 46/61 stories** |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 47/61 stories** |
 
 ### Try it
 
@@ -40,7 +40,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | Module | Licence | What it is |
 |---|---|---|
 | [`protocol/`](protocol) | Apache-2.0 | **CDEP** — the engine contract: NDJSON over a local socket, self-describing controls, published [JSON Schema](protocol/cdep-1.schema.json) |
-| [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
+| [`core/`](core) | Apache-2.0 | **The Unified Scheduler** — staging lane, priority ordering, fairness with **patron rotation**, policy, autonomous drain, gapless handoff, never-silent fallback. *This is the novelty.* |
 | [`interconnect/`](interconnect) | Apache-2.0 | **MIDI** — identity-stable ports, soft-takeover, mappings targeting CDEP, 24 PPQN clock, **MIDI-CI auto-mapping** so a device can describe itself, and **live instruments as queueable sources** |
 | [`providers/`](providers) | Apache-2.0 | Where music comes from — one interface, a router that **isolates a dead source**, an **OpenSubsonic client** where the operator declares the licence, a **Creative Commons classifier** that refuses to guess, and a CI guard that no consumer-streaming or downloader adapter can enter |
 | [`data/`](data) | Apache-2.0 | **Persistence** — venue-scoped schema, append-only credit ledger, licence-class store, play log with CSV export, durable queue |
@@ -51,7 +51,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**611 tests · 20 conformance checks · zero runtime dependencies.**
+**622 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node
