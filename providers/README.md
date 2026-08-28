@@ -77,8 +77,67 @@ and it's fine" must never be the same value.
 | `CON-7` — assert no consumer-streaming or downloader adapters | ✅ Done — enforced in CI |
 | `CON-1` — the provider interface | ✅ Done — `Provider`, `ProviderRouter`, `LocalProvider` |
 | `CON-5` — Creative Commons (Jamendo) | ✅ Done — `JamendoProvider`, `cc-licence.js` |
-| `CON-4` — OpenSubsonic consumer | ⏳ |
-| `CON-6` — loudness normalisation across sources | ⏳ |
+| `CON-4` — OpenSubsonic consumer | ✅ Done — `OpenSubsonicProvider` |
+| `CON-6` — loudness normalisation across sources | ✅ Done — `core/src/loudness.js` |
+
+## Consuming an OpenSubsonic server
+
+Navidrome, Gonic, Astiga and Airsonic all speak the Subsonic API, and a venue that
+already runs one has a curated library the appliance should inherit rather than ask
+to be imported again.
+
+It is a **network client, not a library**. Navidrome is GPL-3.0; we speak HTTP to a
+separate process, which is the arrangement `ADR-006` and `REQ-LIC-8` assume. If this
+ever became an in-process dependency the licence analysis would change.
+
+### Whose licence is it?
+
+A Subsonic server is somebody else's library, and the protocol says nothing about
+what rights the operator holds in the files. Three options, one defensible:
+
+| Option | Verdict |
+|---|---|
+| Infer from tags | Guessing — forbidden by the same rule that makes `licenceClass` mandatory |
+| Always `unknown` | Honest and useless: policy blocks it, so the provider ships dead |
+| **The operator declares it** | They ripped the CDs or pay the record pool. They know, we cannot, and they carry the liability |
+
+So `licenceClass` is a **required constructor argument with no default**, and every
+track carries an attestation — who declared it, when, for which server (`REQ-DAT-8`).
+If a PRO asks why the venue believed it could perform a track, "a named human on a
+date" is an answer. "The software assumed so" is not.
+
+### Credentials travel in the query string
+
+Subsonic authenticates every request, including `stream`, by query parameter. That
+URL reaches the audio engine and is exactly the sort of string that ends up in a log
+line or a crash report. Three consequences:
+
+- **Errors never quote the URL** — they name the method and host only, and a test
+  asserts that no error message or stack contains the token, salt or password.
+- **Stream URLs are minted per call and never cached**, with a fresh salt each time.
+- **A plaintext password to a non-TLS, non-loopback host throws.** On a venue's
+  shared Wi-Fi that is a credential handed to the room. Loopback is exempt — there
+  is no wire to listen on — and `allowInsecureAuth` exists for operators who are
+  certain the link is private.
+
+Token auth (`t = md5(password + salt)`) is used rather than `p`, which keeps the
+plaintext off the wire — and that is *all* it does. MD5 is weak and the server must
+store the password recoverably to check it, so it is not a substitute for TLS. An
+API key is better where the server supports one.
+
+The loopback check is a full IPv4 literal parse, not a `127.` prefix test. An
+attacker who controls `evil.test` can publish `127.0.0.1.evil.test`, and under a
+prefix check the venue's password would be sent there in cleartext. That case is in
+the test suite.
+
+### ReplayGain
+
+OpenSubsonic servers expose `replayGain`, which is mapped straight into the fields
+`core/src/loudness.js` reads. An already-analysed Navidrome library therefore
+normalises on first run, with no analysis pass of our own. Two details matter:
+`baseGain` (Opus output gain) is added per the spec, and a non-positive `trackPeak`
+is dropped rather than converted to a `-Infinity` dB peak that would clamp every
+gain to the floor and silence the library.
 
 ## Reading a Creative Commons licence
 

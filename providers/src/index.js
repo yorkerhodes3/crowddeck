@@ -22,4 +22,10 @@ export {
 export { ProviderRouter, DEFAULT_TIMEOUT_MS } from "./router.js";
 export { LocalProvider } from "./local.js";
 export { JamendoProvider } from "./jamendo.js";
+export {
+  OpenSubsonicProvider,
+  API_VERSION as OPENSUBSONIC_API_VERSION,
+  CLIENT_NAME as OPENSUBSONIC_CLIENT_NAME,
+  isLoopback
+} from "./opensubsonic.js";
 export { parseCcUrl, classifyCc, ccAttribution } from "./cc-licence.js";

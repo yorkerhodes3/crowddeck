@@ -648,7 +648,7 @@
       conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
       live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
       identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>477 tests, 20 conformance checks</strong>, zero
+      instruments as queueable sources. <strong>528 tests, 20 conformance checks</strong>, zero
       dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
       <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
     </div>
@@ -891,6 +891,40 @@
       venue with a search box that never finds anything and no explanation. Probing the guards also found a
       test passing for an incidental reason: it checked one shape of lookalike host and missed the case where
       the real domain is embedded in a <em>path</em>. Now all three shapes are covered.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--info);">
+      <strong>Inheriting the library the venue already has — and the question the protocol
+      can't answer.</strong> Plenty of venues already run Navidrome, Gonic, Astiga or Airsonic, and
+      <span class="mono">CON-4</span> speaks their Subsonic API so the appliance adopts that curated,
+      already-paid-for catalogue instead of demanding it be imported again. It is a network client to a
+      separate process, which is also what keeps Navidrome's GPL-3.0 out of our binary.
+      <br><br>
+      The difficult part isn't HTTP. <strong>A Subsonic server is somebody else's library, and the protocol
+      says nothing about what rights the operator holds in the files.</strong> Three options, and only one
+      survives contact: inferring a licence from tags is guessing, which the whole design forbids; marking
+      everything <span class="mono">unknown</span> is honest but ships the provider dead, since policy blocks
+      unknown in a commercial venue. So <strong>the operator declares it</strong> — a required argument with
+      no default. They ripped the CDs, or they pay the record pool. They know, we cannot, and they carry the
+      liability. Every track then carries an attestation naming <em>who</em> declared it and <em>when</em>.
+      If a performing-rights body ever asks why the venue believed it could play something, "a named person
+      on a date" is an answer. <em>"The software assumed so"</em> is not.
+      <br><br>
+      The second concern is that <strong>Subsonic authenticates in the query string</strong> — including the
+      stream URL, which is handed to the audio engine and is exactly the kind of string that ends up in a log
+      line or a crash report. So errors name the method and host but never quote the URL, stream URLs are
+      minted per call and never cached, and sending a plaintext password to a non-TLS host that isn't
+      loopback simply throws: on a venue's shared Wi-Fi that is a credential handed to the room.
+      <br><br>
+      Writing the test for that exemption found a real vulnerability in it. The check had been "does the
+      hostname start with <span class="mono">127.</span>" — so an attacker who controls
+      <span class="mono">evil.test</span> publishes <span class="mono">127.0.0.1.evil.test</span>, and the
+      venue's password is sent there in cleartext. It now parses a full IPv4 literal. Ten of the 51 tests run
+      against a <strong>real socket, where the server recomputes <span class="mono">md5(password + salt)</span>
+      itself and rejects a mismatch</strong> — swapping the concatenation order turns six of them red, which
+      is the assurance a stubbed <span class="mono">fetch</span> can never give. That probe also exposed a
+      flaw in the harness: a failing test <em>hung</em> rather than failing, because one server was closed
+      outside a <span class="mono">finally</span>. A red test that hangs CI is worse than one that reports.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

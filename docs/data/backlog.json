@@ -671,8 +671,8 @@
           "reqs": [
             "REQ-CON-6"
           ],
-          "detail": "Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary.",
-          "status": "todo"
+          "detail": "Consume Navidrome and friends over HTTP — separate process, so GPL-3.0 stays out of our binary. DONE — providers/src/opensubsonic.js. A venue that already runs Navidrome, Gonic, Astiga or Airsonic has a curated, already-paid-for library, and the appliance should inherit it rather than demand it be imported again. The hard part is not HTTP, it is whose licence it is: the protocol says nothing about what rights the operator holds in the files. Inferring from tags is guessing; marking everything 'unknown' is honest but ships the provider dead, because policy blocks unknown in a commercial venue. So the operator declares the licence class — a required constructor argument with no default — and every track carries an attestation naming who declared it and when (REQ-DAT-8). A named human on a date is an answer a PRO can be given; 'the software assumed so' is not. Second concern: Subsonic authenticates every request, including stream, in the query string, so that URL reaches the engine and could land in a log. Errors therefore never quote the URL, stream URLs are minted per call with a fresh salt and never cached, and sending a plaintext password to a non-TLS non-loopback host throws. The loopback exemption parses a full IPv4 literal rather than testing a '127.' prefix — the test suite caught that an attacker publishing 127.0.0.1.evil.test would otherwise have been handed the venue's password. ReplayGain is mapped into the CON-6 loudness fields, so an analysed library normalises on first run. 51 tests, ten of them against a real socket where the server recomputes md5(password + salt) itself and rejects a mismatch — verified by swapping the concatenation order, which turns six of them red.",
+          "status": "done"
         },
         {
           "id": "CON-5",
