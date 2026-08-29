@@ -63,6 +63,15 @@ the first symptom is a blank deck for whoever opened it.
 - **Generated files must be built by a script, never hand-copied.**
   `docs/demo/` and `docs/engine-web/` mirror real source. A hand-copied duplicate
   drifts, and the published demo slowly stops matching the tested code.
+- **Fetching a page is not verifying it. Drive it.** `curl` returning 200 for the
+  demo and every module told us nothing about whether the deck *worked*. Driving
+  the live URL in a real browser — search, load, play — is what confirms it, and
+  is what caught a defect no HTTP check could see.
+- **Playwright does not report the implicit favicon request**, so its network
+  trace showed zero failing requests while the page console showed two 404s. When
+  the console and the network trace disagree, believe the console and check by
+  hand; the answer was a missing `<link rel="icon">`. Prefer an inline data-URI
+  icon: it costs no request and cannot 404 wherever the page is mounted.
 - **Update the counts in `README.md` and `docs/index.html` whenever stories or
   tests change.** They are written by hand and go stale silently — the dashboard
   once claimed "nothing is audible yet" for a build that made sound.
