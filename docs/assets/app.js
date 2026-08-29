@@ -224,13 +224,24 @@
           var nm = el("span", "capname", s.name);
           if (s.status === "done") nm.style.color = "var(--accent)";
           else if (s.status === "partial") nm.style.color = "var(--warn)";
+          else if (s.blockedBy) nm.style.color = "var(--txt3)";
           head.appendChild(nm);
           if (s.status === "done") head.appendChild(chip("done", "chip-FORK"));
           else if (s.status === "partial") head.appendChild(chip("partial", "chip-partial"));
+          // A blocked story says what it is waiting on, in the row itself. A
+          // backlog that hides its blockers reads as a plan that is merely late.
+          if (s.blockedBy && s.status !== "done") {
+            head.appendChild(chip("blocked: " + s.blockedBy, "chip-blocked"));
+          }
           head.appendChild(chip(s.size, "chip-tier"));
           if (s.verdict) head.appendChild(chip(s.verdict, "chip-" + s.verdict));
           row.appendChild(head);
           row.appendChild(el("div", "capnote", s.detail));
+          if (s.blockedBy && s.blockedReason && s.status !== "done") {
+            var blocked = el("div", "capnote", "⛔ " + s.blockedReason);
+            blocked.style.color = "var(--warn)";
+            row.appendChild(blocked);
+          }
           row.appendChild(el("div", "capfrom", s.reqs.join(" · ")));
           db.appendChild(row);
         });      });
