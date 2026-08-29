@@ -6,6 +6,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>CrowdDeck — Decks</title>
+<!--
+  Inline so it costs no request and cannot 404. Without it the browser asks for
+  /favicon.ico unprompted and logs two console errors on a page we invite people
+  to open; the same record mark as the dashboard, so the two read as one product.
+-->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%234dd4ac'/><circle cx='50' cy='50' r='12' fill='%230a0c12'/></svg>">
 <style>
   /*
     Laid out after the reference the owner actually uses — djay Pro — and for a
