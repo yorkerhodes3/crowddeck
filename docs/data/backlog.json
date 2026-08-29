@@ -1028,6 +1028,40 @@
           ],
           "status": "done",
           "detail": "requestAnimationFrame drives the playhead, meters and cue lights, and is a single point of failure for the whole display: when it stops, everything freezes while the audio keeps playing. A DJ reading a frozen playhead is worse off than one reading no playhead, because a frozen one still looks live. DONE — a watchdog notices rAF has gone quiet and drives the render itself at a lower rate. Found because rAF genuinely does not fire in a non-composited page, which froze the entire panel during verification. The first version of the watchdog guarded on document.hidden and therefore did nothing in exactly the case it existed for, since 'rAF is not running' and 'the page reports itself hidden' are the same situation — the guard was removed."
+        },
+        {
+          "id": "DJX-10",
+          "name": "Openly-licensed starter library",
+          "size": "L",
+          "verdict": null,
+          "reqs": [
+            "REQ-CON-5",
+            "REQ-CON-6"
+          ],
+          "status": "done",
+          "detail": "A DJ application with an empty library cannot be evaluated — you cannot tell whether the crossfader, the loops or the beatgrid work until something is playing, and asking someone to import their collection first is the wrong order. DONE — engine-web/src/library.js plus a browser panel along the bottom. THE CONSTRAINT THAT DECIDED THE SOURCE IS CORS, tested from a real browser rather than assumed: Internet Archive search, metadata AND audio all pass and decode; ccMixter's API sends no Access-Control-Allow-Origin at all so it is unusable from a page; Jamendo and Free Music Archive need API keys, so they stay server-side where a credential can be held. The search asks only for licences that permit commercial use, and every result is classified AGAIN on the way out by the same cc-licence.js the venue side uses — two independent filters, because the Archive's licenseurl is operator-supplied and unvalidated. The licence is shown on every row rather than buried, since it is the fact that decides whether a track may be performed. Two things were found by using it: searching title and creator alone returned ZERO results for 'chiptune' while including subject and description returned 66 — genre is how a DJ searches, and on the Archive genre lives in the subject tags. And a 30 MB download behind a button reading '…' is indistinguishable from a broken button, so the load now reports percentage, then decode, then analyse."
+        },
+        {
+          "id": "DJX-11",
+          "name": "Spinning platters",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-NFR-9"
+          ],
+          "status": "done",
+          "detail": "The visual anchor of every DJ application, and not decoration: a platter answers three questions at a glance that no number does — is this deck moving at all, roughly how fast, and where in the revolution the beat sits. DONE — advancePlatter() in engine-web/src/analyse.js, drawn as SVG. Rotation is derived from the deck's OWN PLAYHEAD, never from wall-clock time. Driving it from elapsed real time would drift from the audio the moment a frame is dropped or the pitch fader moves; taking the delta from position means the record turns because the music is playing, so it slows with pitch and stops dead on pause. 33⅓ rpm, because a DJ's sense of 'that looks about right' is calibrated to it. The arithmetic lives in a tested module rather than in the page, because a cue jump and a loop wrap are both discontinuities in position and neither is rotation — turning by them would fling the record round, and a backward cue would spin it the wrong way. Seven unit tests cover exactly those cases. Three visual bugs were found by looking at it: the platter escaped its row and covered the track title; hiding it on short screens collapsed the EQ faders with it; and the first version was too subtle to read from a metre away, which defeats the point of having one."
+        },
+        {
+          "id": "MID-8",
+          "name": "MIDI over Wi-Fi: position and rationale",
+          "size": "S",
+          "verdict": null,
+          "reqs": [
+            "REQ-CLK-7"
+          ],
+          "status": "done",
+          "detail": "DONE — research/midi-over-wifi.md, ratified as REQ-CLK-7. Network MIDI 2.0 is real and ratified (M2-124-UM, November 2024, UDP carrying UMP with forward error correction); RTP-MIDI (RFC 6295) is the older transport and is MIDI 1.0 ONLY. Neither is the problem. The problem is that MIDI clock is untimestamped: 24 pulses per quarter note, one every 20.83 ms at 120 BPM, fired on ARRIVAL, so a receiver cannot tell 'that pulse was late' from 'the tempo changed'. Casual Wi-Fi jitter is 4-20 ms and spikes near 500 ms with power save — the same order of magnitude as the interval being measured, and one to two orders worse than REQ-CLK-6's 1 ms budget. UMP's Jitter Reduction timestamps would fix this in principle, but Network MIDI 2.0 v1.0 defines NO time synchronisation at all, and timestamps are useless without a shared clock. Ableton Link avoids the problem instead of solving it, by sharing tempo and phase as STATE rather than streaming events. So: clock goes on a cable, wireless tempo goes over Link, and Network MIDI 2.0 is for control traffic where tens of milliseconds are tolerable. Also recorded: no platform ships native Network MIDI 2.0 over Wi-Fi today."
         }
       ]
     }

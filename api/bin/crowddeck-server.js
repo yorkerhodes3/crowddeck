@@ -34,6 +34,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..");
 const clientsDir = path.join(repoRoot, "clients");
 const engineWebDir = path.join(repoRoot, "engine-web");
+const providersDir = path.join(repoRoot, "providers");
 
 function parseArgs(argv) {
   const args = {
@@ -135,33 +136,40 @@ const MIME = {
 };
 
 /**
- * Serve the bundled clients, and the browser engine's modules.
+ * Serve the bundled clients, and the modules they import.
  *
- * The deck page (DJX-5) imports the Web Audio engine as ES modules, which live in
- * `engine-web/` rather than under `clients/` because they are engine code, not
- * client code — the same modules are unit-tested in Node. Both roots are served,
- * and each is confined to itself.
+ * The deck page imports the Web Audio engine as ES modules from `engine-web/`,
+ * and that in turn imports the Creative Commons classifier from `providers/`.
+ * Both live outside `clients/` because they are shared code, unit-tested in Node
+ * — the browser reuses the *same* licence classifier the venue side runs, rather
+ * than a second copy that could drift from it.
+ *
+ * Each root is confined to itself, and `SERVED_ROOTS` is an allow-list: a
+ * directory not named here is not reachable, so adding a package does not
+ * silently expose it.
  *
  * Path traversal is refused explicitly rather than relied upon: `path.normalize`
  * resolves `..` *before* the prefix check, so the check is meaningful.
  */
+const SERVED_ROOTS = [
+  { prefix: "/engine-web/", dir: engineWebDir },
+  { prefix: "/providers/", dir: providersDir }
+];
+
 function staticHandler(pathname) {
   const clean = pathname === "/" ? "/patron/index.html" : pathname;
 
-  const roots = clean.startsWith("/engine-web/")
-    ? [{ dir: engineWebDir, rel: clean.slice("/engine-web".length) }]
-    : [{ dir: clientsDir, rel: clean }];
+  const mount = SERVED_ROOTS.find((r) => clean.startsWith(r.prefix));
+  const dir = mount ? mount.dir : clientsDir;
+  const rel = mount ? clean.slice(mount.prefix.length - 1) : clean;
 
-  for (const { dir, rel } of roots) {
-    const target = path.normalize(path.join(dir, rel));
-    // path.sep guards against a sibling directory sharing the prefix.
-    if (target !== dir && !target.startsWith(dir + path.sep)) continue;
-    if (!existsSync(target)) continue;
-    const ext = path.extname(target);
-    if (!MIME[ext]) continue;
-    return { body: readFileSync(target), contentType: MIME[ext] };
-  }
-  return null;
+  const target = path.normalize(path.join(dir, rel));
+  // path.sep guards against a sibling directory sharing the prefix.
+  if (target !== dir && !target.startsWith(dir + path.sep)) return null;
+  if (!existsSync(target)) return null;
+  const ext = path.extname(target);
+  if (!MIME[ext]) return null;
+  return { body: readFileSync(target), contentType: MIME[ext] };
 }
 
 const api = new VenueApi({

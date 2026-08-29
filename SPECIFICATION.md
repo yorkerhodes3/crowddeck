@@ -544,6 +544,32 @@ age_bonus = floor(minutes_waiting / AGING_INTERVAL) × AGING_WEIGHT
   lose sync when a DJ takes over or steps away.
 - **REQ-CLK-5** MTC **MUST NOT** be used for musical sync; positional reference only.
 - **REQ-CLK-6** Clock jitter **MUST** be ≤1 ms RMS measured at the MIDI output.
+- **REQ-CLK-7** Musical clock **MUST NOT** be carried over Wi-Fi. MIDI Clock **MUST** be emitted on a
+  wired transport (USB or DIN). Wireless tempo sharing **MUST** use **Ableton Link**, which propagates
+  tempo and beat *phase* as state rather than streaming pulses. Network MIDI 2.0 **MAY** be used for
+  control traffic — mapping, Property Exchange, patch and transport commands — where tens of milliseconds
+  are tolerable.
+
+> **Rationale (`research/midi-over-wifi.md`).** Network MIDI 2.0 is real and ratified — **M2-124-UM**,
+> November 2024, UDP carrying UMP with forward error correction. RTP-MIDI (**RFC 6295**) is the older
+> transport and is **MIDI 1.0 only**. Neither is the problem.
+>
+> The problem is that **MIDI clock is untimestamped**: 24 pulses per quarter note, one every **20.83 ms at
+> 120 BPM**, and the receiver fires on *arrival*. It cannot distinguish "that pulse was late" from "the tempo
+> changed". Casual Wi-Fi jitter is **4–20 ms**, rising to ~32 ms average with **spikes near 500 ms** when a
+> laptop enables power save — *the same order of magnitude as the interval being measured*. REQ-CLK-6's
+> 1 ms budget is missed by one to two orders of magnitude.
+>
+> UMP's Jitter Reduction timestamps (32 µs) would fix this in principle, but **Network MIDI 2.0 v1.0 defines
+> no time-synchronisation mechanism at all**, and timestamps are useless without a shared clock.
+>
+> Ableton Link avoids the problem rather than solving it: it shares **state, not events**, so each device
+> computes its position from its own high-resolution clock and a late packet costs nothing. That is why it is
+> the wireless path and MIDI Clock is not.
+>
+> Shipping reality as of this writing: **no platform natively supports Network MIDI 2.0 over Wi-Fi.** Windows
+> MIDI Services ships the MIDI 2.0 stack with network support announced but not released; Linux has
+> `amidi2net` as a userland reference; macOS/iOS ship RTP-MIDI (MIDI 1.0) natively only.
 
 ### 6.5 Instruments as sources (*E5*)
 

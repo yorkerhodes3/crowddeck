@@ -237,6 +237,44 @@ export function foldTempo(bpm, lo = 85, hi = 170) {
   return round2(b);
 }
 
+/** A 12-inch record turns at 33⅓ rpm; a DJ's eye is calibrated to it. */
+export const PLATTER_RPM = 33 + 1 / 3;
+export const PLATTER_DEG_PER_SECOND = (PLATTER_RPM / 60) * 360;
+
+/**
+ * Advance a spinning platter — DJX-11.
+ *
+ * Rotation is derived from the deck's **own playhead**, never from wall-clock
+ * time. Driving it off elapsed real time would drift away from the audio the
+ * moment a frame is dropped or the pitch fader moves; taking the delta from
+ * `position` means the record turns *because the music is playing*, so it slows
+ * with the pitch fader and stops dead when the deck pauses — which is the entire
+ * reason a DJ looks at it.
+ *
+ * A cue jump or a loop wrap is a discontinuity in `position`, not a spin. Rotating
+ * by it would fling the record round and read as a glitch, so any implausible
+ * delta contributes nothing while still updating the reference point.
+ *
+ * @param {{angle: number, lastAt: number}} state mutated in place
+ * @param {number} position current playhead, seconds
+ * @param {boolean} playing
+ * @param {number} [maxStepSeconds] beyond this, treat the jump as a seek
+ * @returns {number} the new angle in degrees, 0..360
+ */
+export function advancePlatter(state, position, playing, maxStepSeconds = 1) {
+  const pos = Number.isFinite(position) ? position : state.lastAt;
+  if (playing) {
+    const delta = pos - state.lastAt;
+    // Negative means a loop wrapped or the deck was cued backwards; too large
+    // means a seek. Neither is rotation.
+    if (delta > 0 && delta <= maxStepSeconds) {
+      state.angle = (state.angle + delta * PLATTER_DEG_PER_SECOND) % 360;
+    }
+  }
+  state.lastAt = pos;
+  return state.angle;
+}
+
 /**
  * Mix a multi-channel buffer down to one array for analysis.
  *

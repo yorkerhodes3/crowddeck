@@ -14,6 +14,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  PLATTER_DEG_PER_SECOND,
+  PLATTER_RPM,
+  advancePlatter,
   detectBpm,
   firstAudible,
   foldTempo,
@@ -249,3 +252,73 @@ test("a fully silent file cues at zero rather than failing", () => {
 function close(a, b, eps = 1e-6) {
   return Math.abs(a - b) < eps;
 }
+
+/* ------------------------------------------------------------- platter */
+
+test("a stopped deck's record does not turn", () => {
+  const s = { angle: 0, lastAt: 0 };
+  advancePlatter(s, 5, false);
+  advancePlatter(s, 10, false);
+  assert.equal(s.angle, 0);
+});
+
+test("a playing deck turns at 33⅓ rpm, measured against the music", () => {
+  assert.ok(close(PLATTER_RPM, 33 + 1 / 3, 1e-9));
+  assert.ok(close(PLATTER_DEG_PER_SECOND, 200, 1e-9), "33⅓ rpm is 200°/s");
+
+  const s = { angle: 0, lastAt: 0 };
+  // One second of *audio*, delivered in four render frames.
+  for (let i = 1; i <= 4; i++) advancePlatter(s, i * 0.25, true);
+  assert.ok(close(s.angle, 200, 1e-6), `turned ${s.angle}°, expected 200°`);
+});
+
+test("the rotation follows the audio, not the frame rate", () => {
+  // The same second of music in 2 frames and in 50 frames must reach the same
+  // angle, or the record would appear to speed up on a faster machine.
+  const coarse = { angle: 0, lastAt: 0 };
+  advancePlatter(coarse, 0.5, true);
+  advancePlatter(coarse, 1.0, true);
+
+  const fine = { angle: 0, lastAt: 0 };
+  for (let i = 1; i <= 50; i++) advancePlatter(fine, i / 50, true);
+
+  assert.ok(close(coarse.angle, fine.angle, 1e-6));
+});
+
+test("a cue jump does not fling the record round", () => {
+  // A seek is a discontinuity in position, not rotation. Turning by it would
+  // read as a glitch — and a backwards jump would spin the record the wrong way.
+  const s = { angle: 0, lastAt: 10 };
+  advancePlatter(s, 200, true);
+  assert.equal(s.angle, 0, "a forward seek contributes no rotation");
+  assert.equal(s.lastAt, 200, "but the reference point still moves");
+
+  const back = { angle: 90, lastAt: 100 };
+  advancePlatter(back, 5, true);
+  assert.equal(back.angle, 90, "a backward cue does not rewind the platter");
+});
+
+test("a loop wrap does not rewind the platter", () => {
+  // Inside a loop the playhead goes backwards every lap. The record must keep
+  // turning forwards, because the music is still moving forwards.
+  const s = { angle: 0, lastAt: 0 };
+  advancePlatter(s, 3.9, true);
+  const afterFirstLap = s.angle;
+  advancePlatter(s, 2.0, true); // wrapped back to the loop start
+  assert.equal(s.angle, afterFirstLap, "the wrap itself adds nothing");
+  advancePlatter(s, 2.5, true);
+  assert.ok(s.angle > afterFirstLap, "and playback resumes turning it");
+});
+
+test("the angle stays within one revolution", () => {
+  const s = { angle: 0, lastAt: 0 };
+  for (let i = 1; i <= 400; i++) advancePlatter(s, i * 0.5, true);
+  assert.ok(s.angle >= 0 && s.angle < 360, `angle escaped its range: ${s.angle}`);
+});
+
+test("a non-finite position cannot corrupt the angle", () => {
+  const s = { angle: 45, lastAt: 10 };
+  advancePlatter(s, NaN, true);
+  assert.equal(s.angle, 45);
+  assert.ok(Number.isFinite(s.lastAt));
+});

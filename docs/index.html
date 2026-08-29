@@ -556,13 +556,13 @@
     <span class="status">✅</span>
     <div class="ph">Phase 2 · complete</div>
     <h4>SPECIFICATION.md</h4>
-    <p>122 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
+    <p>123 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
       </div>
   <div class="gate done">
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 70 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 73 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -585,7 +585,7 @@
 <section id="spec">
   <div class="wrap">
     <div class="sec-num">11 — SPECIFICATION</div>
-    <h2>122 requirements, traced to the research</h2>
+    <h2>123 requirements, traced to the research</h2>
     <p>
       Phase 2 converts the capability set into testable requirements against the six ratified decisions.
       The first section written was the <strong>engine IPC contract</strong>, because everything else is
@@ -654,7 +654,7 @@
       <strong>Build has started — and it makes sound.</strong> The CDEP contract, a conformant stub engine,
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
-      <strong>Web Audio engine with two real decks</strong>. <strong>690 tests, 20 conformance checks</strong>,
+      <strong>Web Audio engine with two real decks</strong>. <strong>718 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -1052,7 +1052,66 @@
       at once.
     </div>
 
-    <div class="callout" style="border-left-color: var(--warn);">
+    <div class="callout hot">
+      <strong>Music on first run, a record that spins, and a straight answer about MIDI over Wi-Fi.</strong>
+      Three things the deck was missing, and one question worth answering properly.
+      <br><br>
+      <strong>The library was the real gap.</strong> A DJ application with nothing in it cannot be evaluated —
+      you cannot tell whether the crossfader, the loops or the beatgrid work until something is playing, and
+      asking someone to import their collection first is the wrong order. The constraint that decided the
+      source turned out to be <strong>CORS</strong>, tested from a real browser rather than assumed: the
+      Internet Archive's search, metadata <em>and audio</em> all pass and decode; <span class="mono">ccMixter</span>
+      sends no <span class="mono">Access-Control-Allow-Origin</span> at all, so it is unusable from a page;
+      Jamendo and the Free Music Archive need API keys and stay server-side where a credential can be held.
+      Every result is classified <em>again</em> on the way out by the same Creative Commons module the venue
+      side uses, because the Archive's licence field is operator-supplied and unvalidated — and the licence is
+      shown on every row, since it is the fact that decides whether a track may be performed.
+      <br><br>
+      Using it found two things reading it would not. Searching title and creator alone returned
+      <strong>zero</strong> results for "chiptune"; including <span class="mono">subject</span> and
+      <span class="mono">description</span> returned <strong>66</strong> — genre is how a DJ searches, and on
+      the Archive genre lives in the subject tags. And a 30 MB download behind a button reading "…" is
+      indistinguishable from a broken button, so the load now reports percentage, then decode, then analyse.
+      <br><br>
+      <strong>The platter is not decoration.</strong> It answers three questions at a glance that no number
+      does: is this deck moving at all, roughly how fast, and where in the revolution the beat sits. Rotation
+      comes from the deck's <em>own playhead</em>, never from wall-clock time — so the record turns because
+      the music is playing, slows with the pitch fader and stops dead on pause. The arithmetic lives in a
+      tested module rather than in the page, because a cue jump and a loop wrap are both discontinuities in
+      position and <em>neither is rotation</em>: turning by them would fling the record round, and a backward
+      cue would spin it the wrong way. Three visual bugs were found by looking at it — the platter escaped its
+      row and covered the track title, hiding it on short screens collapsed the EQ faders with it, and the
+      first version was too subtle to read from a metre away, which defeats the point of having one.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--info);">
+      <strong>Does MIDI 2.0 work over Wi-Fi? Yes — and you still should not put a clock on it.</strong>
+      <span class="mono">Network MIDI 2.0</span> is real and ratified: <strong>M2-124-UM</strong>, November
+      2024, UDP carrying Universal MIDI Packets with forward error correction. The older
+      <span class="mono">RTP-MIDI</span> (<strong>RFC 6295</strong>) is <strong>MIDI 1.0 only</strong> — its
+      abstract says so in as many words. Neither is the problem.
+      <br><br>
+      <strong>The problem is that MIDI clock is untimestamped.</strong> Twenty-four pulses per quarter note,
+      one every <strong>20.83 ms at 120 BPM</strong>, and the receiver fires on <em>arrival</em> — so it
+      cannot distinguish <em>"that pulse was late"</em> from <em>"the tempo changed"</em>. Casual Wi-Fi jitter
+      is <strong>4–20 ms</strong>, rising to ~32 ms average with <strong>spikes near 500 ms</strong> once a
+      laptop enables power save. The timing error is <em>the same order of magnitude as the interval being
+      measured</em>, and one to two orders worse than this project's own 1 ms budget.
+      <br><br>
+      MIDI 2.0's Jitter Reduction timestamps (32 µs) would fix that in principle — but
+      <strong>Network MIDI 2.0 v1.0 defines no time-synchronisation mechanism at all</strong>, and timestamps
+      are useless without a shared clock. <strong>Ableton Link avoids the problem rather than solving it</strong>:
+      it shares tempo and beat <em>phase</em> as state, so each device computes its position from its own
+      high-resolution clock and a late packet costs nothing.
+      <br><br>
+      So the position is: <strong>clock on a cable, wireless tempo over Link, Network MIDI 2.0 for control
+      traffic</strong> where tens of milliseconds are tolerable. Also worth knowing —
+      <strong>no platform ships native Network MIDI 2.0 over Wi-Fi today.</strong> Windows MIDI Services ships
+      the MIDI 2.0 stack with network support announced but unreleased; Linux has a userland reference
+      implementation; macOS and iOS ship RTP-MIDI, which is MIDI 1.0.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--accent-2);">
       <strong>The queue was fair by every rule it had, and still felt rigged.</strong>
       <span class="mono">CRW-1</span> is the one story with a <span class="mono">FORK</span> verdict, and the
       question was what Karaoke Eternal actually contributes when the Unified Scheduler already has a fair
