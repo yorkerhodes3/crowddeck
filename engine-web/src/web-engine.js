@@ -493,13 +493,28 @@ export class WebEngine {
     this.keylockReady = false;
     /** The insert's delay, in seconds, once known. */
     this.keylockLatencySeconds = 0;
-
     this.refresh();
   }
 
   /** @param {string} group */
   deck(group) {
     return this.decks.find((d) => d.group === group) ?? null;
+  }
+
+  /**
+   * Everything between a source node and the speakers, in seconds.
+   *
+   * The keylock insert plus whatever the browser is buffering. `outputLatency`
+   * is the honest figure and is what Chrome reports; `baseLatency` is the
+   * fallback for engines that do not expose it, and zero is the last resort —
+   * a slightly optimistic display is better than a thrown error.
+   */
+  get displayLatencySeconds() {
+    const ctx = this.ctx;
+    const output = Number.isFinite(ctx.outputLatency) && ctx.outputLatency > 0
+      ? ctx.outputLatency
+      : (Number.isFinite(ctx.baseLatency) ? ctx.baseLatency : 0);
+    return this.keylockLatencySeconds + output;
   }
 
   /**

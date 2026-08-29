@@ -335,7 +335,7 @@
 
 <script type="module">
 import { WebEngine } from "../engine-web/src/web-engine.js";
-import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatter } from "../engine-web/src/analyse.js";
+import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatter, audiblePosition } from "../engine-web/src/analyse.js";
 import { eqKnobToDb } from "../engine-web/src/mixer.js";
 import { ArchiveLibrary } from "../engine-web/src/library.js";
 import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
@@ -501,10 +501,11 @@ for (const svg of document.querySelectorAll("[data-platter]")) {
 */
 function spinPlatters() {
   if (!engine) return;
+  const lag = engine.displayLatencySeconds;
   for (const side of ["a", "b"]) {
     const p = platters[side];
     const deck = engine.deck(GROUP[side]);
-    const angle = advancePlatter(p, deck.position, deck.playing);
+    const angle = advancePlatter(p, audiblePosition(deck.position, deck.playing, lag), deck.playing);
     p.vinyl.setAttribute("transform", `rotate(${angle.toFixed(2)} 100 100)`);
   }
 }
@@ -845,7 +846,7 @@ function drawWave(side) {
     }
   }
 
-  const pos = deck ? deck.position : 0;
+  const pos = deck ? audiblePosition(deck.position, deck.playing, engine.displayLatencySeconds) : 0;
   g.fillStyle = "#fff";
   g.fillRect((pos / dur) * w, 0, Math.max(2, dpr * 2), h);
 }
@@ -1148,7 +1149,7 @@ function render() {
       const label = playing ? "PAUSE" : "PLAY";
       if (btn.textContent !== label) btn.textContent = label;
 
-      $("pos" + S).textContent = fmt(deck.position);
+      $("pos" + S).textContent = fmt(audiblePosition(deck.position, deck.playing, engine.displayLatencySeconds));
       if (deck.bpm) $("bpm" + S).textContent = (deck.bpm * deck.playbackRate).toFixed(1);
       renderPads(side);
       renderLoops(side);

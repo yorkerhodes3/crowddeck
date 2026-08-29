@@ -276,6 +276,35 @@ export function advancePlatter(state, position, playing, maxStepSeconds = 1) {
 }
 
 /**
+ * Where the music you can *hear* actually is — DJX-15.
+ *
+ * `position` is where the source node has read to, which is not where the sound
+ * is. Between the two sit the key lock insert (a constant 49ms by design) and the
+ * browser's own output buffer. Drawing the playhead and the platter from the raw
+ * figure puts the display ahead of the audio by their sum — around 70–90ms, which
+ * at 128 BPM is roughly a fifth of a beat and plainly visible on a waveform.
+ *
+ * This became worth fixing only once key lock existed: the browser's own latency
+ * alone was small enough to ignore, and adding a further 49ms to it was not.
+ *
+ * Only applied while playing. A paused deck is not emitting anything, so its
+ * playhead should show where it will resume from rather than a point before it —
+ * otherwise cueing a track would appear to set the cue in the wrong place.
+ *
+ * @param {number} position raw playhead, seconds
+ * @param {boolean} playing
+ * @param {number} latencySeconds total delay between the source and the speakers
+ * @returns {number}
+ */
+export function audiblePosition(position, playing, latencySeconds) {
+  if (!Number.isFinite(position)) return 0;
+  if (!playing || !Number.isFinite(latencySeconds) || latencySeconds <= 0) {
+    return Math.max(0, position);
+  }
+  return Math.max(0, position - latencySeconds);
+}
+
+/**
  * Mix a multi-channel buffer down to one array for analysis.
  *
  * Analysing only the left channel would miss anything panned right, and a

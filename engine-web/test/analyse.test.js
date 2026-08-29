@@ -17,6 +17,7 @@ import {
   PLATTER_DEG_PER_SECOND,
   PLATTER_RPM,
   advancePlatter,
+  audiblePosition,
   detectBpm,
   firstAudible,
   foldTempo,
@@ -321,4 +322,38 @@ test("a non-finite position cannot corrupt the angle", () => {
   advancePlatter(s, NaN, true);
   assert.equal(s.angle, 45);
   assert.ok(Number.isFinite(s.lastAt));
+});
+
+/* ------------------------------------------------ audible position (DJX-15) */
+
+test("a playing deck's display is pulled back by the output latency", () => {
+  // The display should show where the sound IS, not where the source node has
+  // read to. Between them sit the key lock insert and the browser's buffer.
+  assert.ok(Math.abs(audiblePosition(10, true, 0.09) - 9.91) < 1e-9);
+});
+
+test("a paused deck is not pulled back", () => {
+  // Nothing is being emitted, so its playhead should show where it will resume
+  // from. Subtracting here would make cueing appear to set the cue early.
+  assert.equal(audiblePosition(10, false, 0.09), 10);
+});
+
+test("the very start of a track never shows a negative position", () => {
+  // The first 90ms of playback is the case where the correction exceeds the
+  // position itself, and a negative playhead would draw off the left edge.
+  assert.equal(audiblePosition(0.02, true, 0.09), 0);
+  assert.equal(audiblePosition(0, true, 0.09), 0);
+});
+
+test("an unknown latency leaves the position alone rather than corrupting it", () => {
+  // Browsers that expose neither outputLatency nor baseLatency report 0, and a
+  // NaN here would propagate into the platter angle and the waveform playhead.
+  assert.equal(audiblePosition(10, true, 0), 10);
+  assert.equal(audiblePosition(10, true, NaN), 10);
+  assert.equal(audiblePosition(10, true, undefined), 10);
+});
+
+test("a non-finite position is zero, not NaN", () => {
+  assert.equal(audiblePosition(NaN, true, 0.09), 0);
+  assert.equal(audiblePosition(undefined, false, 0.09), 0);
 });

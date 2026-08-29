@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 76 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 77 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>764 tests, 20 conformance checks</strong>,
+      <strong>769 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -774,6 +774,23 @@
       waited for <span class="mono">analysis.a.duration &gt; 0</span>, which was <em>already true</em> from an
       earlier synthetic load — so it returned instantly and reported stale data. Caught only because the
       confidence matched the previous run to seventeen decimal places.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-15 — a bug the new feature created.</strong> Key lock's insert delays a deck by a constant
+      49ms, and the browser buffers on top of that: measured, <strong>59ms</strong> total. But the waveform
+      playhead, the platter rotation and the position readout were all drawn from where the <em>source node</em>
+      had read to, not from where the sound was — so the display ran ahead of the music by roughly an eighth
+      of a beat at 128 BPM. Visible on a waveform, and exactly the kind of small wrongness that makes an
+      application feel untrustworthy without anyone being able to say why.
+      <br><br>
+      This was only worth fixing once key lock existed. The browser's own latency alone was small enough to
+      ignore; adding 49ms to it was not. <strong>Adding a feature moved the threshold on an existing
+      imprecision</strong> — the compromise was fine until it wasn't.
+      <br><br>
+      Corrected only while <em>playing</em>: a paused deck emits nothing, so its playhead should show where it
+      will resume from, and subtracting there would make cueing appear to set the cue point early. Clamped at
+      zero, because the first 59ms is the case where the correction exceeds the position itself.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

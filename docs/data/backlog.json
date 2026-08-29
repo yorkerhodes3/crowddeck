@@ -1096,6 +1096,17 @@
           "name": "Key detection and harmonic mixing",
           "id": "DJX-14",
           "verdict": null
+        },
+        {
+          "detail": "A correctness problem introduced by DJX-13. The deck drew its waveform playhead, platter rotation and position readout from the source node's playhead, which is not where the sound is: between them sit the key lock insert (a constant 49ms by design) and the browser's own output buffer. Measured in a real browser the total is 59ms, and at 128 BPM that is roughly an eighth of a beat - plainly visible on a waveform and exactly the sort of small wrongness that makes an application feel untrustworthy without the user being able to say why. Worth fixing only once key lock existed: the browser's own latency alone was small enough to ignore, and adding 49ms to it was not. DONE - audiblePosition() in analyse.js, applied at all three display sites. Kept as a pure function rather than a method so the arithmetic is testable without an AudioContext, which is the same reason advancePlatter lives there. Only applied while PLAYING: a paused deck emits nothing, so its playhead should show where it will resume from, and subtracting there would make cueing appear to set the cue point early. Clamped at zero, because the first 59ms of a track is the case where the correction exceeds the position itself and a negative playhead would draw off the left edge of the canvas. Falls back from outputLatency to baseLatency to zero - in headless Chromium outputLatency reports 0 while baseLatency reports 10ms, so the fallback is not hypothetical.",
+          "id": "DJX-15",
+          "verdict": null,
+          "reqs": [
+            "REQ-NFR-1"
+          ],
+          "size": "S",
+          "status": "done",
+          "name": "The display shows where the sound is"
         }
       ]
     }
