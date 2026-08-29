@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright 2026 CrowdDeck contributors -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>CrowdDeck — Decks</title>
+<style>
+  /*
+    Laid out for a Surface Studio lying flat (DJX-7).
+
+    The controls you touch constantly are at the BOTTOM, because on a flat 28-inch
+    screen your hands rest near the bottom edge and reaching to the top means
+    lifting your arm off the desk. The waveforms — which you only look at — are at
+    the top. That is the inverse of a desktop app's usual hierarchy, and it is the
+    right way round for a surface you play rather than point at.
+
+    Every target is at least 56px. Nothing is hover-only: hover does not exist
+    under a finger, so any affordance that needs it is invisible in use.
+  */
+  :root {
+    --bg:#07090e; --panel:#111623; --panel2:#171d2e; --line:#232b40;
+    --txt:#e8ecf5; --txt2:#98a2ba; --txt3:#657092;
+    --a:#4dd4ac; --b:#7c6cff; --hot:#ff5c7a; --warn:#ffb454;
+    --mono: ui-monospace,"Cascadia Code",Consolas,monospace;
+    --hit: 56px;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; }
+  body {
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column;
+    /* A finger dragging a fader must not scroll or select the page. */
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+
+  header {
+    display:flex; align-items:center; gap:16px; padding:10px 18px;
+    border-bottom:1px solid var(--line); background:#0a0d15; flex:none;
+  }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:-.02em; }
+  .dot { width:11px; height:11px; border-radius:50%; background:linear-gradient(135deg,var(--a),var(--b)); }
+  .spacer { flex:1; }
+  .meter { width:170px; height:12px; background:#0d1119; border-radius:99px; overflow:hidden; border:1px solid var(--line); }
+  .meter > div { height:100%; width:0; background:linear-gradient(90deg,var(--a),var(--warn),var(--hot)); }
+  .hint { font-family:var(--mono); font-size:11.5px; color:var(--txt3); }
+
+  /* ---- waveforms: look, don't touch ---- */
+  .waves { flex:none; display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 14px 0; }
+  .wavebox { position:relative; height:118px; background:var(--panel); border:1px solid var(--line); border-radius:11px; overflow:hidden; }
+  .wavebox canvas { display:block; width:100%; height:100%; }
+  .wavebox .none { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+                   color:var(--txt3); font-family:var(--mono); font-size:12.5px; }
+
+  /* ---- decks ---- */
+  /*
+    The mixer column is fluid rather than a fixed 300px. Measured on a narrow
+    window the fixed column pushed the layout 62px past the viewport and cut deck
+    B's transport off the right edge — on a demo machine that reads as broken,
+    even though the Surface Studio itself is far wider.
+  */
+  main { flex:1; display:grid; gap:12px; padding:12px 14px; min-height:0;
+         grid-template-columns:minmax(0,1fr) clamp(190px,22vw,300px) minmax(0,1fr); }
+  @media (max-width:760px) {
+    /* Decks above, mixer below: on a small screen the mixer still wants to be
+       nearest your hands. */
+    main { grid-template-columns:1fr 1fr; grid-template-rows:1fr auto; }
+    .mixer { grid-column:1 / -1; grid-row:2; }
+  }
+  .deck { background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:14px 16px;
+          display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .deck.live { border-color:rgba(77,212,172,.55); }
+  .deck[data-side="b"].live { border-color:rgba(124,108,255,.55); }
+  .tag { font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--txt3); }
+  .title { font-size:19px; font-weight:700; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .artist { font-size:13.5px; color:var(--txt2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .readout { display:flex; gap:16px; font-family:var(--mono); font-size:12px; color:var(--txt3); flex-wrap:wrap; }
+  .readout b { color:var(--a); font-weight:600; }
+
+  .transport { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  button {
+    font-family:inherit; font-size:15px; font-weight:700; color:var(--txt);
+    background:var(--panel2); border:1px solid var(--line); border-radius:11px;
+    min-height:var(--hit); cursor:pointer; padding:0 10px; touch-action:none;
+  }
+  button:active { transform:translateY(1px); }
+  button.play.on { background:var(--a); color:#06231b; border-color:var(--a); }
+  button.cue { color:var(--warn); }
+  button.load { background:transparent; border-style:dashed; color:var(--txt2); font-size:13.5px; }
+  button.sync.on { background:var(--b); color:#0d0725; border-color:var(--b); }
+
+  .eqrow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:1; min-height:0; }
+  .strip { display:flex; flex-direction:column; align-items:center; gap:7px; min-height:0; }
+  .strip .lbl { font-family:var(--mono); font-size:10.5px; letter-spacing:.11em; color:var(--txt3); }
+  .strip .val { font-family:var(--mono); font-size:11px; color:var(--txt2); }
+  /*
+    Vertical faders. A rotary knob needs a circular drag that fingers are bad at;
+    a vertical throw is one axis and works with a thumb.
+  */
+  .fader { position:relative; flex:1; width:100%; min-width:0; min-height:90px;
+           background:#0c1018; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .fader .fill { position:absolute; left:0; right:0; bottom:0; background:linear-gradient(180deg,var(--a),rgba(77,212,172,.25)); }
+  .fader .cap { position:absolute; left:0; right:0; height:16px; background:var(--txt); border-radius:3px; }
+  .fader.kill .fill { background:linear-gradient(180deg,var(--hot),rgba(255,92,122,.3)); }
+
+  /* ---- centre column: the mixer, under your hands ---- */
+  .mixer { background:var(--panel); border:1px solid var(--line); border-radius:13px;
+           padding:14px; display:flex; flex-direction:column; gap:14px; }
+  .mixer h3 { margin:0; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--txt3); font-weight:600; text-align:center; }
+  .xf { position:relative; height:var(--hit); background:#0c1018; border:1px solid var(--line); border-radius:11px; }
+  .xf .cap { position:absolute; top:0; bottom:0; width:46px; background:var(--txt); border-radius:9px; }
+  .xflabels { display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--txt3); margin-bottom:6px; }
+  .vols { display:grid; grid-template-columns:1fr 1fr; gap:12px; flex:1; min-height:120px; }
+
+  #files { display:none; }
+  .err { position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+         background:var(--hot); color:#2b0710; padding:11px 18px; border-radius:10px;
+         font-weight:600; font-size:14px; display:none; max-width:80vw; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span> CrowdDeck <span class="hint">decks</span></div>
+  <span class="hint" id="ctxstate">audio: idle</span>
+  <div class="spacer"></div>
+  <span class="hint">master</span>
+  <div class="meter"><div id="meter"></div></div>
+</header>
+
+<div class="waves">
+  <div class="wavebox"><canvas id="waveA"></canvas><div class="none" id="noneA">load a track</div></div>
+  <div class="wavebox"><canvas id="waveB"></canvas><div class="none" id="noneB">load a track</div></div>
+</div>
+
+<main>
+  <section class="deck" data-side="a" id="deckA">
+    <div>
+      <div class="tag">DECK A</div>
+      <div class="title" id="titleA">—</div>
+      <div class="artist" id="artistA">no track loaded</div>
+    </div>
+    <div class="readout">
+      <span>bpm <b id="bpmA">—</b></span>
+      <span>pos <b id="posA">0:00</b></span>
+      <span>pitch <b id="pitchA">0.0%</b></span>
+    </div>
+    <div class="transport">
+      <button class="load" data-load="a">LOAD</button>
+      <button class="cue" data-cue="a">CUE</button>
+      <button class="play" data-play="a">PLAY</button>
+    </div>
+    <div class="eqrow">
+      <div class="strip"><span class="lbl">HIGH</span><div class="fader" data-ctl="a:eq_high" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">MID</span><div class="fader" data-ctl="a:eq_mid" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">LOW</span><div class="fader" data-ctl="a:eq_low" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">PITCH</span><div class="fader" data-ctl="a:rate" data-min="-1" data-max="1" data-def="0"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+    </div>
+    <button class="sync" data-sync="a">SYNC</button>
+  </section>
+
+  <section class="mixer">
+    <h3>MIXER</h3>
+    <div class="vols">
+      <div class="strip"><span class="lbl">VOL A</span><div class="fader" data-ctl="a:volume" data-min="0" data-max="1" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">1.00</span></div>
+      <div class="strip"><span class="lbl">VOL B</span><div class="fader" data-ctl="b:volume" data-min="0" data-max="1" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">1.00</span></div>
+    </div>
+    <div>
+      <div class="xflabels"><span>A</span><span>CROSSFADER</span><span>B</span></div>
+      <div class="xf" id="xf"><div class="cap"></div></div>
+    </div>
+    <button id="center">CENTRE</button>
+  </section>
+
+  <section class="deck" data-side="b" id="deckB">
+    <div>
+      <div class="tag">DECK B</div>
+      <div class="title" id="titleB">—</div>
+      <div class="artist" id="artistB">no track loaded</div>
+    </div>
+    <div class="readout">
+      <span>bpm <b id="bpmB">—</b></span>
+      <span>pos <b id="posB">0:00</b></span>
+      <span>pitch <b id="pitchB">0.0%</b></span>
+    </div>
+    <div class="transport">
+      <button class="load" data-load="b">LOAD</button>
+      <button class="cue" data-cue="b">CUE</button>
+      <button class="play" data-play="b">PLAY</button>
+    </div>
+    <div class="eqrow">
+      <div class="strip"><span class="lbl">HIGH</span><div class="fader" data-ctl="b:eq_high" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">MID</span><div class="fader" data-ctl="b:eq_mid" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">LOW</span><div class="fader" data-ctl="b:eq_low" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+      <div class="strip"><span class="lbl">PITCH</span><div class="fader" data-ctl="b:rate" data-min="-1" data-max="1" data-def="0"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+    </div>
+    <button class="sync" data-sync="b">SYNC</button>
+  </section>
+</main>
+
+<input type="file" id="files" accept="audio/*" multiple>
+<div class="err" id="err"></div>
+
+<script type="module">
+import { WebEngine } from "/engine-web/src/web-engine.js";
+import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks } from "/engine-web/src/analyse.js";
+import { eqKnobToDb } from "/engine-web/src/mixer.js";
+
+const GROUP = { a: "[Channel1]", b: "[Channel2]" };
+const $ = (id) => document.getElementById(id);
+
+/*
+  The AudioContext cannot start until a gesture. Browsers require it, and it is
+  the right rule — a page that makes noise before you touch it is a bad citizen.
+  So the context is created lazily on first interaction, and every entry point
+  routes through ensureAudio().
+*/
+let ctx = null;
+let engine = null;
+const analysis = { a: null, b: null };
+
+function ensureAudio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    engine = new WebEngine(ctx, { decks: 2 });
+    // Exposed so the behaviour can be verified by automation against the real
+    // audio graph rather than against the DOM alone.
+    window.__crowddeck = { ctx, engine, analysis };
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  $("ctxstate").textContent = "audio: " + ctx.state;
+  return engine;
+}
+window.__ensureAudio = ensureAudio;
+
+function fail(msg) {
+  const el = $("err");
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(fail._t);
+  fail._t = setTimeout(() => { el.style.display = "none"; }, 6000);
+}
+
+/* ------------------------------------------------------------ loading */
+
+let pendingSide = "a";
+$("files").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (file) await loadInto(pendingSide, file);
+});
+
+for (const btn of document.querySelectorAll("[data-load]")) {
+  btn.addEventListener("click", () => {
+    ensureAudio();
+    pendingSide = btn.dataset.load;
+    $("files").click();
+  });
+}
+
+// Drag and drop onto a deck: with a file explorer open on the same screen this
+// is faster than a picker dialog, and on a touchscreen it is a natural gesture.
+for (const side of ["a", "b"]) {
+  const el = $("deck" + side.toUpperCase());
+  el.addEventListener("dragover", (e) => { e.preventDefault(); });
+  el.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) await loadInto(side, f);
+  });
+}
+
+async function loadInto(side, file) {
+  const eng = ensureAudio();
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = await ctx.decodeAudioData(bytes);
+    await loadBuffer(side, buffer, file.name);
+  } catch (err) {
+    // A file the browser cannot decode is common — a DRM'd m4a, a corrupt mp3 —
+    // and must not look like the application breaking.
+    fail('Could not decode "' + file.name + '": ' + err.message);
+  }
+}
+
+async function loadBuffer(side, buffer, name) {
+  const eng = ensureAudio();
+  const channels = [];
+  for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+  const mono = toMono(channels);
+
+  const { bpm } = detectBpm(mono, buffer.sampleRate);
+  const folded = foldTempo(bpm);
+  const cue = firstAudible(mono, buffer.sampleRate);
+  const peaks = waveformPeaks(mono, 1400);
+
+  analysis[side] = { peaks, bpm: folded, duration: buffer.duration, cue };
+  eng.deck(GROUP[side]).load(buffer, { id: name, bpm: folded, cuePoint: cue });
+
+  const S = side.toUpperCase();
+  const nice = name.replace(/\.[a-z0-9]+$/i, "");
+  const dash = nice.split(" - ");
+  $("title" + S).textContent = dash.length > 1 ? dash.slice(1).join(" - ") : nice;
+  $("artist" + S).textContent = dash.length > 1 ? dash[0] : "unknown artist";
+  $("bpm" + S).textContent = folded ? folded.toFixed(1) : "—";
+  $("none" + S).style.display = "none";
+  drawWave(side);
+}
+window.__loadBuffer = loadBuffer;
+
+/* ------------------------------------------------------------ waveform */
+
+function drawWave(side) {
+  const canvas = $("wave" + side.toUpperCase());
+  const a = analysis[side];
+  if (!a) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, canvas.clientWidth * dpr);
+  const h = Math.max(1, canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+
+  const g = canvas.getContext("2d");
+  g.clearRect(0, 0, w, h);
+
+  const n = a.peaks.max.length;
+  const mid = h / 2;
+  g.fillStyle = side === "a" ? "#4dd4ac" : "#7c6cff";
+  for (let i = 0; i < n; i++) {
+    const x = (i / n) * w;
+    const top = a.peaks.max[i] * mid;
+    const bot = a.peaks.min[i] * mid;
+    g.fillRect(x, mid - top, Math.max(1, w / n), Math.max(1, top - bot));
+  }
+
+  const pos = engine ? engine.deck(GROUP[side]).position : 0;
+  const dur = a.duration || 1;
+  g.fillStyle = "#fff";
+  g.fillRect((pos / dur) * w, 0, Math.max(2, dpr * 2), h);
+}
+
+/* ------------------------------------------------------------ transport */
+
+for (const btn of document.querySelectorAll("[data-play]")) {
+  btn.addEventListener("click", () => {
+    const eng = ensureAudio();
+    const side = btn.dataset.play;
+    const playing = eng.get(GROUP[side], "play") >= 1;
+    eng.set(GROUP[side], "play", playing ? 0 : 1);
+  });
+}
+
+for (const btn of document.querySelectorAll("[data-cue]")) {
+  btn.addEventListener("click", () => {
+    ensureAudio().set(GROUP[btn.dataset.cue], "cue_gotoandplay", 1);
+  });
+}
+
+for (const btn of document.querySelectorAll("[data-sync]")) {
+  btn.addEventListener("click", () => {
+    const eng = ensureAudio();
+    const side = btn.dataset.sync;
+    if (!eng.sync(GROUP[side])) {
+      // Reported, never silent. A sync that quietly does nothing has the DJ
+      // believe the decks are locked and stop listening for drift.
+      fail("Sync unavailable — both decks need a tempo, the other deck must be playing, and they must be within ±8%.");
+      return;
+    }
+    syncFaderTo(side);
+  });
+}
+
+/* ------------------------------------------------- faders (pointer-driven) */
+
+/*
+  Pointer events, not mouse events. Mouse handlers work under a finger only
+  because browsers synthesise mouse events, which arrive late and drop during
+  fast drags. setPointerCapture also keeps a drag alive when the finger slides
+  outside the control, which on a touchscreen happens constantly.
+*/
+/*
+  Position ↔ value mapping for a fader.
+
+  EQ needs a curve, not a straight scale. The knob range is 0..4 with unity at 1,
+  so a linear fader puts "neutral" a quarter of the way up — it *looks* like a cut
+  when nothing is cut, and reaching unity by eye becomes guesswork. On hardware
+  neutral is the centre detent, and that is what a hand expects. So the midpoint
+  of travel is unity: the bottom half spans the cut range 0..1 and the top half
+  spans the boost range 1..4.
+*/
+function curveFor(ctl) {
+  if (ctl.indexOf("eq_") === -1) return null;
+  return {
+    toValue: (pos) => (pos <= 0.5 ? pos * 2 : 1 + (pos - 0.5) * 2 * 3),
+    toPos: (v) => (v <= 1 ? v / 2 : 0.5 + (v - 1) / 6)
+  };
+}
+
+function bindFader(el, onChange) {
+  const min = parseFloat(el.dataset.min);
+  const max = parseFloat(el.dataset.max);
+  const fill = el.querySelector(".fill");
+  const cap = el.querySelector(".cap");
+  const val = el.parentElement.querySelector(".val");
+  const ctl = el.dataset.ctl;
+  const curve = curveFor(ctl);
+
+  const posOf = (v) => (curve ? curve.toPos(v) : (v - min) / (max - min));
+  const valueOf = (pos) => (curve ? curve.toValue(pos) : min + pos * (max - min));
+
+  const render = (v) => {
+    const frac = Math.max(0, Math.min(1, posOf(v)));
+    fill.style.height = (frac * 100) + "%";
+    cap.style.bottom = "calc(" + (frac * 100) + "% - 8px)";
+    el.classList.toggle("kill", curve !== null && v <= 0.001);
+    if (val) {
+      val.textContent = ctl.endsWith("volume")
+        ? v.toFixed(2)
+        : ctl.endsWith("rate")
+          ? (v * 8).toFixed(1) + "%"
+          : v <= 0.001 ? "KILL" : eqKnobToDb(v).toFixed(1) + "dB";
+    }
+  };
+
+  const fromEvent = (e) => {
+    const r = el.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+    return valueOf(pos);
+  };
+
+  let dragging = false;
+  let lastTap = 0;
+  let lastTapPos = null;
+  let movedSinceDown = false;
+
+  el.addEventListener("pointerdown", (e) => {
+    ensureAudio();
+    const r = el.getBoundingClientRect();
+    const pos = { x: e.clientX - r.left, y: e.clientY - r.top };
+    const now = Date.now();
+
+    /*
+      Double-tap resets to the default, because on glass there is no centre
+      detent to feel for.
+
+      It must be a real double-tap: two taps in the *same place*, with no drag in
+      between. Testing with only a time window, two quick EQ adjustments at
+      different heights were read as a double-tap and the band snapped back to
+      unity mid-mix — the control undoing the move you just made. Requiring
+      proximity separates "tap tap" from "adjust, adjust".
+    */
+    const near = lastTapPos && Math.hypot(pos.x - lastTapPos.x, pos.y - lastTapPos.y) < 18;
+    if (now - lastTap < 320 && near && !movedSinceDown) {
+      lastTap = 0;
+      lastTapPos = null;
+      const d = parseFloat(el.dataset.def);
+      render(d); onChange(d);
+      return;
+    }
+    lastTap = now;
+    lastTapPos = pos;
+    movedSinceDown = false;
+
+    dragging = true;
+    el.setPointerCapture(e.pointerId);
+    const v = fromEvent(e);
+    render(v); onChange(v);
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    movedSinceDown = true;
+    const v = fromEvent(e);
+    render(v); onChange(v);
+  });
+  const end = (e) => {
+    dragging = false;
+    if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+
+  el.__render = render;
+  render(parseFloat(el.dataset.def));
+}
+
+for (const el of document.querySelectorAll(".fader[data-ctl]")) {
+  const parts = el.dataset.ctl.split(":");
+  const side = parts[0];
+  const item = parts[1];
+  bindFader(el, (v) => {
+    ensureAudio().set(GROUP[side], item, v);
+    if (item === "rate") $("pitch" + side.toUpperCase()).textContent = (v * 8).toFixed(1) + "%";
+  });
+}
+
+function syncFaderTo(side) {
+  const rate = ensureAudio().get(GROUP[side], "rate");
+  const el = document.querySelector('.fader[data-ctl="' + side + ':rate"]');
+  if (el && el.__render) el.__render(rate);
+  $("pitch" + side.toUpperCase()).textContent = (rate * 8).toFixed(1) + "%";
+}
+
+/* --------------------------------------------------------- crossfader */
+
+const xf = $("xf");
+const xfCap = xf.querySelector(".cap");
+
+function renderXf(v) {
+  xfCap.style.left = "calc(" + (((v + 1) / 2) * 100) + "% - 23px)";
+}
+function xfFromEvent(e) {
+  const r = xf.getBoundingClientRect();
+  return Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1));
+}
+
+let xfDrag = false;
+xf.addEventListener("pointerdown", (e) => {
+  const eng = ensureAudio();
+  xfDrag = true;
+  xf.setPointerCapture(e.pointerId);
+  const v = xfFromEvent(e);
+  renderXf(v); eng.set("[Master]", "crossfader", v);
+});
+xf.addEventListener("pointermove", (e) => {
+  if (!xfDrag) return;
+  const v = xfFromEvent(e);
+  renderXf(v); engine.set("[Master]", "crossfader", v);
+});
+const xfEnd = (e) => {
+  xfDrag = false;
+  if (xf.hasPointerCapture && xf.hasPointerCapture(e.pointerId)) xf.releasePointerCapture(e.pointerId);
+};
+xf.addEventListener("pointerup", xfEnd);
+xf.addEventListener("pointercancel", xfEnd);
+renderXf(0);
+
+$("center").addEventListener("click", () => {
+  renderXf(0);
+  ensureAudio().set("[Master]", "crossfader", 0);
+});
+
+/* -------------------------------------------------------------- render */
+
+function fmt(sec) {
+  if (!Number.isFinite(sec)) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function frame() {
+  if (engine) {
+    for (const side of ["a", "b"]) {
+      const deck = engine.deck(GROUP[side]);
+      const S = side.toUpperCase();
+      const playing = deck.playing;
+
+      $("deck" + S).classList.toggle("live", playing);
+      const btn = document.querySelector('[data-play="' + side + '"]');
+      btn.classList.toggle("on", playing);
+      btn.textContent = playing ? "PAUSE" : "PLAY";
+
+      $("pos" + S).textContent = fmt(deck.position);
+      if (deck.bpm) $("bpm" + S).textContent = (deck.bpm * deck.playbackRate).toFixed(1);
+      if (analysis[side]) drawWave(side);
+    }
+    $("meter").style.width = Math.min(100, engine.masterLevel() * 100) + "%";
+    $("ctxstate").textContent = "audio: " + ctx.state;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+window.addEventListener("resize", () => { drawWave("a"); drawWave("b"); });
+</script>
+</body>
+</html>

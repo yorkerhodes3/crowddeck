@@ -123,8 +123,12 @@ for (const m of backlog.milestones) {
     for (const s of epic.stories) {
       const verdict = s.verdict ? `\`${s.verdict}\`` : "build";
       const reqs = s.reqs.length ? s.reqs.map((r) => `\`${r}\``).join(" ") : "—";
-      const mark = s.status === "done" ? "✅ " : s.status === "partial" ? "◐ " : "";
-      p(`| ${mark}**${s.id}** | **${s.name}**<br>${s.detail} | ${s.size} | ${verdict} | ${reqs} |`);
+      const mark =
+        s.status === "done" ? "✅ " : s.status === "partial" ? "◐ " : s.blockedBy ? "⛔ " : "";
+      // A blocked story states what it is waiting on, in the row itself. A
+      // backlog that hides its blockers reads as a plan that is merely behind.
+      const blocked = s.blockedBy ? `<br><br>**⛔ ${s.blockedReason}**` : "";
+      p(`| ${mark}**${s.id}** | **${s.name}**<br>${s.detail}${blocked} | ${s.size} | ${verdict} | ${reqs} |`);
     }
     p();
   }

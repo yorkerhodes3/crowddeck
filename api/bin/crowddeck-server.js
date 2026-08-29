@@ -33,6 +33,7 @@ import { DemoCatalog } from "../src/demo-catalog.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..");
 const clientsDir = path.join(repoRoot, "clients");
+const engineWebDir = path.join(repoRoot, "engine-web");
 
 function parseArgs(argv) {
   const args = {
@@ -133,15 +134,34 @@ const MIME = {
   ".svg": "image/svg+xml"
 };
 
-/** Serve the bundled clients. Path traversal is refused explicitly. */
+/**
+ * Serve the bundled clients, and the browser engine's modules.
+ *
+ * The deck page (DJX-5) imports the Web Audio engine as ES modules, which live in
+ * `engine-web/` rather than under `clients/` because they are engine code, not
+ * client code — the same modules are unit-tested in Node. Both roots are served,
+ * and each is confined to itself.
+ *
+ * Path traversal is refused explicitly rather than relied upon: `path.normalize`
+ * resolves `..` *before* the prefix check, so the check is meaningful.
+ */
 function staticHandler(pathname) {
   const clean = pathname === "/" ? "/patron/index.html" : pathname;
-  const target = path.normalize(path.join(clientsDir, clean));
-  if (!target.startsWith(clientsDir)) return null;
-  if (!existsSync(target)) return null;
-  const ext = path.extname(target);
-  if (!MIME[ext]) return null;
-  return { body: readFileSync(target), contentType: MIME[ext] };
+
+  const roots = clean.startsWith("/engine-web/")
+    ? [{ dir: engineWebDir, rel: clean.slice("/engine-web".length) }]
+    : [{ dir: clientsDir, rel: clean }];
+
+  for (const { dir, rel } of roots) {
+    const target = path.normalize(path.join(dir, rel));
+    // path.sep guards against a sibling directory sharing the prefix.
+    if (target !== dir && !target.startsWith(dir + path.sep)) continue;
+    if (!existsSync(target)) continue;
+    const ext = path.extname(target);
+    if (!MIME[ext]) continue;
+    return { body: readFileSync(target), contentType: MIME[ext] };
+  }
+  return null;
 }
 
 const api = new VenueApi({

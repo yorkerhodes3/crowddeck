@@ -31,6 +31,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLANES = [
   { prefix: "engine", licence: "GPL-2.0-or-later", copyleft: true },
   { prefix: "engine-stub", licence: "Apache-2.0", copyleft: false },
+  // The browser audio engine (DJX-1). Entirely our own code — no Mixxx, so no
+  // GPL, so the ADR-001 plane boundary does not even arise for this path. That is
+  // a genuine advantage of the browser engine over the fork, not an accident.
+  // Longest-prefix matching keeps it distinct from `engine/` above.
+  { prefix: "engine-web", licence: "Apache-2.0", copyleft: false },
   { prefix: "protocol", licence: "Apache-2.0", copyleft: false },
   { prefix: "conformance", licence: "Apache-2.0", copyleft: false },
   { prefix: "core", licence: "Apache-2.0", copyleft: false },

@@ -43,6 +43,11 @@
       "id": "M6",
       "name": "Venue-ready",
       "goal": "Policy, licensing, offline, deploy — the things that make a venue keep it switched on."
+    },
+    {
+      "id": "M7",
+      "name": "Standalone DJ (browser)",
+      "goal": "Replace a commercial DJ application on a touchscreen desktop, in a browser, with no venue, no MIDI hardware and no native toolchain. This is the current priority."
     }
   ],
   "epics": [
@@ -62,7 +67,9 @@
             "REQ-CDEP-18"
           ],
           "detail": "Strip Mixxx to a headless binary, expose the Control bus over a socket, measure command→audio latency. Output is the validated CDEP control set (§2.10) and the §8.1 budgets. This is the single highest-value action in the whole plan. PARTIAL — the source-analysis half is done and reported in spike/SPIKE-1-REPORT.md: the enumerable-control-bus assumption ADR-002 rests on is verified, EngineMixer is confirmed GUI-free, §2.10 is validated and two errors fixed, and CDEP is amended to parameter space. The build-and-measure half is NOT done — it needs Qt6/CMake/MSVC and real audio+MIDI hardware, which this environment has none of. §8.1 latency budgets therefore remain unvalidated assumptions and are the largest residual risk in the plan.",
-          "status": "partial"
+          "status": "partial",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "LEGAL-1",
@@ -88,7 +95,9 @@
             "REQ-NFR-1"
           ],
           "detail": "Measure miniaudio vs PortAudio for WASAPI-exclusive/ASIO/CoreAudio/ALSA at 64-128 sample buffers on the REQ-NFR-11 baseline. WASAPI MEASURED — spike/spike-2/FINDINGS.md. The §8.1 audio-callback budget is achievable: WASAPI shared at 128 frames gave a p99 callback interval of 3.667ms against a 10ms budget on commodity laptop hardware, with 0.14% late callbacks. Three findings: (1) exclusive mode was markedly WORSE than shared (17% late vs 0.14%), inverting the usual advice — share mode must be configurable and default to shared; (2) the first run measured the default device, a USB speakerphone, whose large hardware buffer would have been misread as 'no configuration met the budget'; (3) the xrun proxy was too strict and was recalibrated from measurement, judging a rate rather than any-at-all. Built with portable GCC (w64devkit) because MSVC needs admin rights; the compiler does not materially affect a 10ms budget dominated by the OS audio stack. CROSS-PLATFORM: CoreAudio and ALSA cannot be substituted — CoreAudio IS macOS audio and ALSA IS the Linux kernel API. But compile-and-run is separable from latency: a CI workflow now builds the probe on ubuntu-latest against real ALSA headers and macos-latest against real CoreAudio frameworks, and runs the callback loop on both, every push. It caught a real bug immediately — the POSIX branch used clock_gettime with no <time.h> include and had never been compiled anywhere. STILL OUTSTANDING (all need hardware): ASIO latency (needs an interface), CoreAudio latency (needs a Mac), ALSA latency (needs real Linux with a sound card), and the PortAudio comparison.",
-          "status": "partial"
+          "status": "partial",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         }
       ]
     },
@@ -206,7 +215,9 @@
             "REQ-LIC-7"
           ],
           "detail": "A GPL-configured FFmpeg silently relicenses the product. Pin the configuration and assert it in CI; generate NOTICE per artifact.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "REPO-4",
@@ -551,7 +562,9 @@
             "REQ-LIC-4"
           ],
           "detail": "Keep engine, audio, soundio, mixer, analyzer, effects, control, controllers, sources, track. Delete skin, widget, qml, dialog, preferences, rendergraph, shaders. SPIKE-1: effects is NOT optional — per-deck EQ is routed through [EqualizerRack1_[ChannelN]_Effect1], so the rack must be retained. SPIKE-1 also found EngineMixer includes only QtCore, so the headless strip is less risky than assumed. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-2",
@@ -565,7 +578,9 @@
             "REQ-CDEP-12a"
           ],
           "detail": "Bridge ControlObject / ControlDoublePrivate::getAllInstances() to CDEP describe/get/set/subscribe. Must pass the same conformance suite as the stub. Satisfies AC-17. SPIKE-1: describe() is built from getAllInstances() + name()/description()/defaultValue(); min/max are NOT reachable, so serve parameter space via ControlDoublePrivate::getParameter/setParameter (REQ-CDEP-12a). Coalescing for REQ-CDEP-14 is inheritable from ControlObjectScript's CompressingProxy rather than built from scratch. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-3",
@@ -576,7 +591,9 @@
             "REQ-CDEP-10"
           ],
           "detail": "Inherited from Mixxx; wire to the CDEP control set. SPIKE-1: EQ is an effects-rack unit, not a deck control — budget for wiring [EqualizerRack1_[ChannelN]_Effect1]/parameter1..3. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-4",
@@ -587,7 +604,9 @@
             "REQ-CON-2"
           ],
           "detail": "Inherited analysers. Key-lock via SoundTouch (LGPL) rather than Rubber Band, keeping the permissive option open. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-5",
@@ -598,7 +617,9 @@
             "REQ-CLK-1"
           ],
           "detail": "The leader deck becomes the single tempo source published to every transport. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-6",
@@ -609,7 +630,9 @@
             "REQ-CDEP-10"
           ],
           "detail": "Inherited from Mixxx. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         },
         {
           "id": "ENG-7",
@@ -621,7 +644,9 @@
             "REQ-NFR-2"
           ],
           "detail": "Assert no allocation, locks, logging or I/O in the audio callback. Count and surface xruns as CDEP events. TOOLCHAIN NEEDED: MSVC Build Tools, CMake, Ninja, Qt6, and vcpkg for Mixxx's dependency tree (FFmpeg LGPL-only per REQ-LIC-6, libsndfile, taglib, chromaprint, SoundTouch, protobuf, sqlite3, opus/vorbis/FLAC, PortAudio, RtMidi). Several GB of installs and a multi-hour first build of ~640MB of source. HARDWARE GAP: AC-12 (MIDI → audible, p99 < 15ms) needs a real USB-MIDI controller — none is attached to the dev machine. A virtual loopback such as loopMIDI exercises the software path but cannot measure true latency, because that number includes USB transfer and the driver stack. SPIKE-2: replace the probe's late-callback heuristic with real xruns from the engine — the proxy measures 'the callback was late', not 'the audio glitched'.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "native-toolchain",
+          "blockedReason": "Native toolchain dependency — MSVC, CMake, Qt6, audio interface. Superseded for the browser demo by E11, which needs none of it."
         }
       ]
     },
@@ -651,7 +676,9 @@
             "REQ-CON-1"
           ],
           "detail": "beets + Chromaprint/AcoustID + MusicBrainz, de-duplicating by fingerprint. Satisfies AC-15.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "python-tooling",
+          "blockedReason": "Python tooling dependency — beets / Chromaprint / librosa. The DJ-critical part (waveform + BPM) is done in-browser by DJX-4 instead."
         },
         {
           "id": "CON-3",
@@ -663,7 +690,9 @@
             "REQ-CON-3"
           ],
           "detail": "One pass produces beatgrid, key, loudness, waveform, phrases. librosa (ISC) keeps the analysis path licence-safe. Never shares a process with the audio engine.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "python-tooling",
+          "blockedReason": "Python tooling dependency — beets / Chromaprint / librosa. The DJ-critical part (waveform + BPM) is done in-browser by DJX-4 instead."
         },
         {
           "id": "CON-4",
@@ -778,7 +807,9 @@
             "REQ-CLK-4"
           ],
           "detail": "GPL-2.0-or-later, so it lives in engine/. Quantum and start/stop sync; must survive a mode handoff.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "midi-hardware",
+          "blockedReason": "MIDI hardware dependency — ON HOLD until a controller is available."
         },
         {
           "id": "MID-6",
@@ -881,7 +912,100 @@
             "REQ-NFR-11"
           ],
           "detail": "Compose file, sane defaults, CC catalog seeded, on 4-core/8GB with no GPU.",
-          "status": "todo"
+          "status": "todo",
+          "blockedBy": "venue",
+          "blockedReason": "Venue dependency — needs a venue, patrons or an operator. Not required to DJ."
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "name": "Standalone DJ — browser deck",
+      "milestone": "M7",
+      "why": "The original plan routed audio through a Mixxx fork (E7), which needs MSVC, Qt6, CMake and hours of build. None of that is available, and none of it is necessary: **the browser is a viable audio engine.** Web Audio gives sample-accurate scheduling, per-deck gain, biquad EQ and playback-rate control — which is a DJ mixer. Writing the engine against CDEP means it is held to the same contract as the stub and validated by the same 20 conformance checks, so this is not a detour around the architecture but a second proof of REQ-LIC-5: the engine really is replaceable. It also removes the GPL question entirely for this path, since a Web Audio engine is our own Apache-2.0 code with no Mixxx in it.",
+      "stories": [
+        {
+          "id": "DJX-1",
+          "name": "Web Audio engine speaking CDEP",
+          "size": "L",
+          "verdict": null,
+          "reqs": [
+            "REQ-CDEP-1",
+            "REQ-CDEP-9",
+            "REQ-CDEP-11",
+            "REQ-LIC-5"
+          ],
+          "status": "done",
+          "detail": "Two decks that make actual sound, driven entirely by CDEP messages. AudioBufferSourceNode per deck into a per-deck GainNode (pregain), a three-band biquad EQ, then a channel gain and the crossfader. Must implement the same control surface the stub does so the conformance suite passes unchanged — that is the whole point, and the first time the 'any conforming engine' claim is tested against a genuinely different implementation. DONE — engine-web/src/web-engine.js. Two decks that make real sound, driven by the same CDEP control names the stub publishes. Signal path is source → pregain → 3-band EQ → volume → crossfader → master, in that order because pregain corrects the FILE (the CON-6 normalisation trim) while volume is the fader the DJ holds, and the crossfader must be able to silence a channel whose fader is up. Every gain change is a 12 ms ramp, not an assignment: a step change in gain is a discontinuity, and a discontinuity is an audible click on every EQ tweak. A brick-wall limiter sits on the master bus because two decks at unity sum past full scale and the browser's output stage hard-clips — without it a normal beatmatched blend distorts exactly when both tracks are loudest. VERIFIED IN A REAL BROWSER: 0.796 peak with the crossfader on deck A, exactly 0.0 with it on deck B, and 0.984 with both decks playing through the limiter."
+        },
+        {
+          "id": "DJX-2",
+          "name": "CDEP over WebSocket, so a browser can BE the engine",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-CDEP-1",
+            "REQ-CDEP-2",
+            "REQ-LIC-5"
+          ],
+          "status": "todo",
+          "detail": "The CDEP client hard-codes net.createConnection to a unix socket / named pipe, which a browser cannot open. Add a transport seam so the same protocol runs over WebSocket, and bridge it so the existing conformance runner can test a browser engine through --socket. Without this the scheduler and the audio live in different worlds and nothing built so far applies. NOT NEEDED FOR THE STANDALONE DEMO — the browser runs the engine and the UI together, so nothing has to cross a socket to DJ. This is what connects the deck to the Node scheduler, queue and providers, i.e. the jukebox half. Deferred until that is wanted."
+        },
+        {
+          "id": "DJX-3",
+          "name": "Load tracks from the local disk",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-CON-5",
+            "REQ-NFR-3"
+          ],
+          "status": "done",
+          "detail": "A DJ's library is on the machine. File System Access API where available, drag-and-drop and a file picker as the fallback. Audio is decoded in the browser and never uploaded — no server round-trip, which is also what makes it work with no network at all. DONE — file picker and drag-and-drop onto either deck, decoded in the browser with decodeAudioData. Nothing is uploaded, so it works with no network at all. A file the browser cannot decode (a DRM'd m4a, a corrupt mp3) is reported by name rather than looking like the application breaking."
+        },
+        {
+          "id": "DJX-4",
+          "name": "Waveform and BPM in the browser",
+          "size": "L",
+          "verdict": null,
+          "reqs": [
+            "REQ-CON-2"
+          ],
+          "status": "done",
+          "detail": "Peak extraction for the waveform and onset-based tempo detection, both from the decoded buffer in an OfflineAudioContext. Replaces the librosa dependency of CON-3 for the DJ path. Without a waveform you cannot see the phrase coming, and without a BPM you cannot beatmatch. DONE — engine-web/src/analyse.js. Peak-preserving waveform (an averaged waveform of percussive music is a smooth blob with no visible transients) and onset-autocorrelation tempo detection. THE IMPORTANT FINDING: autocorrelation always has a maximum, so it happily reports a tempo for material with no beat — caught by playing a sine tone through the real engine and watching the deck read 150 BPM with a sync button that looked ready. Worse, the correlation peak is INVERSELY related to whether a beat exists: measured, a pure tone scored 1.00 and a 128 BPM click track scored 0.66. Gating on it would have rejected every real beat and accepted every drone. The discriminator is the onset envelope's crest factor (peak over mean): 29-55 for real beats, 3-6 for tones and noise, so the threshold sits in an empty gap. Confidence is now reported from the crest factor, because putting a reassuring number next to a meaningless answer is worse than reporting nothing."
+        },
+        {
+          "id": "DJX-5",
+          "name": "Touch deck UI — the actual mixer",
+          "size": "XL",
+          "verdict": null,
+          "reqs": [
+            "REQ-API-1"
+          ],
+          "status": "done",
+          "detail": "Two decks, transport, pitch fader, cue, crossfader, three-band EQ and channel gain, all sized for fingers rather than a mouse. The existing DJ console is a queue supervisor, not a mixer — it has no decks at all, which is the single largest gap to the Monday target. DONE — clients/deck/index.html. Two decks, transport, pitch, cue, crossfader, three-band EQ and channel faders, all driving the engine through CDEP control names. EQ faders use a curve so UNITY SITS AT THE MIDPOINT of travel: the knob range is 0..4, so a linear fader puts neutral a quarter of the way up, which looks like a cut when nothing is cut. On hardware neutral is the centre detent and that is what a hand expects."
+        },
+        {
+          "id": "DJX-6",
+          "name": "Beat sync and pitch lock between decks",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-CLK-1"
+          ],
+          "status": "done",
+          "detail": "Playback-rate matching from the detected BPM, with the leader deck as the tempo source, mirroring the REQ-CLK-1 design so the later Ableton Link work drops in without redesign. DONE — syncRate() folds octaves, so 140 over 70 is treated as the double-time mix it is and a wrong-octave detection still beatmatches correctly. Sync REFUSES and reports rather than silently doing nothing when a tempo is unknown or the pair is beyond the pitch fader's range: a DJ told the decks are locked stops listening for drift, which is the worst possible failure. Verified in the browser — 125 BPM synced to 127.84 leaves a tempo gap of exactly 0."
+        },
+        {
+          "id": "DJX-7",
+          "name": "Surface Studio ergonomics",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-NFR-9"
+          ],
+          "status": "done",
+          "detail": "A 28-inch screen lying flat, operated with fingers and no hover. Large hit targets, no hover-only affordances, pointer events rather than mouse events, and a layout that works at the Surface Studio's aspect ratio with the controls under your hands rather than at the top. DONE — every target is at least 56px, faders are 129px wide at Surface Studio scale, and the layout is bottom-weighted: waveforms (which you only look at) on top, mixer and faders at the bottom where your hands rest on a flat 28-inch screen. Pointer events throughout rather than mouse events, with setPointerCapture so a drag survives the finger sliding outside the control. Two bugs found by driving it: a fixed 300px mixer column pushed the layout 62px past a narrow viewport and cut deck B's transport off the edge; and the double-tap-to-reset gesture was misreading two quick EQ adjustments as a reset, snapping the band back to unity mid-mix. A double-tap now requires both taps in the same place with no drag between them."
         }
       ]
     }
