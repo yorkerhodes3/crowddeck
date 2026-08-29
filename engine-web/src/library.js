@@ -111,6 +111,14 @@ export class ArchiveLibrary {
     this.cache = new Map();
     /** Resolved artwork URLs, including the null answers. */
     this.artCache = new Map();
+    /**
+     * Detected tempos, including the null answers — DJX-19.
+     *
+     * Caching the failures matters as much as caching the successes: without it
+     * every rescan re-downloads the tracks that could not be analysed, which is
+     * exactly the set that was slowest to fail.
+     */
+    this.tempoCache = new Map();
   }
 
   /**
@@ -144,7 +152,12 @@ export class ArchiveLibrary {
   #searchUrl(term, rows) {
     const p = new URLSearchParams();
     p.set("q", this.buildQuery(term));
-    for (const f of ["identifier", "title", "creator", "licenseurl", "year", "downloads"]) {
+    // `subject` carries the genre tags — DJX-18. The Archive keeps genre there
+    // rather than in a dedicated field, so it is both what the query searches
+    // and the only place a browse list can show what a record actually is.
+    for (const f of [
+      "identifier", "title", "creator", "licenseurl", "year", "downloads", "subject", "item_size"
+    ]) {
       p.append("fl[]", f);
     }
     p.set("rows", String(rows ?? this.rows));
@@ -210,6 +223,13 @@ export class ArchiveLibrary {
       title: doc.title || doc.identifier,
       artist: creator || "Unknown artist",
       year: doc.year ?? null,
+      tags: normaliseTags(doc.subject),
+      downloads: Number.isFinite(Number(doc.downloads)) ? Number(doc.downloads) : null,
+      bytes: Number.isFinite(Number(doc.item_size)) ? Number(doc.item_size) : null,
+      // Tempo is not in the Archive's metadata and cannot be had without the
+      // audio, so it starts unknown and is filled in by an explicit scan.
+      // Stated as null rather than guessed: see `bpm-match.js`.
+      bpm: null,
       licenceClass,
       licenceUrl: doc.licenseurl ?? null,
       licenceReason: reason,
@@ -277,6 +297,62 @@ export class ArchiveLibrary {
   }
 
   /**
+   * Detect the tempo of a release, by analysing its first playable track.
+   *
+   * ## Why this downloads the whole track
+   *
+   * A byte-range prefix would be far cheaper — a 256 KB range decodes in about
+   * 350 ms and gives 32 seconds of audio, and `Range` is both supported and
+   * CORS-exposed by the Archive. It was measured against full-file analysis on
+   * ten releases and **disagreed on five of them**, because the opening of a
+   * record is frequently an intro with a different feel. A window from the
+   * middle was no better: three agreed, five disagreed and two would not decode
+   * at all.
+   *
+   * Worse, confidence did not separate the good answers from the bad — one
+   * wrong tempo scored 0.95. So there was no way to show a preview-derived
+   * figure *and* be honest about which ones to trust.
+   *
+   * A browse list that displays a confidently wrong BPM is worse than one that
+   * displays nothing: it sends a DJ to a record that will not lock, and the
+   * discovery happens in front of people. So this pays the bandwidth and
+   * computes the same figure the deck computes on load.
+   *
+   * @param {object} release
+   * @param {{signal?: AbortSignal, decode: (bytes: ArrayBuffer) => Promise<AudioBuffer>,
+   *          analyse: (buffer: AudioBuffer) => number|null}} opts
+   * @returns {Promise<number|null>} BPM, or null when it cannot be determined.
+   */
+  async detectTempo(release, opts) {
+    if (!release?.id || typeof opts?.decode !== "function" || typeof opts?.analyse !== "function") {
+      return null;
+    }
+    if (this.tempoCache.has(release.id)) return this.tempoCache.get(release.id);
+
+    let bpm = null;
+    try {
+      const files = await this.tracks(release.id, { signal: opts.signal });
+      const track = files[0];
+      // A long DJ mix has a tempo, but downloading 60 MB to find it out during a
+      // browse is not a reasonable thing to do to someone's connection or to a
+      // charity's servers.
+      if (track && track.bytes > 0 && track.bytes <= PREFERRED_MAX_BYTES) {
+        const res = await this.fetch(track.url, { signal: opts.signal });
+        if (res.ok) {
+          bpm = opts.analyse(await opts.decode(await res.arrayBuffer()));
+        }
+      }
+    } catch {
+      // An unreadable track leaves the tempo unknown. It must not abandon the
+      // scan of everything else, and it must not throw into a browse list.
+      bpm = null;
+    }
+
+    this.tempoCache.set(release.id, bpm);
+    return bpm;
+  }
+
+  /**
    * Cover art for a release, or null — DJX-12.
    *
    * Returned as a URL for an `<img>`, deliberately not fetched. Reading the bytes
@@ -328,6 +404,47 @@ function rankArt(file) {
 }
 
 /** `https://ia800708.us.archive.org/18/items/Foo/02 Bar.mp3`, encoded per segment. */
+/**
+ * Genre tags, tidied — DJX-18.
+ *
+ * The Archive's `subject` is operator-supplied and arrives as a string, an
+ * array, or a single string holding a comma-separated list. All three are real.
+ * Deduplicated case-insensitively because "Chiptune" and "chiptune" both appear,
+ * often on the same release, and showing both wastes a row that has little space
+ * to begin with.
+ *
+ * @param {unknown} subject
+ * @returns {string[]}
+ */
+export function normaliseTags(subject) {
+  const raw = Array.isArray(subject) ? subject : [subject];
+  const seen = new Map();
+  for (const entry of raw) {
+    if (typeof entry !== "string") continue;
+    for (const part of entry.split(/[,;]/)) {
+      const tag = part.trim().replace(/\s+/g, " ");
+      if (!tag) continue;
+      const key = tag.toLowerCase();
+      // First spelling wins, so the case the uploader chose is preserved.
+      if (!seen.has(key)) seen.set(key, tag);
+    }
+  }
+  return [...seen.values()];
+}
+
+/**
+ * A count as a browse list should show it.
+ *
+ * @param {number|null} n
+ * @returns {string}
+ */
+export function formatCount(n) {
+  if (!Number.isFinite(n) || n < 0) return "";
+  if (n < 1000) return String(Math.round(n));
+  if (n < 1000000) return `${(n / 1000).toFixed(n < 10000 ? 1 : 0)}k`;
+  return `${(n / 1000000).toFixed(1)}M`;
+}
+
 export function buildFileUrl(server, dir, name) {
   const path = String(name)
     .split("/")

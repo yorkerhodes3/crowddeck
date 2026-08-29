@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 78 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 81 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>788 tests, 20 conformance checks</strong>,
+      <strong>818 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -819,6 +819,53 @@
       because some players stop at the first zero-length block rather than skipping it — turning a good
       recording into a silent one. And filenames carry local time <em>to the second</em>, so two takes a
       minute apart cannot quietly overwrite each other.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-19 — a measurement that killed the cheap design.</strong> Sourcing records by tempo against
+      what is already playing. The compatibility question <em>sounds</em> like a tolerance to invent — ±5 BPM,
+      or ±10% — and it is not: the deck already defines it exactly. A record can be beat-matched only if the
+      <strong>pitch fader can physically reach it</strong>, which is ±8%. So this asks <span class="mono">syncRate</span>,
+      the same function the SYNC button uses. A record this list calls mixable is one SYNC will genuinely lock.
+      <br><br>
+      <strong>Verified live against a playing 138.88 BPM deck:</strong> 22 of 25 results scanned, 8 mixable,
+      ranked <span class="mono">+0.0% · +1.2% · −1.2% · −2.5% · +3.7%</span> — ascending by how far the fader
+      must travel — with unmixable rows dimmed and pushed below.
+      <br><br>
+      <strong>The cheap version would have been nearly free, and was wrong.</strong> A 256 KB byte-range
+      prefix decodes in 350 ms and yields 32 seconds of audio; the Archive supports <span class="mono">Range</span>
+      with CORS. Measured against full-file analysis on ten releases, it <strong>disagreed on five</strong> —
+      the opening of a record is frequently an intro with a different feel. A window from the middle was no
+      better: three agreed, five disagreed, two would not decode at all. And confidence did not separate the
+      good answers from the bad — <strong>one wrong tempo scored 0.95</strong>.
+      <br><br>
+      So there was no honest way to show a preview-derived figure <em>and</em> flag which ones to trust. A
+      browse list showing a confidently wrong BPM is worse than one showing nothing: it sends a DJ to a record
+      that will not lock, and the discovery happens in front of people. It therefore pays the bandwidth and
+      computes the same figure the deck computes on load — opt-in, four at a time (twenty-wide would starve
+      the audio thread <em>while music is playing</em>), stoppable, and skipping anything over 12 MB rather
+      than pulling a 60 MB DJ mix to browse it. Results are <strong>ranked, never filtered</strong>: a list
+      that empties itself is worse than one that puts the good matches on top.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-17 / DJX-18 — the waveform became usable, and the browse list became informative.</strong>
+      The waveform showed where you were but could not take you anywhere. Now a tap or drag moves the
+      playhead: verified in a browser, a click at 25% of a 100-second track lands at 25.0s, at 75% lands at
+      75.0s, and a drag past the right edge clamps rather than running off the end. Seeking applies
+      <em>continuously</em> during the drag, because scrubbing to find a drop is the point — a deck that only
+      moves when you let go cannot be used to search a track by ear.
+      <br><br>
+      <strong>And a bug that hid inside a convenience.</strong> <span class="mono">setPointerCapture</span>
+      throws <span class="mono">InvalidPointerId</span> for a pointer the browser no longer considers active,
+      and it was being called <em>before</em> the seek — so a failed capture silently swallowed the seek
+      itself. The seek now happens first and capture is best-effort, which is the right order regardless:
+      capture is an enhancement for the drag, the seek is the actual function.
+      <br><br>
+      The browse list now carries <strong>genre tags, play count and size</strong> — 24 of 25 rows tagged in a
+      live search. The tags come from the Archive's <span class="mono">subject</span> field, which is also
+      what the search reads, so showing it finally explains <em>why</em> a record came back for the word
+      typed.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

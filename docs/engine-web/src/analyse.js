@@ -305,6 +305,31 @@ export function audiblePosition(position, playing, latencySeconds) {
 }
 
 /**
+ * Where a click on the waveform lands, as a fraction of the track — DJX-17.
+ *
+ * Trivial arithmetic with three ways to go wrong, all of them silent. Clamping
+ * matters because a pointer that leaves the canvas mid-drag reports coordinates
+ * outside it, and an unclamped value seeks past the end and stops the deck. A
+ * zero-width canvas — which is what a hidden or not-yet-laid-out element
+ * reports — must not produce a NaN that propagates into the playhead.
+ *
+ * Takes numbers rather than the event and the element, so the behaviour is
+ * testable without a DOM.
+ *
+ * @param {number} clientX
+ * @param {number} left Bounding-box left edge.
+ * @param {number} width Bounding-box width.
+ * @returns {number} 0..1
+ */
+export function seekFraction(clientX, left, width) {
+  if (!Number.isFinite(clientX) || !Number.isFinite(left) || !Number.isFinite(width) || width <= 0) {
+    return 0;
+  }
+  const raw = (clientX - left) / width;
+  return Math.min(1, Math.max(0, raw));
+}
+
+/**
  * Mix a multi-channel buffer down to one array for analysis.
  *
  * Analysing only the left channel would miss anything panned right, and a

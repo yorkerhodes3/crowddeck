@@ -22,6 +22,7 @@ import {
   firstAudible,
   foldTempo,
   onsetEnvelope,
+  seekFraction,
   toMono,
   waveformPeaks
 } from "../src/analyse.js";
@@ -356,4 +357,28 @@ test("an unknown latency leaves the position alone rather than corrupting it", (
 test("a non-finite position is zero, not NaN", () => {
   assert.equal(audiblePosition(NaN, true, 0.09), 0);
   assert.equal(audiblePosition(undefined, false, 0.09), 0);
+});
+
+/* ------------------------------------------------- seek fraction (DJX-17) */
+
+test("clicking the middle of the waveform is the middle of the track", () => {
+  assert.equal(seekFraction(500, 100, 800), 0.5);
+  assert.equal(seekFraction(100, 100, 800), 0, "the left edge is the start");
+  assert.equal(seekFraction(900, 100, 800), 1, "the right edge is the end");
+});
+
+test("a pointer dragged outside the canvas is clamped, not extrapolated", () => {
+  // A pointer that leaves the element mid-drag reports coordinates outside it.
+  // Unclamped, that seeks past the end and stops the deck.
+  assert.equal(seekFraction(-50, 100, 800), 0);
+  assert.equal(seekFraction(5000, 100, 800), 1);
+});
+
+test("a zero-width canvas yields 0 rather than NaN", () => {
+  // What a hidden or not-yet-laid-out element reports. A NaN here propagates
+  // into the playhead and the deck stops responding with no visible cause.
+  assert.equal(seekFraction(500, 100, 0), 0);
+  assert.equal(seekFraction(500, 100, -10), 0);
+  assert.equal(seekFraction(NaN, 100, 800), 0);
+  assert.equal(seekFraction(500, NaN, 800), 0);
 });

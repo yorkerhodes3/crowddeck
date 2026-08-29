@@ -15,7 +15,14 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ArchiveLibrary, ArchiveLibraryError, buildFileUrl, escapeLucene } from "../src/library.js";
+import {
+  ArchiveLibrary,
+  ArchiveLibraryError,
+  buildFileUrl,
+  escapeLucene,
+  formatCount,
+  normaliseTags
+} from "../src/library.js";
 
 const searchResponse = (docs) => ({
   ok: true,
@@ -305,4 +312,96 @@ test("a null answer is cached too, so a coverless release is asked about once", 
   await lib.coverArt("X");
   await lib.coverArt("X");
   assert.equal(calls.length, 1);
+});
+
+/* ------------------------------------------- genre tags and counts (DJX-18) */
+
+test("subject tags arrive as an array, a string, or a comma-separated list", () => {
+  // All three shapes are real in the Archive's metadata.
+  assert.deepEqual(normaliseTags(["chiptune", "8bit"]), ["chiptune", "8bit"]);
+  assert.deepEqual(normaliseTags("chiptune"), ["chiptune"]);
+  assert.deepEqual(normaliseTags("chiptune, 8bit; demoscene"), ["chiptune", "8bit", "demoscene"]);
+});
+
+test("tags are deduplicated case-insensitively, keeping the uploader's spelling", () => {
+  // "Chiptune" and "chiptune" routinely appear on the same release, and the row
+  // has too little space to show both.
+  assert.deepEqual(normaliseTags(["Chiptune", "chiptune", "CHIPTUNE"]), ["Chiptune"]);
+});
+
+test("missing or malformed subjects yield no tags rather than throwing", () => {
+  assert.deepEqual(normaliseTags(undefined), []);
+  assert.deepEqual(normaliseTags(null), []);
+  assert.deepEqual(normaliseTags([null, 42, "", "  "]), []);
+  assert.deepEqual(normaliseTags(["  spaced   out  "]), ["spaced out"]);
+});
+
+test("counts are abbreviated the way a browse list shows them", () => {
+  assert.equal(formatCount(0), "0");
+  assert.equal(formatCount(986), "986");
+  assert.equal(formatCount(4151), "4.2k");
+  assert.equal(formatCount(41510), "42k");
+  assert.equal(formatCount(2400000), "2.4M");
+  assert.equal(formatCount(null), "", "an unknown count shows nothing, not zero");
+  assert.equal(formatCount(-1), "");
+});
+
+/* ------------------------------------------------- tempo detection (DJX-19) */
+
+/** A library whose metadata call yields one small playable file. */
+function tempoLibrary(onAudio, bytes = 400000) {
+  let audioCalls = 0;
+  const lib = new ArchiveLibrary({
+    fetch: async (url) => {
+      if (url.includes("/metadata/")) {
+        return metadataResponse([{ name: "01.mp3", size: bytes, length: "120.0" }]);
+      }
+      audioCalls += 1;
+      return onAudio ? onAudio() : { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(8) };
+    }
+  });
+  return { lib, audio: () => audioCalls };
+}
+
+const decodeOk = async () => ({ sampleRate: 44100, numberOfChannels: 1 });
+
+test("a detected tempo comes back and is cached", async () => {
+  const { lib, audio } = tempoLibrary();
+  const opts = { decode: decodeOk, analyse: () => 128 };
+  assert.equal(await lib.detectTempo({ id: "x" }, opts), 128);
+  assert.equal(await lib.detectTempo({ id: "x" }, opts), 128);
+  assert.equal(audio(), 1, "a cached tempo must not re-download the track");
+});
+
+test("a failure is cached too, so a rescan does not re-download what already failed", async () => {
+  // Without this, every rescan retries exactly the set that was slowest to fail.
+  const { lib, audio } = tempoLibrary(async () => { throw new Error("network"); });
+  const opts = { decode: decodeOk, analyse: () => 128 };
+  assert.equal(await lib.detectTempo({ id: "x" }, opts), null);
+  assert.equal(await lib.detectTempo({ id: "x" }, opts), null);
+  assert.equal(audio(), 1);
+});
+
+test("a very large track is skipped rather than downloaded to browse it", async () => {
+  // A 60 MB continuous mix has a tempo, but fetching it during a browse is not
+  // a reasonable thing to do to someone's connection or to a charity's servers.
+  const { lib, audio } = tempoLibrary(undefined, 60 * 1024 * 1024);
+  assert.equal(await lib.detectTempo({ id: "x" }, { decode: decodeOk, analyse: () => 128 }), null);
+  assert.equal(audio(), 0, "the audio must not be fetched at all");
+});
+
+test("an undecodable track leaves the tempo unknown instead of throwing", async () => {
+  const { lib } = tempoLibrary();
+  const result = await lib.detectTempo({ id: "x" }, {
+    decode: async () => { throw new Error("EncodingError"); },
+    analyse: () => 128
+  });
+  assert.equal(result, null);
+});
+
+test("detectTempo refuses nonsense arguments rather than throwing into a browse list", async () => {
+  const { lib } = tempoLibrary();
+  assert.equal(await lib.detectTempo(null, { decode: decodeOk, analyse: () => 1 }), null);
+  assert.equal(await lib.detectTempo({ id: "x" }, {}), null);
+  assert.equal(await lib.detectTempo({ id: "x" }), null);
 });
