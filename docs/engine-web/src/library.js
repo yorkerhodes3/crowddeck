@@ -18,13 +18,15 @@
  * | source | search API | audio fetch | verdict |
  * |---|---|---|---|
  * | **Internet Archive** | no key, CORS ok | **CORS ok, decodes** | **usable** |
+ * | **Openverse** | no key, CORS ok | **CORS ok, decodes** | **usable — see `openverse.js`** |
  * | ccMixter | no key, **CORS blocked** | — | unusable from a page |
- * | Jamendo | requires a client ID | — | needs configuration first |
+ * | Jamendo (direct) | requires a client ID | — | needs configuration first |
  * | Free Music Archive | API requires a key | — | needs configuration first |
  *
- * So the Archive is the only one of these that gives a working library with no
- * account, no key and no proxy. Jamendo remains supported through the venue-side
- * provider (`providers/src/jamendo.js`) where a server can hold the credential.
+ * The Archive was the *first* source that worked with no account, key or proxy;
+ * `openverse.js` later added a second, which reaches Jamendo's catalogue without
+ * the client ID the direct adapter needs. Jamendo remains supported directly
+ * venue-side (`providers/src/jamendo.js`) where a server can hold a credential.
  *
  * ## The licence filter is the point, not a detail
  *

@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 81 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 82 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>818 tests, 20 conformance checks</strong>,
+      <strong>840 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -876,6 +876,48 @@
       live search. The tags come from the Archive's <span class="mono">subject</span> field, which is also
       what the search reads, so showing it finally explains <em>why</em> a record came back for the word
       typed.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-20 — "can we use YouTube?" No, and here is the evidence.</strong> It was a reasonable ask:
+      that is where the music is. The answer is no on <em>two independent grounds</em>, both verified rather
+      than asserted.
+      <br><br>
+      <strong>1. YouTube's own Terms forbid the use case by name.</strong> "Permissions and Restrictions",
+      clause 9: <em>"use the Service to view or listen to Content other than for personal, non-commercial use
+      (for example, you may not publicly screen videos or <strong>stream music from the Service</strong>)"</em>.
+      DJing is publicly streaming music from the Service. That rules out the <em>permitted</em> embed too —
+      this is not merely a point about downloaders.
+      <br><br>
+      <strong>2. It could not work anyway.</strong> Measured in a real browser: <span class="mono">fetch</span>
+      of a watch page is CORS-blocked; the official IFrame embed's <span class="mono">contentDocument</span> is
+      <span class="mono">null</span>; and <span class="mono">createMediaElementSource</span> throws a
+      <span class="mono">TypeError</span> when handed an iframe. Web Audio can never see the samples — so no
+      crossfader, no EQ, no key lock, no BPM, no waveform, no recording. A video player beside a deck, not a
+      deck.
+      <br><br>
+      <span class="mono">REQ-CON-7</span> already encoded this and the build check enforces it — proven by
+      wiring a YouTube URL in and watching <span class="mono">check-content-sources</span> exit 1.
+      <br><br>
+      <strong>So the legitimate library got bigger instead.</strong> Openverse — the WordPress Foundation's
+      Creative Commons search — is now a second source, searched concurrently with the Archive and merged. It
+      reaches <strong>Jamendo's catalogue without an API key</strong>, which the Archive-only library could
+      not. Verified end to end: <strong>45 rows from one search</strong> (25 Archive + 20 Openverse) and a
+      Jamendo track loaded and played — <em>"Fantasy - Techno"</em>, 314s, 140.63 BPM, key 5A, zero console
+      errors.
+      <br><br>
+      <strong>The licence filter is the point.</strong> An unfiltered Openverse search is mostly unusable
+      here: measured on "techno", the default response carried <span class="mono">by-nc-nd</span>,
+      <span class="mono">by-nc-sa</span> and <span class="mono">by-nc</span> — every one non-commercial and
+      unplayable in a venue. As with the Archive, the upstream filter is not trusted alone; every result is
+      classified again by the same <span class="mono">cc-licence.js</span> the venue policy engine uses.
+      Proven by deleting that second filter and watching the test fail.
+      <br><br>
+      <strong>And the bug that cost the most time had nothing to do with any of it.</strong> Openverse caps
+      <em>anonymous</em> requests at <span class="mono">page_size=20</span> and answers <strong>401</strong>
+      for anything larger — not 400, not 429. The app asked for 25 to match the Archive's page, so every
+      Openverse search failed while every hand-written probe, which used smaller numbers, worked. It looked
+      exactly like intermittent rate limiting and was a hard boundary: 20 returns 200, 21 returns 401.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

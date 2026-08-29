@@ -116,7 +116,12 @@ const SKIP_DIRS = new Set([
  */
 const EXEMPT = new Set([
   "tools/check-content-sources.mjs",
-  "tools/test/check-content-sources.test.js"
+  "tools/test/check-content-sources.test.js",
+  // Tests that a pasted consumer-service link is *refused* with an explanation
+  // rather than silently returning nothing. It needs a realistic watch URL to
+  // assert against, and the assertion is that the URL is turned away — the ban
+  // being exercised, not excepted.
+  "engine-web/test/openverse.test.js"
 ]);
 
 /**

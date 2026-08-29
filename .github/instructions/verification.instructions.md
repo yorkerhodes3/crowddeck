@@ -79,6 +79,18 @@ trace showed zero failing requests while the page logged two 404s.
 
 ## Environment quirks (Windows, no admin)
 
+- **A rate limit is not the only thing that returns 401.** Openverse caps
+  *anonymous* requests at `page_size=20` and answers **401** — not 400, not 429 —
+  for anything larger. Asking for 25 made every search fail while every
+  hand-written probe (which used smaller numbers) worked, and it presented as
+  intermittent rate limiting. When a status code disagrees with its usual
+  meaning, bisect the request rather than trusting the code.
+- **There is a known intermittent test failure** (seen twice: 787/1 and 839/1 out
+  of ~840). It does not reproduce in isolation, under 4-way CPU load, or across
+  6 repeat runs of the timing-sensitive suites — only under full-suite parallel
+  load. Several suites use wall-clock sleeps, which is the likely cause. If you
+  see a single failure in an otherwise-green run, re-run before believing it, and
+  capture the test name if you can — that is the missing piece.
 - PowerShell `-ArgumentList` **splits on spaces**, and this repository's path
   contains them. Quote it: ``@("script.mjs", "`"$path`"")``.
 - `node -e` breaks on escaped quotes and `$`. Write a temp `.mjs` file instead —

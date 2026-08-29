@@ -4447,6 +4447,19 @@ window.__CROWDDECK_DATA__ = {
             "reqs": [
               "REQ-CLK-1"
             ]
+          },
+          {
+            "detail": "Someone asked to wire up YouTube as an audio source. The answer is no, on two independent grounds, and both were VERIFIED rather than asserted. FIRST, YouTube's own Terms of Service forbid the use case by name - Permissions and Restrictions clause 9: 'use the Service to view or listen to Content other than for personal, non-commercial use (for example, you may not publicly screen videos or stream music from the Service)'. DJing is publicly streaming music from the Service. That rules out the PERMITTED embed too, not just downloaders. SECOND, it could not work anyway: measured in a real browser, fetch of a watch page is CORS-blocked, the official IFrame embed's contentDocument is null, and createMediaElementSource throws TypeError when handed an iframe. Web Audio can therefore never see the samples, so there would be no crossfader, EQ, key lock, BPM detection, waveform or recording - a video player beside a deck, not a deck. REQ-CON-7 already encoded this and check-content-sources.mjs fails the build over it; proven by wiring a YouTube URL in and watching it exit 1, then restoring. So rather than only refusing, the legitimate library got bigger. DONE - Openverse (the WordPress Foundation's Creative Commons search) added as a second source, searched concurrently with the Archive and merged. It reaches Jamendo's catalogue WITHOUT an API key, which the Archive-only library could not do. Verified end to end in a browser: 45 rows from one search (25 Archive + 20 Openverse) and a Jamendo track loaded and played - 'Fantasy - Techno' by Snabisch, 314s, 140.63 BPM, key 5A, zero console errors. THE LICENCE FILTER IS THE POINT. An unfiltered Openverse search is mostly unusable here: measured on 'techno' the default response carried by-nc-nd, by-nc-sa and by-nc, every one non-commercial and unplayable in a venue. license_type=commercial removes them, and as with the Archive that filter is not trusted alone - every result is classified again on the way out by the same cc-licence.js the venue policy engine uses. Proven by deleting the second filter and watching the test fail. category=music was equally necessary: without it the response was full of Freesound material that is audio but not music, including a 926ms whoosh. THE BUG THAT COST THE MOST TIME had nothing to do with any of that. Openverse caps ANONYMOUS requests at page_size=20 and answers 401 for anything larger - not 400, not 429. The app asked for 25 to match the Archive's page, so every Openverse search failed while every hand-written probe, which used smaller numbers, worked. It presented as intermittent rate limiting and was a hard reproducible boundary: 20 returns 200, 21 returns 401. Capped, and pinned with a test, so a 401 that does reach the caller now genuinely means the documented anonymous limits of 20 requests/minute and 200/day. A pasted consumer-service link is also now explained rather than silently returning nothing, because someone who sees 'nothing found' concludes the search is broken. Traces REQ-CON-6, which requires at least one CC provider with Jamendo named: Openverse satisfies it browser-side without the API key the direct Jamendo adapter needs.",
+            "verdict": null,
+            "size": "M",
+            "reqs": [
+              "REQ-CON-7",
+              "REQ-CON-5",
+              "REQ-CON-6"
+            ],
+            "id": "DJX-20",
+            "status": "done",
+            "name": "Openverse as a second source; YouTube refused with reasons"
           }
         ]
       }

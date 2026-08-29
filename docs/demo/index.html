@@ -360,6 +360,7 @@ import { WebEngine } from "../engine-web/src/web-engine.js";
 import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatter, audiblePosition, seekFraction } from "../engine-web/src/analyse.js";
 import { eqKnobToDb } from "../engine-web/src/mixer.js";
 import { ArchiveLibrary, formatCount } from "../engine-web/src/library.js";
+import { OpenverseLibrary, detectConsumerService } from "../engine-web/src/openverse.js";
 import { formatTempoMatch, mapWithLimit, rankByTempo, tempoMatch } from "../engine-web/src/bpm-match.js";
 import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
 import { MixRecorder, formatElapsed } from "../engine-web/src/record.js";
@@ -379,6 +380,7 @@ let engine = null;
 let keylockReady = null;
 const analysis = { a: null, b: null };
 const library = new ArchiveLibrary();
+const openverse = new OpenverseLibrary();
 
 /*
   The AudioContext cannot start until a gesture. Browsers require it, and it is
@@ -654,20 +656,78 @@ window.__loadBuffer = loadBuffer;
 
 let results = [];
 
+/**
+ * Search every openly-licensed source at once — DJX-20.
+ *
+ * Both are queried concurrently and merged, because the point of a second source
+ * is more music, not a dropdown to choose between two half-libraries.
+ *
+ * A source that fails does **not** fail the search. Openverse being down should
+ * cost you Openverse's results, not the Archive's — so failures are collected
+ * and reported alongside whatever did come back. Only when everything fails is
+ * the search an error.
+ */
 async function runSearch(term) {
   const list = $("liblist");
-  list.innerHTML = '<div class="libmsg">Searching the Internet Archive…</div>';
-  try {
-    results = await library.search(term, { rows: 25 });
-    renderResults();
-    // A new search with matching on should scan the new results, or the tempo
-    // column would sit empty and look broken.
-    if (matchOn && !scanning) await scanTempos();
-  } catch (err) {
-    // Named honestly: the library is a bonus, and local files are the fallback
-    // that always works.
-    list.innerHTML = '<div class="libmsg">' + escapeHtml(err.message) + "</div>";
+
+  // Someone who pastes a YouTube link and sees "nothing found" concludes the
+  // search is broken. Explain instead — see openverse.js for the two independent
+  // reasons this cannot work.
+  const consumer = detectConsumerService(term);
+  if (consumer) {
+    list.innerHTML =
+      '<div class="libmsg"><strong>' + escapeHtml(consumer.service) +
+      ' links cannot be played here.</strong><br>' + escapeHtml(consumer.why) + "</div>";
+    results = [];
+    return;
   }
+
+  list.innerHTML = '<div class="libmsg">Searching openly-licensed music…</div>';
+
+  const sources = [
+    { name: "Internet Archive", lib: library },
+    { name: "Openverse", lib: openverse }
+  ];
+
+  const settled = await Promise.all(sources.map(async (s) => {
+    try {
+      return { name: s.name, items: await s.lib.search(term, { rows: 25 }) };
+    } catch (err) {
+      return { name: s.name, items: [], error: err.message };
+    }
+  }));
+
+  const failures = settled.filter((s) => s.error);
+  if (failures.length === sources.length) {
+    // Everything is down. Say so honestly — local files are the fallback that
+    // always works.
+    list.innerHTML = '<div class="libmsg">' + escapeHtml(failures[0].error) + "</div>";
+    results = [];
+    return;
+  }
+
+  // Interleaved rather than concatenated, so a source that happens to answer
+  // second is not buried below twenty-five rows nobody scrolls to.
+  const lists = settled.map((s) => s.items);
+  results = [];
+  for (let i = 0; i < Math.max(...lists.map((l) => l.length)); i += 1) {
+    for (const items of lists) if (items[i]) results.push(items[i]);
+  }
+
+  // Openverse results carry their audio URL already, so the loader can skip a
+  // metadata round trip entirely.
+  for (const r of results) if (r.provider === "openverse") openverse.remember(r);
+
+  renderResults();
+  if (failures.length) {
+    const note = document.createElement("div");
+    note.className = "libmsg";
+    note.textContent = failures.map((f) => f.name + ": " + f.error).join(" · ");
+    list.appendChild(note);
+  }
+  // A new search with matching on should scan the new results, or the tempo
+  // column would sit empty and look broken.
+  if (matchOn && !scanning) await scanTempos();
 }
 
 function renderResults() {
@@ -720,7 +780,12 @@ function renderResults() {
     const stat = document.createElement("span");
     stat.className = "lstat";
     const bits = [];
+    // Which catalogue this came from. With two sources merged, "where is this
+    // from" becomes a real question — and the answer affects attribution.
+    if (r.sourceName && r.provider === "openverse") bits.push(r.sourceName);
+    else if (r.provider === "archive") bits.push("archive");
     if (r.downloads != null) bits.push(formatCount(r.downloads) + " plays");
+    if (r.durationSec) bits.push(Math.floor(r.durationSec / 60) + ":" + String(Math.round(r.durationSec % 60)).padStart(2, "0"));
     if (r.bytes) bits.push(Math.round(r.bytes / 1048576) + " MB");
     stat.textContent = bits.join(" · ");
     if (stat.textContent) meta.appendChild(stat);
@@ -902,7 +967,10 @@ async function scanTempos() {
   // twenty-wide would starve the audio thread of bandwidth and CPU *while music
   // is playing* — the one thing this application must never do.
   await mapWithLimit(pending, 4, async (r) => {
-    const bpm = await library.detectTempo(r, { decode, analyse });
+    // Each result is scanned by its own source, or an Openverse row would look
+    // up an Archive identifier and silently come back with no tempo.
+    const source = r.provider === "openverse" ? openverse : library;
+    const bpm = await source.detectTempo(r, { decode, analyse });
     r.bpm = bpm;
     r.bpmScanned = true;
     done += 1;
@@ -961,8 +1029,12 @@ async function loadFromArchive(side, release, button) {
   const show = (t) => { button.textContent = t; };
   show("…");
 
+  // Each source resolves its own files. An Openverse result already knows its
+  // audio URL, so this costs no extra round trip there.
+  const source = release.provider === "openverse" ? openverse : library;
+
   try {
-    const files = await library.tracks(release.id);
+    const files = await source.tracks(release.id);
     if (!files.length) throw new Error("no playable audio in this release");
 
     const file = files[0];
@@ -1005,9 +1077,12 @@ async function loadFromArchive(side, release, button) {
     show("analyse");
     // Artwork is fetched alongside, and its failure is ignored: a missing sleeve
     // must never stop a track loading.
-    const art = await library.coverArt(release.id).catch(() => null);
+    const art = await source.coverArt(release.id).catch(() => null);
     await loadBuffer(side, buffer, file.name, {
-      title: prettyName(file.name),
+      // An Openverse result carries a real track title; an Archive filename has
+      // to be tidied. Using the release title for Openverse avoids turning a
+      // clean name back into a filename.
+      title: release.provider === "openverse" ? release.title : prettyName(file.name),
       artist: release.artist,
       art
     });
