@@ -43,6 +43,8 @@ import {
   syncRate
 } from "./mixer.js";
 import { HotCues, beatLoop, loopPosition, makeLoop, quantiseToBeat, scaleLoop, shiftLoop } from "./cues.js";
+import { KEYLOCK_PROCESSOR, keylockLatencySamples, loadKeylockWorklet } from "./keylock-node.js";
+import { keylockRatio } from "./keylock.js";
 
 /**
  * The floor used where the maths says "kill".
@@ -100,10 +102,19 @@ export class WebDeck {
       eqLow: 1,
       eqMid: 1,
       eqHigh: 1,
-      syncEnabled: 0
+      syncEnabled: 0,
+      keylock: 0
     };
 
     this.pregainNode = ctx.createGain();
+    /**
+     * The keylock insert, once a worklet is available.
+     *
+     * Always in the chain when it exists, engaged or not — see `keylock.js` for
+     * why the delay is paid unconditionally.
+     * @type {AudioWorkletNode|null}
+     */
+    this.keylockNode = null;
     this.low = ctx.createBiquadFilter();
     this.mid = ctx.createBiquadFilter();
     this.high = ctx.createBiquadFilter();
@@ -128,6 +139,29 @@ export class WebDeck {
 
     /** Fired for track_loaded / playposition consumers. */
     this.onEvent = null;
+  }
+
+  /**
+   * Splice the keylock insert in ahead of the EQ.
+   *
+   * Done once, before anything plays, because inserting it later would add its
+   * delay to a deck that is already running and shift it against the other one.
+   *
+   * @param {AudioWorkletNode} node
+   */
+  attachKeylock(node) {
+    if (this.keylockNode) return;
+    this.keylockNode = node;
+    this.pregainNode.disconnect();
+    this.pregainNode.connect(node).connect(this.low);
+    this.#pushKeylockRatio();
+  }
+
+  /** Tell the worklet what to do, if there is one. */
+  #pushKeylockRatio() {
+    if (!this.keylockNode) return;
+    const ratio = this.controls.keylock ? keylockRatio(this.playbackRate) : 1;
+    this.keylockNode.port.postMessage({ ratio });
   }
 
   get duration() {
@@ -386,6 +420,11 @@ export class WebDeck {
     if (this.source) {
       ramp(this.source.playbackRate, this.playbackRate, t);
     }
+
+    // The shifter has to track the pitch fader continuously, not just when
+    // keylock is toggled — otherwise nudging the pitch mid-mix silently detunes
+    // the deck, which is the exact failure keylock exists to prevent.
+    this.#pushKeylockRatio();
   }
 
   #emit(event, detail) {
@@ -450,12 +489,56 @@ export class WebEngine {
       curve: CrossfaderCurve.CONSTANT_POWER
     };
 
+    /** True once every deck has a keylock insert. */
+    this.keylockReady = false;
+    /** The insert's delay, in seconds, once known. */
+    this.keylockLatencySeconds = 0;
+
     this.refresh();
   }
 
   /** @param {string} group */
   deck(group) {
     return this.decks.find((d) => d.group === group) ?? null;
+  }
+
+  /**
+   * Make key lock available, by putting a shifter in every deck's chain.
+   *
+   * Must be awaited **before anything plays**. The insert imposes a constant
+   * delay, and adding it to a deck that is already running would shift that deck
+   * against the others by ~49ms — an audible flam appearing from nowhere. Doing
+   * it up front, on every deck at once, means the delay is simply part of the
+   * engine rather than something that arrives later.
+   *
+   * Returns false rather than throwing when the browser cannot do it; the decks
+   * then behave exactly as they did before DJX-13, refusing `keylock` honestly.
+   *
+   * @param {string|URL} [sourceUrl]
+   * @returns {Promise<boolean>}
+   */
+  async initKeylock(sourceUrl) {
+    if (this.keylockReady) return true;
+    const ok = await loadKeylockWorklet(this.ctx, sourceUrl);
+    if (!ok) return false;
+
+    try {
+      for (const deck of this.decks) {
+        const node = new AudioWorkletNode(this.ctx, KEYLOCK_PROCESSOR, {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [2],
+          processorOptions: { channels: 2 }
+        });
+        deck.attachKeylock(node);
+      }
+    } catch {
+      return false;
+    }
+
+    this.keylockReady = true;
+    this.keylockLatencySeconds = keylockLatencySamples() / this.ctx.sampleRate;
+    return true;
   }
 
   /** Push every control value into the audio graph. */
@@ -507,10 +590,10 @@ export class WebEngine {
       case "duration": return deck.duration;
       case "track_loaded": return deck.buffer ? 1 : 0;
       case "playposition": return deck.duration ? deck.position / deck.duration : 0;
-      // Honest rather than accepted-and-ignored. Pitch-independent tempo needs a
-      // phase vocoder; reporting keylock as on when it is not would have a DJ mix
-      // a set believing the key is held.
-      case "keylock": return 0;
+      // No longer refused: DJX-13 implements pitch-independent tempo with a
+      // two-stage time-domain shifter (see keylock.js). Still honest, though —
+      // it reports on only when a worklet is actually carrying the audio.
+      case "keylock": return deck.keylockNode && deck.controls.keylock ? 1 : 0;
       case "loop_enabled": return deck.loop && deck.loop.enabled ? 1 : 0;
       case "loop_in": return deck.loop ? deck.loop.start : (deck.loopIn ?? 0);
       case "loop_out": return deck.loop ? deck.loop.end : 0;
@@ -563,8 +646,12 @@ export class WebEngine {
         if (value >= 0.5) this.sync(group);
         break;
       case "keylock":
-        // Refused rather than stored. See `get`.
-        return false;
+        // Still refused when no worklet is carrying the audio — accepting it
+        // would report the key as held while the pitch kept moving, which is the
+        // one failure mode worse than not having the feature.
+        if (!deck.keylockNode) return false;
+        deck.controls.keylock = value >= 0.5 ? 1 : 0;
+        break;
       case "loop_in":
         if (value >= 0.5) deck.markLoopIn();
         break;

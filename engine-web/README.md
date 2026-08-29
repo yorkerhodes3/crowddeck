@@ -60,9 +60,27 @@ in the waveform, and a discontinuity is a click — on every EQ tweak.
 and the browser's output stage hard-clips, so without it a normal beatmatched
 blend distorts at the moment both tracks are loudest.
 
-**`keylock` is refused, not accepted and ignored.** Pitch-independent tempo needs
-a phase vocoder, which is not implemented. Reporting keylock as on when it is not
-would have someone mix a whole set believing the key was held.
+**`keylock` works, and used to be refused.** Pitch-independent tempo is implemented
+in [`src/keylock.js`](src/keylock.js) as a two-stage time-domain shifter running in
+an AudioWorklet. It is still refused — rather than accepted and ignored — on any
+browser where the worklet fails to load, because reporting keylock as on when it is
+not would have someone mix a whole set believing the key was held.
+
+Three things worth knowing about it:
+
+- **The splice search can fight the resampler.** The first version resampled inside
+  each grain and then correlated the result, which measured perfectly at 440 Hz and
+  left 60 Hz *completely uncorrected*: the offset that best matches the previous
+  output is the one that undoes the resampling, and at low frequencies nothing stops
+  it. The stages are now separate, so grains are copied verbatim and cannot be
+  re-pitched by the choice of offset.
+- **The search must span a whole pitch period.** Clean splices repeat once per
+  period, so a range shorter than one can never reach one. At ±128 samples a bass
+  line came out a full semitone sharp.
+- **Its latency is paid whether keylock is on or off.** 49ms, constant. If bypass
+  were free, arming keylock mid-mix would shift that deck against the other one by
+  that much — a flam on every beat, appearing at the exact moment it is hardest to
+  diagnose.
 
 ## The tempo detector, and what it gets wrong
 
@@ -96,9 +114,9 @@ to a wrong answer.
 
 ## What it does not do yet
 
-- **Key detection and key lock.** Both need work this does not have. `keylock` is
-  *refused* rather than accepted and ignored, so nobody mixes a set believing the
-  key is held.
+- **Key detection.** Nothing reads the musical key of a track, so there is no
+  harmonic-mixing guidance. Key *lock* is implemented; knowing what the key *is* is
+  not.
 - **Recording the mix.**
 - **`DJX-2`, CDEP over WebSocket.** The browser currently runs the engine and the
   UI together, so nothing crosses a socket. That story is what connects the deck

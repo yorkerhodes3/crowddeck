@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 74 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 75 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -664,7 +664,8 @@
       <strong>Build has started — and it makes sound.</strong> The CDEP contract, a conformant stub engine,
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
-      <strong>Web Audio engine with two real decks</strong>. <strong>724 tests, 20 conformance checks</strong>,
+      <strong>Web Audio engine with two real decks, with working key lock</strong>.
+      <strong>746 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -696,9 +697,50 @@
       4-beat loop at 119.7 BPM measuring 2.005 s with the source node genuinely looping.
     </div>
 
+    <div class="callout hot">
+      <strong>DJX-13 — key lock: the control the engine used to refuse.</strong> Moving the pitch fader
+      dragged the musical key with it. At the ±8% a Technics 1200 offers that is up to
+      <strong>1.4 semitones</strong> — far enough that a vocal audibly changes key — so any track with a
+      voice in it could not really be beat-matched. Rather than accept the control and ignore it, the engine
+      <em>refused</em> it outright, and said why.
+      <br><br>
+      <strong>Now measured in a real browser:</strong> with the pitch fader at +8%, a 220 Hz tone is heard at
+      <strong>237.6 Hz</strong> with key lock off and at <strong>exactly 220.0 Hz</strong> with it on.
+      <br><br>
+      <strong>Not a phase vocoder.</strong> That is the textbook answer and the wrong one here: it needs an
+      FFT — a dependency, or hundreds of lines to prove — and it smears transients, the one artefact
+      four-to-the-floor material cannot take. Time-domain overlap-add is what SoundTouch, and therefore
+      Mixxx's own key lock, actually uses.
+      <br><br>
+      <strong>It measured perfectly at 440 Hz while leaving 60 Hz completely uncorrected.</strong> The splice
+      search picks the offset that best matches what was already written — and for a grain that has been
+      resampled, the best match is the offset that <em>undoes the resampling</em>. At 440 Hz the search spans
+      several periods and locks to phase, so the shift survives; at 60 Hz one period is 754 samples, the
+      offset slides freely, and the correction is cancelled entirely. Splitting the resampler and the
+      overlap-add into separate stages removes the conflict by construction: a grain copied verbatim cannot
+      be re-pitched by <em>any</em> choice of offset.
+      <br><br>
+      Two more, both found by measuring rather than reasoning. <strong>The search has to span a whole pitch
+      period</strong> — clean splices repeat once per period, so a shorter range can never reach one, and
+      ±128 samples left bass a full semitone sharp. And <strong>it only ever needs to look backward</strong>,
+      since exactly one clean offset always lies in the period behind: that cut latency from 67ms to
+      <strong>49ms</strong> for identical output.
+      <br><br>
+      <strong>That latency is paid whether key lock is on or off</strong>, which looks wasteful and is not.
+      If bypass were free, arming key lock mid-mix would shift that deck 49ms against the other — a flam on
+      every beat, appearing at the exact moment a DJ is least able to diagnose it. A constant delay is
+      learned once; a delay that arrives when you touch a button is a fault.
+      <br><br>
+      <strong>And one test that passed on broken code.</strong> Stereo needs both channels spliced at the
+      same point, or the image wanders. The first version of that test compared the inter-channel delay
+      against its original value with a 6-sample tolerance — then two independent mono shifters, which is
+      exactly what a per-channel decision amounts to, drifted by 4 and <em>passed</em>. The property that
+      actually separates them is <em>stability</em>: the shared decision holds the delay perfectly constant
+      while per-channel wanders by 3 samples.
+    </div>
+
     <div class="callout" style="border-left-color: var(--warn);">
-      <strong>Five bugs that only appeared when the thing was played.</strong> Every one was invisible to
-      reading and to unit tests, and every one would otherwise have been found on stage.
+      <strong>Five bugs that only appeared when the thing was played.</strong> Every one was invisible to      reading and to unit tests, and every one would otherwise have been found on stage.
       <br><br>
       <strong>A sine tone was detected as 150 BPM.</strong> Autocorrelation always has a maximum, so it
       reports a confident tempo for material with no beat at all. Worse, the peak turns out to be

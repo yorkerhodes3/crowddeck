@@ -136,9 +136,12 @@
   button.play.on { background:var(--a); color:#06231b; border-color:var(--a); }
   button.cue { color:var(--warn); }
   button.load { background:transparent; border-style:dashed; color:var(--txt2); font-size:12.5px; }
+  .lockrow { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  button.keylock { font-size:12.5px; color:var(--txt3); }
+  button.keylock.on { background:rgba(124,108,255,.20); border-color:var(--b); color:#b9b0ff; }
+  button.keylock[disabled] { opacity:.4; cursor:not-allowed; }
 
-  .pads { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
-  .pad { min-height:42px; font-size:12px; font-weight:700; border-radius:8px;
+  .pads { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }  .pad { min-height:42px; font-size:12px; font-weight:700; border-radius:8px;
          background:#0d1220; border:1px solid var(--line); color:var(--txt3); }
   .pad.set { background:rgba(255,180,84,.15); border-color:var(--warn); color:var(--warn); }
   .loops { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
@@ -240,7 +243,10 @@
         <button data-loopoff="a">OFF</button>
       </div>
     </div>
-    <button class="sync" data-sync="a">SYNC</button>
+    <div class="lockrow">
+      <button class="sync" data-sync="a">SYNC</button>
+      <button class="keylock" data-keylock="a" disabled>KEY LOCK</button>
+    </div>
   </section>
 
   <section class="mixer">
@@ -295,7 +301,10 @@
         <button data-loopoff="b">OFF</button>
       </div>
     </div>
-    <button class="sync" data-sync="b">SYNC</button>
+    <div class="lockrow">
+      <button class="sync" data-sync="b">SYNC</button>
+      <button class="keylock" data-keylock="b" disabled>KEY LOCK</button>
+    </div>
   </section>
 </main>
 
@@ -328,6 +337,14 @@ const $ = (id) => document.getElementById(id);
 
 let ctx = null;
 let engine = null;
+/**
+ * Resolves once every deck has its keylock insert.
+ *
+ * Started with the AudioContext rather than when the button is pressed: the
+ * insert imposes a constant delay, and adding it to a deck that is already
+ * running would shift that deck against the other one.
+ */
+let keylockReady = null;
 const analysis = { a: null, b: null };
 const library = new ArchiveLibrary();
 
@@ -339,7 +356,16 @@ function ensureAudio() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     engine = new WebEngine(ctx, { decks: 2 });
-    window.__crowddeck = { ctx, engine, analysis, library };
+    keylockReady = engine.initKeylock().then((ok) => {
+      for (const btn of document.querySelectorAll("[data-keylock]")) {
+        btn.disabled = !ok;
+        btn.title = ok
+          ? "Hold the musical key while the pitch fader moves the tempo"
+          : "Unavailable — this browser could not load the audio worklet";
+      }
+      return ok;
+    });
+    window.__crowddeck = { ctx, engine, analysis, library, keylockReady };
   }
   if (ctx.state === "suspended") ctx.resume();
   return engine;
@@ -775,11 +801,31 @@ function drawWave(side) {
 /* ========================================================== transport */
 
 for (const btn of document.querySelectorAll("[data-play]")) {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     const eng = ensureAudio();
     const side = btn.dataset.play;
+    // Wait for the keylock insert before the first note, never after. Splicing a
+    // 49ms delay into a deck that is already running would shift it against the
+    // other deck — a flam that appears from nowhere mid-mix.
+    if (keylockReady) await keylockReady;
     const playing = eng.get(GROUP[side], "play") >= 1;
     eng.set(GROUP[side], "play", playing ? 0 : 1);
+  });
+}
+
+for (const btn of document.querySelectorAll("[data-keylock]")) {
+  btn.addEventListener("click", async () => {
+    const eng = ensureAudio();
+    if (keylockReady) await keylockReady;
+    const side = btn.dataset.keylock;
+    const on = eng.get(GROUP[side], "keylock") >= 1;
+    if (!eng.set(GROUP[side], "keylock", on ? 0 : 1)) {
+      // Reported rather than silently ignored: a DJ who believes the key is held
+      // when it is not will mix two tracks that clash and not know why.
+      fail("Key lock unavailable — this browser could not load the audio worklet.");
+      return;
+    }
+    btn.classList.toggle("on", !on);
   });
 }
 

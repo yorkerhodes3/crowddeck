@@ -131,10 +131,13 @@ export function eqKnobToDb(knob) {
  * means — ±8% by convention. `direction` is +1 or −1 because DJs disagree about
  * which way a pitch fader should move, and hardware ships both ways.
  *
- * **This changes pitch as well as tempo**, exactly like a turntable. Holding pitch
- * while changing tempo needs a phase vocoder, which is not implemented here; the
- * engine reports `keylock` as unsupported rather than accepting it and doing
- * nothing, so nobody mixes a set believing it is on.
+ * **This changes pitch as well as tempo**, exactly like a turntable. Holding the
+ * pitch while the tempo moves is `keylock`, implemented separately in
+ * `keylock.js` as an insert on each deck — it corrects the pitch the rate change
+ * causes rather than altering the rate itself, which is why this function is
+ * unchanged by it. On a browser where the shifter cannot load, the engine reports
+ * `keylock` as unsupported rather than accepting it and doing nothing, so nobody
+ * mixes a set believing it is on.
  *
  * @param {number} rate
  * @param {number} [rateRange]
