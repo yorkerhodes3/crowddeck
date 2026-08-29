@@ -1062,6 +1062,17 @@
           ],
           "status": "done",
           "detail": "DONE — research/midi-over-wifi.md, ratified as REQ-CLK-7. Network MIDI 2.0 is real and ratified (M2-124-UM, November 2024, UDP carrying UMP with forward error correction); RTP-MIDI (RFC 6295) is the older transport and is MIDI 1.0 ONLY. Neither is the problem. The problem is that MIDI clock is untimestamped: 24 pulses per quarter note, one every 20.83 ms at 120 BPM, fired on ARRIVAL, so a receiver cannot tell 'that pulse was late' from 'the tempo changed'. Casual Wi-Fi jitter is 4-20 ms and spikes near 500 ms with power save — the same order of magnitude as the interval being measured, and one to two orders worse than REQ-CLK-6's 1 ms budget. UMP's Jitter Reduction timestamps would fix this in principle, but Network MIDI 2.0 v1.0 defines NO time synchronisation at all, and timestamps are useless without a shared clock. Ableton Link avoids the problem instead of solving it, by sharing tempo and phase as STATE rather than streaming events. So: clock goes on a cable, wireless tempo goes over Link, and Network MIDI 2.0 is for control traffic where tens of milliseconds are tolerable. Also recorded: no platform ships native Network MIDI 2.0 over Wi-Fi today."
+        },
+        {
+          "id": "DJX-12",
+          "name": "Album art on the platter",
+          "size": "M",
+          "verdict": null,
+          "reqs": [
+            "REQ-NFR-9"
+          ],
+          "status": "done",
+          "detail": "The last visible gap to the reference application, which puts the sleeve on the record. DONE — ArchiveLibrary.coverArt() plus an SVG image inside the rotating group, so the label turns with the record as a real one does. This started as a claim that had to be RETRACTED: the previous note said the Archive had no reliable cover art. Checking rather than repeating it found sleeves on most releases (TAM033-Cover.jpg, Cover1.jpg). The CORS block on archive.org/services/img is real but IRRELEVANT — an <img> needs CORS only if the pixels are read back, and nothing reads them. That distinction is the only reason artwork is possible at all. Auto-generated _spectrogram.png files are excluded by name: every audio file on the Archive gets one, and showing a spectrogram as a record label would be a confident wrong answer on most releases. THE BUG THIS EXPOSED WAS NOT ABOUT ART. With the label finally visible it became obvious the record was swinging around a point OUTSIDE itself rather than spinning in place — measured, displaced 103px right and 30px up. Cause: CSS transform-origin:50% 50% resolved to 100 CSS PIXELS while SVG's three-argument rotate(angle 100 100) uses 100 USER UNITS, which render at ~78px. The two combined into a translation. The CSS rule was redundant — the SVG rotate already carries its own centre — and removing it fixed it. A plain dark disc had hidden this completely."
         }
       ]
     }

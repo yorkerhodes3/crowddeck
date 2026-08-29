@@ -100,7 +100,14 @@
   }
   .platterwrap { position:relative; flex:none; height:100%; aspect-ratio:1; }
   .platter { width:100%; height:100%; display:block; }
-  .platter .vinyl { transform-origin:50% 50%; }
+  /*
+    No `transform-origin` here, deliberately. The rotation uses SVG's three-
+    argument `rotate(angle cx cy)`, which carries its own centre in *user units*.
+    A CSS `transform-origin: 50% 50%` resolves to CSS *pixels* — 100px against a
+    100-user-unit centre that renders at ~78px — and the two combine into a
+    translation: measured, the record was displaced 103px right and 30px up,
+    swinging around a point outside itself instead of spinning in place.
+  */
   .deckfaders { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; flex:1; min-width:0; height:100%; }
 
   .strip { display:flex; flex-direction:column; align-items:center; gap:5px; min-height:0; }
@@ -368,11 +375,13 @@ function buildPlatter(svg, side) {
 
   /*
     Weighted to read from a metre away on a dark stage, not to look delicate in a
-    screenshot. The first version used 1px rings at #1a2132 and a 4px marker; at
-    the size the record actually renders (~150px) that is invisible past arm's
-    length, which defeats the whole purpose of having a platter.
+    screenshot. The first version used 1px rings and a 4px marker; at the size the
+    record actually renders (~150px) that is invisible past arm's length, which
+    defeats the whole purpose of having a platter.
   */
   svg.innerHTML =
+    // A circular clip so album art cannot spill past the record's edge.
+    '<defs><clipPath id="lbl' + side + '"><circle cx="100" cy="100" r="48"/></clipPath></defs>' +
     '<circle cx="100" cy="100" r="99" fill="#05070c"/>' +
     '<g class="vinyl">' +
       '<circle cx="100" cy="100" r="96" fill="#161b28"/>' +
@@ -380,8 +389,22 @@ function buildPlatter(svg, side) {
       [90, 82, 74, 66, 58].map(
         (r) => '<circle cx="100" cy="100" r="' + r + '" fill="none" stroke="#2b3550" stroke-width="2"/>'
       ).join("") +
-      // The label, in the deck's colour so the two decks are never confused.
+      // The label. Album art is drawn here when the release has any; the coloured
+      // disc underneath shows through when it does not, so the deck is still
+      // identifiable by colour either way.
       '<circle cx="100" cy="100" r="48" fill="' + accent + '" opacity="0.28"/>' +
+      // The clip is belt-and-braces; the real guarantee is `meet`. With `slice`
+      // the image scales to COVER its box and paints outside it — measured, a
+      // non-square sleeve rendered 106px where 75px was asked for and washed out
+      // the grooves. `meet` scales to FIT, so it can never exceed the box no
+      // matter whether the clip resolves. Non-square art is letterboxed, and the
+      // coloured label shows through the gap, which is a fine outcome.
+      '<g clip-path="url(#lbl' + side + ')">' +
+        '<image class="art" x="54" y="54" width="92" height="92" ' +
+          'preserveAspectRatio="xMidYMid meet" style="display:none"/>' +
+      '</g>' +
+      // Drawn AFTER the art so the deck's colour and the grooves survive a dark
+      // sleeve. A black cover would otherwise turn the record into a dead disc.
       '<circle cx="100" cy="100" r="48" fill="none" stroke="' + accent + '" stroke-width="3"/>' +
       // The position marker. This is what makes rotation legible at all: a
       // featureless disc looks identical at every angle, so spinning and stopped
@@ -392,13 +415,33 @@ function buildPlatter(svg, side) {
       // better than from one.
       '<rect x="150" y="96" width="30" height="8" rx="4" fill="' + accent + '" opacity="0.6"/>' +
       '<circle cx="100" cy="100" r="9" fill="#05070c" stroke="' + accent + '" stroke-width="3"/>' +
-    '</g>' +
-    // The label does NOT rotate: a spinning number is unreadable, and the tempo is
-    // something you read continuously while beatmatching.
-    '<text class="plabel" x="100" y="107" text-anchor="middle" font-family="ui-monospace,monospace" ' +
-      'font-size="26" font-weight="700" fill="#ffffff">' + side.toUpperCase() + '</text>';
+    '</g>';
+  // No caption on the record. The tempo is already in the readout directly above
+  // it, and printed on the label it sat on top of the album art — two pieces of
+  // information fighting for the same 96 square units, neither legible.
 
   return svg.querySelector(".vinyl");
+}
+
+/**
+ * Show or clear a deck's album art.
+ *
+ * The art is inside the rotating group on purpose: a record label turns with the
+ * record. Pinning it upright would look like a screen artefact sitting on top of
+ * a spinning disc rather than like a record.
+ */
+function setPlatterArt(side, url) {
+  const img = document.querySelector('[data-platter="' + side + '"] .art');
+  if (!img) return;
+  if (!url) {
+    img.style.display = "none";
+    img.removeAttribute("href");
+    return;
+  }
+  // An <img>/<image> load needs no CORS unless the pixels are read back, and
+  // nothing reads them — which is the only reason artwork is possible here.
+  img.setAttribute("href", url);
+  img.style.display = "";
 }
 
 const platters = {};
@@ -487,10 +530,9 @@ async function loadBuffer(side, buffer, name, meta) {
   $("bpm" + S).textContent = folded ? folded.toFixed(1) : "—";
   $("none" + S).style.display = "none";
 
-  // The platter label carries the deck letter and, once loaded, the tempo — the
-  // two things you glance at while cueing.
-  const label = document.querySelector('[data-platter="' + side + '"] .plabel');
-  if (label) label.textContent = folded ? folded.toFixed(0) : S;
+  // Artwork belongs to the track, so a local file clears whatever the last
+  // release put there rather than leaving a stale sleeve on the record.
+  setPlatterArt(side, (meta && meta.art) || null);
 
   platters[side].lastAt = 0;
   renderPads(side);
@@ -632,7 +674,14 @@ async function loadFromArchive(side, release, button) {
     const buffer = await ctx.decodeAudioData(bytes.buffer);
 
     show("analyse");
-    await loadBuffer(side, buffer, file.name, { title: prettyName(file.name), artist: release.artist });
+    // Artwork is fetched alongside, and its failure is ignored: a missing sleeve
+    // must never stop a track loading.
+    const art = await library.coverArt(release.id).catch(() => null);
+    await loadBuffer(side, buffer, file.name, {
+      title: prettyName(file.name),
+      artist: release.artist,
+      art
+    });
   } catch (err) {
     fail('Could not load "' + release.title + '": ' + err.message);
   } finally {

@@ -245,3 +245,64 @@ test("file URLs encode each path segment, so spaces and hashes survive", () => {
     "https://ia1.us.archive.org/1/items/X/a%20b/c%23d.mp3"
   );
 });
+
+/* ------------------------------------------------------------ cover art */
+
+const artMetadata = (files) => ({
+  ok: true,
+  status: 200,
+  json: async () => ({ server: "ia1.us.archive.org", dir: "/1/items/X", files })
+});
+
+test("an explicit cover beats any other image", async () => {
+  const { lib } = libraryWith(() =>
+    artMetadata([
+      { name: "insert.jpg", size: "1000" },
+      { name: "TAM033-Cover.jpg", size: "9000" },
+      { name: "back.png", size: "500" }
+    ])
+  );
+  assert.match(await lib.coverArt("X"), /TAM033-Cover\.jpg$/);
+});
+
+test("auto-generated spectrograms are never mistaken for artwork", async () => {
+  // Every audio file on the Archive gets a `_spectrogram.png`. Showing one as a
+  // record label would be a confident, wrong answer on most releases.
+  const { lib } = libraryWith(() =>
+    artMetadata([
+      { name: "01 Track_spectrogram.png", size: "40000" },
+      { name: "__ia_thumb.jpg", size: "3000" },
+      { name: "Cover1.jpg", size: "8000" }
+    ])
+  );
+  assert.match(await lib.coverArt("X"), /Cover1\.jpg$/);
+});
+
+test("a release with only spectrograms has no art, rather than a wrong one", async () => {
+  const { lib } = libraryWith(() => artMetadata([{ name: "a_spectrogram.png", size: "40000" }]));
+  assert.equal(await lib.coverArt("X"), null);
+});
+
+test("a release with no images at all returns null", async () => {
+  const { lib } = libraryWith(() => artMetadata([{ name: "a.mp3", size: "100" }]));
+  assert.equal(await lib.coverArt("X"), null);
+});
+
+test("artwork failure is silent, because it must not stop a track loading", async () => {
+  const lib = new ArchiveLibrary({
+    fetch: async () => {
+      throw new Error("ECONNREFUSED");
+    }
+  });
+  assert.equal(await lib.coverArt("X"), null, "a network failure returns null, not a throw");
+
+  const http = new ArchiveLibrary({ fetch: async () => ({ ok: false, status: 500, json: async () => ({}) }) });
+  assert.equal(await http.coverArt("X"), null);
+});
+
+test("a null answer is cached too, so a coverless release is asked about once", async () => {
+  const { lib, calls } = libraryWith(() => artMetadata([{ name: "a.mp3", size: "100" }]));
+  await lib.coverArt("X");
+  await lib.coverArt("X");
+  assert.equal(calls.length, 1);
+});

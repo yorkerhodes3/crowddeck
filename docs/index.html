@@ -562,7 +562,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 73 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 74 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -654,7 +654,7 @@
       <strong>Build has started — and it makes sound.</strong> The CDEP contract, a conformant stub engine,
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
-      <strong>Web Audio engine with two real decks</strong>. <strong>718 tests, 20 conformance checks</strong>,
+      <strong>Web Audio engine with two real decks</strong>. <strong>724 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -1082,6 +1082,18 @@
       cue would spin it the wrong way. Three visual bugs were found by looking at it — the platter escaped its
       row and covered the track title, hiding it on short screens collapsed the EQ faders with it, and the
       first version was too subtle to read from a metre away, which defeats the point of having one.
+      <br><br>
+      <strong>Then the artwork went on, and a much worse bug fell out of it.</strong> A previous note here
+      claimed the Archive had no reliable cover art. Checking rather than repeating it found sleeves on most
+      releases — and the CORS block on the Archive's image endpoint turned out to be irrelevant, because an
+      <span class="mono">&lt;img&gt;</span> needs CORS only if you read the pixels back, and nothing does.
+      With a visible label finally on the record, it became obvious that the disc was
+      <strong>swinging around a point outside itself</strong> rather than spinning in place — measured, 103px
+      right and 30px up. The cause: CSS <span class="mono">transform-origin: 50% 50%</span> resolves to 100
+      <em>CSS pixels</em>, while SVG's three-argument <span class="mono">rotate(angle 100 100)</span> uses 100
+      <em>user units</em>, which render at about 78px. The two combined into a translation. The CSS rule was
+      redundant — the SVG rotate already carries its own centre — and removing it fixed it. A plain dark disc
+      had hidden the whole thing.
     </div>
 
     <div class="callout" style="border-left-color: var(--info);">

@@ -71,6 +71,17 @@ const COMMERCIAL_LICENCE_QUERY =
 const PLAYABLE = /\.(mp3|ogg|oga|opus|flac|wav|m4a)$/i;
 
 /**
+ * Image files that are plausibly cover art.
+ *
+ * The Archive stores several images per item and most are not artwork: every
+ * audio file gets an auto-generated `_spectrogram.png`, and there are thumbnails
+ * and scanned inserts. Those are excluded by name, and remaining candidates are
+ * ranked so an explicit "cover" wins.
+ */
+const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
+const NOT_ARTWORK = /(_spectrogram|_thumb|__ia_thumb|_itemimage)/i;
+
+/**
  * Preferred ceiling for a first download.
  *
  * The Archive hosts continuous DJ mixes of 60 MB and more. They are legitimate
@@ -98,6 +109,8 @@ export class ArchiveLibrary {
     this.commercialOnly = opts.commercialOnly !== false;
     /** Resolved file lists, so picking a track twice does not re-fetch. */
     this.cache = new Map();
+    /** Resolved artwork URLs, including the null answers. */
+    this.artCache = new Map();
   }
 
   /**
@@ -262,6 +275,56 @@ export class ArchiveLibrary {
     this.cache.set(identifier, files);
     return files;
   }
+
+  /**
+   * Cover art for a release, or null — DJX-12.
+   *
+   * Returned as a URL for an `<img>`, deliberately not fetched. Reading the bytes
+   * would need CORS, and `archive.org/services/img/` does not send the header;
+   * an `<img>` element does not need it unless the pixels are read back, and
+   * nothing here reads them. That distinction is the whole reason artwork is
+   * possible at all.
+   *
+   * @param {string} identifier
+   * @param {{signal?: AbortSignal}} [opts]
+   * @returns {Promise<string|null>}
+   */
+  async coverArt(identifier, opts = {}) {
+    if (this.artCache.has(identifier)) return this.artCache.get(identifier);
+
+    let meta;
+    try {
+      const res = await this.fetch(METADATA_ENDPOINT + encodeURIComponent(identifier), {
+        signal: opts.signal
+      });
+      if (!res.ok) return null;
+      meta = await res.json();
+    } catch {
+      // Artwork is a nicety. A failure here must never stop a track loading.
+      return null;
+    }
+
+    const candidates = (meta?.files ?? []).filter(
+      (f) => IMAGE.test(f.name || "") && !NOT_ARTWORK.test(f.name) && Number(f.size) > 0
+    );
+    if (!candidates.length || !meta.server || !meta.dir) {
+      this.artCache.set(identifier, null);
+      return null;
+    }
+
+    candidates.sort((a, b) => rankArt(a) - rankArt(b));
+    const url = buildFileUrl(meta.server, meta.dir, candidates[0].name);
+    this.artCache.set(identifier, url);
+    return url;
+  }
+}
+
+/** An explicit "cover" beats "front" beats anything else; smaller files first. */
+function rankArt(file) {
+  const n = String(file.name).toLowerCase();
+  if (/cover/.test(n)) return 0;
+  if (/front|sleeve|artwork/.test(n)) return 1;
+  return 2;
 }
 
 /** `https://ia800708.us.archive.org/18/items/Foo/02 Bar.mp3`, encoded per segment. */
