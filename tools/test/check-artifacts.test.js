@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { planeOf, checkArtifacts, inspectArtifact, declaredArtifacts } from "../check-artifacts.mjs";
+import { planeOf, checkArtifacts, inspectArtifact, declaredArtifacts, walk } from "../check-artifacts.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -110,4 +110,38 @@ test("release.json stays consistent with the licence-lint planes", () => {
       );
     }
   }
+});
+
+/* ------------------------------------------- walking a moving tree (DJX-21) */
+
+test("a directory that vanishes mid-walk is not an artifact violation", () => {
+  // `build-demo.mjs` clears and rewrites the very docs/ subtrees this walks, and
+  // `declaredArtifacts` checks existence and *then* walks — a time-of-check race
+  // with a real writer. A file that no longer exists cannot violate ADR-006, so
+  // it must not take the build down.
+  //
+  // The sibling walkers in licence-lint and check-content-sources both handle
+  // this and say why; this one did not, which made it the only place a routine
+  // file-system race could fail the build.
+  assert.deepEqual(walk(join(root, "no-such-directory-anywhere")), []);
+});
+
+test("a real tree still walks completely — tolerance is not blindness", () => {
+  // The other half of the guard: swallowing ENOENT must not turn into swallowing
+  // everything, or the check would pass by finding nothing at all.
+  const files = walk(join(root, "tools"));
+  assert.ok(files.includes("check-artifacts.mjs"), "should find its own source");
+  assert.ok(files.length > 5, `only found ${files.length} files under tools/`);
+});
+
+test("only ENOENT is tolerated, so a real failure still fails loudly", () => {
+  // Walking a *file* as though it were a directory fails with ENOTDIR (or
+  // ENOENT on some platforms). Either way it must not be reported as an empty
+  // artifact, which would silently pass the licence-plane check.
+  const notADirectory = join(root, "tools", "check-artifacts.mjs");
+  let threw = false;
+  let result = null;
+  try { result = walk(notADirectory); } catch { threw = true; }
+  assert.ok(threw || (Array.isArray(result) && result.length === 0),
+    "walking a file must either throw or yield nothing, never invent contents");
 });

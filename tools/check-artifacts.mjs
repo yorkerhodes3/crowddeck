@@ -89,12 +89,40 @@ export function checkArtifacts(artifacts) {
   return violations;
 }
 
-function walk(dir, base = dir) {
+/**
+ * Walk the tree, tolerating a file that disappears mid-walk.
+ *
+ * `readdirSync` returns a snapshot, so an entry can be gone by the time we stat
+ * it — an editor saving, another test cleaning up a fixture, or `build-demo.mjs`
+ * clearing and rewriting the very `docs/` subtrees this walks. Crashing then
+ * reports an artifact-layout failure that has nothing to do with the artifact
+ * layout, and a file that no longer exists cannot violate ADR-006.
+ *
+ * The other two tree walkers in `tools/` already handle this and say so. This
+ * one did not, which made it the only place where a routine file-system race
+ * could take the build down. Kept deliberately narrow: only ENOENT is
+ * swallowed, so a permissions problem or a corrupt directory still fails loudly.
+ */
+export function walk(dir, base = dir) {
   const out = [];
-  for (const entry of readdirSync(dir)) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch (err) {
+    if (err.code === "ENOENT") return out;
+    throw err;
+  }
+  for (const entry of entries) {
     if (entry === "node_modules" || entry === ".git") continue;
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...walk(full, base));
+    let st;
+    try {
+      st = statSync(full);
+    } catch (err) {
+      if (err.code === "ENOENT") continue;
+      throw err;
+    }
+    if (st.isDirectory()) out.push(...walk(full, base));
     else out.push(relative(base, full).split(sep).join("/"));
   }
   return out;

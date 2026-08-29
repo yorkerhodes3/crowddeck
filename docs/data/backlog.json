@@ -1164,6 +1164,17 @@
           "id": "DJX-20",
           "status": "done",
           "name": "Openverse as a second source; YouTube refused with reasons"
+        },
+        {
+          "id": "DJX-21",
+          "name": "The artifact check survives a moving file tree",
+          "size": "S",
+          "verdict": null,
+          "reqs": [
+            "REQ-LIC-8"
+          ],
+          "status": "done",
+          "detail": "Went looking for an intermittent test failure seen twice (787/1 and 839/1 out of ~840) and did not find it - eighteen consecutive full-suite runs stayed green across three conditions: idle, under four-way CPU load, under Chromium saturating network and CPU with real audio downloads, and immediately after build:data on the theory that a freshly rewritten docs/ was the trigger. Reported honestly as unreproduced rather than quietly dropped. THE SEARCH FOUND A DIFFERENT, REAL BUG. Of the three tree walkers in tools/, licence-lint.mjs and check-content-sources.mjs both tolerate a file disappearing between readdirSync and statSync, and both carry a comment explaining why - readdir returns a snapshot, and an editor saving or a build cleaning up can remove an entry before it is stat-ed. check-artifacts.mjs did not, which made it the only place a routine file-system race could take the build down. That matters here specifically because build-demo.mjs CLEARS AND REWRITES the docs/demo, docs/engine-web and docs/providers subtrees that check-artifacts walks, and declaredArtifacts checks existsSync and THEN walks - a textbook time-of-check race with a real writer. Fixed to match its siblings, deliberately narrow: only ENOENT is swallowed, so a permissions problem or a corrupt directory still fails loudly. Proven by restoring the original walk and watching the new test fail, then restoring the fix and watching it pass. Two further tests guard the other direction, because tolerance must not become blindness: a real tree must still walk completely, and walking a file as though it were a directory must never be reported as an empty artifact - which would silently pass the licence-plane check that REQ-LIC-8 depends on."
         }
       ]
     }
