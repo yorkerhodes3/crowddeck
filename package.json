@@ -13,7 +13,7 @@
     "test": "node --test \"protocol/test/**/*.test.js\" \"engine-stub/test/**/*.test.js\" \"core/test/**/*.test.js\" \"engine-web/test/**/*.test.js\" \"data/test/**/*.test.js\" \"providers/test/**/*.test.js\" \"api/test/**/*.test.js\" \"interconnect/test/**/*.test.js\" \"clients/test/**/*.test.js\" \"spike/spike-2/test/**/*.test.js\" \"tools/test/**/*.test.js\"",
     "conformance": "node conformance/bin/cdep-conformance.js --engine engine-stub",
     "lint:licence": "node tools/licence-lint.mjs",
-    "build:data": "node tools/extract-requirements.mjs && node tools/build-backlog.mjs && node tools/build-data.mjs",
+    "build:data": "node tools/extract-requirements.mjs && node tools/build-backlog.mjs && node tools/build-data.mjs && node tools/build-demo.mjs",
     "check": "npm run lint:licence && npm run lint:artifacts && npm run lint:sources && npm test && npm run conformance",
     "lint:artifacts": "node tools/check-artifacts.mjs",
     "lint:sources": "node tools/check-content-sources.mjs"

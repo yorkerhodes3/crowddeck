@@ -3,10 +3,15 @@
 **An open-source venue runtime that runs a professional DJ deck engine and a TouchTunes-style crowd request
 jukebox on one scheduler, one library and one clock — wired together by MIDI.**
 
+> ## ▶ [**Open the live deck — it plays music →**](https://yorkerhodes3.github.io/crowddeck/demo/)
+>
+> Two decks, waveforms, hot cues, beat loops, three-band EQ, crossfader and sync — running **entirely in your
+> browser**, with a built-in library of openly-licensed music. Or drop in your own files; nothing is uploaded.
+>
 > ## 📊 [**View the project dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
 >
 > The dashboard is the recommended way to read this project: an interactive capability matrix, a filterable
-> open-source triage table, the proposed architecture, and browsable views of all 123 requirements and 70
+> open-source triage table, the proposed architecture, and browsable views of all 123 requirements and 74
 > backlog stories.
 
 ---

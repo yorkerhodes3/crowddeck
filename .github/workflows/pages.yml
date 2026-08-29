@@ -8,6 +8,12 @@ on:
       - "tools/**"
       - "SPECIFICATION.md"
       - ".github/workflows/pages.yml"
+      # The playable demo is assembled from these at build time, so a change to
+      # the deck or the engine must redeploy the page. Without them the published
+      # demo silently drifts behind the code it is supposed to demonstrate.
+      - "clients/deck/**"
+      - "engine-web/**"
+      - "providers/src/cc-licence.js"
   workflow_dispatch:
 
 permissions:
@@ -40,6 +46,13 @@ jobs:
 
       - name: Build data bundle
         run: node tools/build-data.mjs
+
+      # Assembles the playable deck into docs/. Fails the build if any module the
+      # demo imports is missing, so a broken demo cannot be published — the link
+      # would still resolve and the page would still render, and the first symptom
+      # would be a blank deck for whoever opened it.
+      - name: Build playable demo
+        run: node tools/build-demo.mjs
 
       - name: Verify generated files are current
         run: |
