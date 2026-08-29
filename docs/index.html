@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 75 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 76 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -664,8 +664,8 @@
       <strong>Build has started — and it makes sound.</strong> The CDEP contract, a conformant stub engine,
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
-      <strong>Web Audio engine with two real decks, with working key lock</strong>.
-      <strong>746 tests, 20 conformance checks</strong>,
+      <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
+      <strong>764 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -737,6 +737,43 @@
       exactly what a per-channel decision amounts to, drifted by 4 and <em>passed</em>. The property that
       actually separates them is <em>stability</em>: the shared decision holds the delay perfectly constant
       while per-channel wanders by 3 samples.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-14 — key detection, and knowing when not to answer.</strong> Key lock holds a track's key
+      while the tempo moves. This answers the other half: <em>what key is it in?</em> Without that there is no
+      harmonic mixing — no way to know the record you are about to bring in clashes with the one already
+      playing. Each deck now shows a <strong>Camelot code</strong>, and the two badges turn green when the
+      decks mix and red when they do not.
+      <br><br>
+      <strong>Verified on real audio, not just synthetic:</strong> two Internet Archive tracks read as
+      <strong>A major (11B)</strong> and <strong>D major (10B)</strong> — one step apart on the wheel — and
+      were correctly shown as compatible.
+      <br><br>
+      <strong>Goertzel, not an FFT</strong>, for the same reason key lock avoided a phase vocoder: an FFT
+      means a dependency or a few hundred lines to prove, and it computes every bin when only 72 are wanted.
+      A Goertzel filter costs about one multiply-add per sample per frequency and lines the bins up with
+      <em>semitones</em> rather than a linear grid — which matters, because uniform FFT spacing is far too
+      coarse in the bass to separate adjacent semitones.
+      <br><br>
+      <strong>It refuses to guess, on two gates, and both were needed.</strong> A tonality gate rejects flat
+      chroma: measured, tonal material scores 2.7–3.3 while drums and noise score 1.20–1.32, so the 1.6
+      threshold sits in the gap rather than on top of either population. A margin gate then rejects answers
+      where two keys fit about equally well. The second is <em>not</em> redundant — a single sustained note
+      scores <strong>11.07</strong> on tonality, far above the threshold, and is still refused, because one
+      note fits a dozen keys within 0.012. Musically that is the right answer: a note does not establish a
+      key, a progression does.
+      <br><br>
+      This is the same discipline the tempo detector learned when autocorrelation confidently reported 150
+      BPM for a sine tone. <strong>The failure that matters is not being wrong — it is being confidently
+      wrong</strong>, because a DJ who trusts a key badge will mix two records that clash and not know why.
+      Stated plainly: this is classical chroma matching, not a modern learned model, and real tracks scored
+      1.83 against that 1.6 gate — a narrower margin than the synthetic tests suggest.
+      <br><br>
+      <strong>And a test of mine measured nothing while looking fine.</strong> The first real-track check
+      waited for <span class="mono">analysis.a.duration &gt; 0</span>, which was <em>already true</em> from an
+      earlier synthetic load — so it returned instantly and reported stale data. Caught only because the
+      confidence matched the previous run to seventeen decimal places.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

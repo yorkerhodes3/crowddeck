@@ -114,9 +114,13 @@ to a wrong answer.
 
 ## What it does not do yet
 
-- **Key detection.** Nothing reads the musical key of a track, so there is no
-  harmonic-mixing guidance. Key *lock* is implemented; knowing what the key *is* is
-  not.
+- **Key detection is present but modest.** `src/key.js` reports a Camelot code and
+  refuses when the material is not tonal enough. It is chroma plus
+  Krumhansl–Schmuckler, which is the classical approach, not a modern
+  learned one — expect it to be right most of the time on clearly tonal music and
+  to say *unknown* on a lot of percussive material. Real tracks measured 1.83 on
+  the tonality gate against a threshold of 1.6, which is a narrower margin than
+  the synthetic tests suggest.
 - **Recording the mix.**
 - **`DJX-2`, CDEP over WebSocket.** The browser currently runs the engine and the
   UI together, so nothing crosses a socket. That story is what connects the deck

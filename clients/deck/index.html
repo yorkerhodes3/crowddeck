@@ -137,6 +137,11 @@
   button.cue { color:var(--warn); }
   button.load { background:transparent; border-style:dashed; color:var(--txt2); font-size:12.5px; }
   .lockrow { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  /* Green only when the two loaded decks actually mix harmonically — the whole
+     point of showing a key is the comparison, not the label. */
+  .keyval.match { color:var(--a); }
+  .keyval.clash { color:var(--hot); }
+  .keyval.unknown { color:var(--txt3); }
   button.keylock { font-size:12.5px; color:var(--txt3); }
   button.keylock.on { background:rgba(124,108,255,.20); border-color:var(--b); color:#b9b0ff; }
   button.keylock[disabled] { opacity:.4; cursor:not-allowed; }
@@ -212,6 +217,7 @@
     </div>
     <div class="readout">
       <span>bpm <b id="bpmA">—</b></span>
+      <span>key <b id="keyA" class="keyval">—</b></span>
       <span>pos <b id="posA">0:00</b></span>
       <span>pitch <b id="pitchA">0.0%</b></span>
     </div>
@@ -270,6 +276,7 @@
     </div>
     <div class="readout">
       <span>bpm <b id="bpmB">—</b></span>
+      <span>key <b id="keyB" class="keyval">—</b></span>
       <span>pos <b id="posB">0:00</b></span>
       <span>pitch <b id="pitchB">0.0%</b></span>
     </div>
@@ -331,6 +338,7 @@ import { WebEngine } from "../engine-web/src/web-engine.js";
 import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatter } from "../engine-web/src/analyse.js";
 import { eqKnobToDb } from "../engine-web/src/mixer.js";
 import { ArchiveLibrary } from "../engine-web/src/library.js";
+import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
 
 const GROUP = { a: "[Channel1]", b: "[Channel2]" };
 const $ = (id) => document.getElementById(id);
@@ -550,8 +558,9 @@ async function loadBuffer(side, buffer, name, meta) {
   const folded = foldTempo(bpm);
   const cue = firstAudible(mono, buffer.sampleRate);
   const peaks = waveformPeaks(mono, 1400);
+  const key = detectKey(mono, buffer.sampleRate);
 
-  analysis[side] = { peaks, bpm: folded, duration: buffer.duration, cue };
+  analysis[side] = { peaks, bpm: folded, duration: buffer.duration, cue, key };
   eng.deck(GROUP[side]).load(buffer, { id: name, bpm: folded, cuePoint: cue });
 
   const S = side.toUpperCase();
@@ -570,6 +579,49 @@ async function loadBuffer(side, buffer, name, meta) {
   renderPads(side);
   renderLoops(side);
   drawWave(side);
+  renderKeys();
+}
+
+/**
+ * Show each deck's key, and whether the two mix.
+ *
+ * Rendered for both decks together rather than for the one just loaded, because
+ * compatibility is a relationship: loading deck B changes what deck A's badge
+ * should say.
+ */
+function renderKeys() {
+  const codes = {};
+  for (const side of ["a", "b"]) {
+    const k = analysis[side] && analysis[side].key;
+    codes[side] = k && k.camelot ? k.camelot : null;
+    const el = $("key" + side.toUpperCase());
+    if (!el) continue;
+    if (!analysis[side]) {
+      el.textContent = "—";
+      el.className = "keyval";
+      el.title = "";
+    } else if (!codes[side]) {
+      // Named rather than blank. "unknown" is a finding — this track has no
+      // stable key — and hiding it would look like the feature was broken.
+      el.textContent = "unknown";
+      el.className = "keyval unknown";
+      el.title = (k && k.reason) || "no key detected";
+    } else {
+      el.textContent = codes[side] + " · " + k.key;
+      el.className = "keyval";
+      el.title = `${k.key} (Camelot ${k.camelot}), confidence ${(k.confidence * 100).toFixed(0)}%`;
+    }
+  }
+
+  if (!codes.a || !codes.b) return;
+  const ok = camelotCompatible(codes.a, codes.b);
+  for (const side of ["a", "b"]) {
+    const el = $("key" + side.toUpperCase());
+    el.className = "keyval " + (ok ? "match" : "clash");
+    el.title += ok
+      ? " — mixes harmonically with the other deck"
+      : " — clashes with the other deck; try the ±1 neighbours or its relative";
+  }
 }
 window.__loadBuffer = loadBuffer;
 
