@@ -846,6 +846,16 @@
       the audio thread <em>while music is playing</em>), stoppable, and skipping anything over 12 MB rather
       than pulling a 60 MB DJ mix to browse it. Results are <strong>ranked, never filtered</strong>: a list
       that empties itself is worse than one that puts the good matches on top.
+      <br><br>
+      <strong>And then a defect found by asking whether the ranking follows the decks.</strong> It did not:
+      the list was drawn on search and on scan completion, but never on track load — so after loading a
+      140 BPM record the header still read <em>"under 100.0 BPM"</em> and still recommended the 100 BPM
+      track. An actively wrong recommendation rather than a missing one. The fix is split on purpose: loading
+      a different record <strong>re-sorts</strong>, because the question "what should I play next" has
+      genuinely changed, while moving the pitch fader updates <strong>only the numbers</strong> — re-sorting
+      on every frame of a fader drag would make the rows jump under the finger dragging them. Both halves
+      verified: a new record flipped the order, a +4% fader move held it and moved the labels from
+      <span class="mono">+0.0 / −2.3 / +3.2</span> to <span class="mono">+4.0 / +1.6 / +7.4</span>.
     </div>
 
     <div class="callout hot">

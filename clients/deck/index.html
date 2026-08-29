@@ -682,6 +682,9 @@ function renderResults() {
   // matches is worse than one that simply puts the good matches at the top.
   const leader = matchOn ? leaderBpm() : null;
   const ordered = matchOn ? rankByTempo(results, leader) : results;
+  // Kept so a later label refresh can map a row back to its record without
+  // re-sorting; reading the DOM order alone would silently mismatch.
+  renderedOrder = ordered;
 
   for (const r of ordered) {
     const row = document.createElement("div");
@@ -770,6 +773,8 @@ function renderResults() {
 let matchOn = false;
 let scanning = false;
 let scanAbort = null;
+/** The order the rows are currently drawn in, for in-place label updates. */
+let renderedOrder = [];
 
 /**
  * The tempo to match against: whichever deck is playing.
@@ -777,20 +782,74 @@ let scanAbort = null;
  * Its *effective* tempo, including the pitch fader, because that is what the
  * new record actually has to sit under. Matching the track's written BPM while
  * the fader sits at +6% would recommend records that are audibly out.
+ *
+ * The identity is returned alongside it so the list can tell a *different
+ * record* from *the same record with the fader moved* — the first should
+ * re-sort, the second must not, or the rows would shuffle under your finger
+ * while you nudge the pitch.
  */
-function leaderBpm() {
-  if (!engine) return null;
+function leaderInfo() {
+  if (!engine) return { bpm: null, id: null };
+  const consider = (deck, side) => ({
+    bpm: deck.bpm ? deck.bpm * deck.playbackRate : null,
+    // The record's *own* tempo is part of the identity, not the effective one.
+    // A new record — or a re-analysis that lands on a different tempo — is a new
+    // matching question and should re-sort. Moving the pitch fader changes only
+    // the effective tempo, and must not.
+    id: side + ":" + (deck.trackId ?? "") + ":" + (deck.bpm ?? "")
+  });
   for (const side of ["a", "b"]) {
     const deck = engine.deck(GROUP[side]);
-    if (deck && deck.playing && deck.bpm) return deck.bpm * deck.playbackRate;
+    if (deck && deck.playing && deck.bpm) return consider(deck, side);
   }
   // Nothing playing: fall back to whatever is loaded, so the list is still
   // useful while cueing up the first record of the night.
   for (const side of ["a", "b"]) {
     const deck = engine.deck(GROUP[side]);
-    if (deck && deck.bpm) return deck.bpm * deck.playbackRate;
+    if (deck && deck.bpm) return consider(deck, side);
   }
-  return null;
+  return { bpm: null, id: null };
+}
+
+function leaderBpm() {
+  return leaderInfo().bpm;
+}
+
+/**
+ * Keep the tempo column honest as the decks change.
+ *
+ * Split in two deliberately. Loading a different record is a discrete decision
+ * point, so the list **re-sorts**: the whole question "what should I play next"
+ * has changed. Moving the pitch fader is continuous, so only the **numbers**
+ * update — re-sorting on every frame of a fader drag would make the rows jump
+ * around under the finger that is dragging them.
+ */
+let lastLeaderId = null;
+let lastLeaderBpm = null;
+
+function syncTempoColumn() {
+  if (!matchOn || scanning) return;
+  const leader = leaderInfo();
+  if (leader.id !== lastLeaderId) {
+    lastLeaderId = leader.id;
+    lastLeaderBpm = leader.bpm;
+    renderResults();
+    $("matchstate").textContent = describeLeader();
+    return;
+  }
+  if (leader.bpm !== lastLeaderBpm) {
+    lastLeaderBpm = leader.bpm;
+    for (const [index, row] of [...document.querySelectorAll(".lrow")].entries()) {
+      const el = row.querySelector(".lbpm");
+      const item = renderedOrder[index];
+      if (!el || !item || item.bpm == null) continue;
+      const match = tempoMatch(leader.bpm, item.bpm);
+      el.className = "lbpm " + (match.mixable ? "match" : "clash");
+      el.textContent = item.bpm.toFixed(1) + (leader.bpm ? " " + formatTempoMatch(match) : "");
+      row.classList.toggle("dim", Boolean(leader.bpm) && !match.mixable);
+    }
+    $("matchstate").textContent = describeLeader();
+  }
 }
 
 $("match").addEventListener("click", async () => {
@@ -805,6 +864,8 @@ $("match").addEventListener("click", async () => {
   btn.classList.toggle("on", matchOn);
   if (!matchOn) {
     $("matchstate").textContent = "";
+    lastLeaderId = null;
+    lastLeaderBpm = null;
     renderResults();
     return;
   }
@@ -815,6 +876,9 @@ async function scanTempos() {
   const pending = results.filter((r) => r.bpm == null && !r.bpmScanned);
   renderResults();
   if (!pending.length) {
+    const settled = leaderInfo();
+    lastLeaderId = settled.id;
+    lastLeaderBpm = settled.bpm;
     $("matchstate").textContent = describeLeader();
     return;
   }
@@ -850,6 +914,11 @@ async function scanTempos() {
   scanning = false;
   scanAbort = null;
   $("match").textContent = "⇄ MATCH BPM";
+  // Seeded so the follow-the-decks check does not immediately redraw what was
+  // just drawn.
+  const settled = leaderInfo();
+  lastLeaderId = settled.id;
+  lastLeaderBpm = settled.bpm;
   $("matchstate").textContent = describeLeader();
   renderResults();
 }
@@ -1481,6 +1550,9 @@ function render() {
       if (analysis[side]) drawWave(side);
     }
     spinPlatters();
+    // The browse list's tempo column has to follow the decks, or it recommends
+    // records that suited the record you were playing ten minutes ago.
+    syncTempoColumn();
     $("meter").style.width = Math.min(100, engine.masterLevel() * 100) + "%";
     $("ctxstate").textContent = "audio: " + ctx.state;
   }
