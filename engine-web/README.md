@@ -114,14 +114,15 @@ to a wrong answer.
 
 ## What it does not do yet
 
-- **Key detection is present but modest.** `src/key.js` reports a Camelot code and
-  refuses when the material is not tonal enough. It is chroma plus
+- **Key detection is present but modest.** `src/key.js` reports a Camelot code and  refuses when the material is not tonal enough. It is chroma plus
   Krumhansl–Schmuckler, which is the classical approach, not a modern
   learned one — expect it to be right most of the time on clearly tonal music and
   to say *unknown* on a lot of percussive material. Real tracks measured 1.83 on
   the tonality gate against a threshold of 1.6, which is a narrower margin than
   the synthetic tests suggest.
-- **Recording the mix.**
+- **Recording is lossy.** `src/record.js` uses MediaRecorder, so a set is Opus in
+  WebM rather than a WAV. That is deliberate — see the file for the arithmetic —
+  but if you want a lossless master, this does not give you one.
 - **`DJX-2`, CDEP over WebSocket.** The browser currently runs the engine and the
   UI together, so nothing crosses a socket. That story is what connects the deck
   to the Node scheduler and the jukebox half of the product.

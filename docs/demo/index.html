@@ -142,6 +142,10 @@
   .keyval.match { color:var(--a); }
   .keyval.clash { color:var(--hot); }
   .keyval.unknown { color:var(--txt3); }
+  button.rec { color:var(--hot); }
+  button.rec.on { background:rgba(255,92,122,.18); border-color:var(--hot); color:#ff8ea3; }
+  button.rec[disabled] { opacity:.4; cursor:not-allowed; }
+  .rechint { font-size:10.5px; color:var(--txt3); text-align:center; margin-top:4px; letter-spacing:.04em; }
   button.keylock { font-size:12.5px; color:var(--txt3); }
   button.keylock.on { background:rgba(124,108,255,.20); border-color:var(--b); color:#b9b0ff; }
   button.keylock[disabled] { opacity:.4; cursor:not-allowed; }
@@ -266,6 +270,8 @@
       <div class="xf" id="xf"><div class="cap"></div></div>
     </div>
     <button id="center">CENTRE</button>
+    <button id="rec" class="rec">● REC</button>
+    <div class="rechint" id="rechint">records the master mix</div>
   </section>
 
   <section class="deck" data-side="b" id="deckB">
@@ -339,6 +345,7 @@ import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatt
 import { eqKnobToDb } from "../engine-web/src/mixer.js";
 import { ArchiveLibrary } from "../engine-web/src/library.js";
 import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
+import { MixRecorder, formatElapsed } from "../engine-web/src/record.js";
 
 const GROUP = { a: "[Channel1]", b: "[Channel2]" };
 const $ = (id) => document.getElementById(id);
@@ -887,6 +894,90 @@ for (const btn of document.querySelectorAll("[data-cue]")) {
     ensureAudio().set(GROUP[btn.dataset.cue], "cue_gotoandplay", 1);
   });
 }
+
+/* ========================================================== recording */
+
+const recorder = new MixRecorder({
+  createRecorder: (stream, opts) =>
+    typeof MediaRecorder === "function" ? new MediaRecorder(stream, opts) : null,
+  isTypeSupported: (t) =>
+    typeof MediaRecorder === "function" && MediaRecorder.isTypeSupported(t)
+});
+
+let recTimer = null;
+
+function updateRecLabel() {
+  $("rec").textContent = "■ STOP " + formatElapsed(recorder.elapsedSeconds);
+}
+
+/**
+ * Hand the finished recording straight to the browser's downloads.
+ *
+ * Not offered as a link to click later: the set exists only in this tab, and a
+ * reload loses it. Downloading immediately is the only way it survives.
+ */
+function saveRecording(result) {
+  const url = URL.createObjectURL(result.blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = result.filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoked on a delay: revoking immediately can cancel the download in some
+  // browsers, which loses the file at the very last step.
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+$("rec").addEventListener("click", async () => {
+  const eng = ensureAudio();
+  const btn = $("rec");
+
+  if (recorder.state === "recording") {
+    clearInterval(recTimer);
+    recTimer = null;
+    btn.classList.remove("on");
+    btn.textContent = "● REC";
+    const result = await recorder.stop();
+    if (!result) {
+      fail("Recording produced no audio — nothing was playing, or the browser stopped it early.");
+      $("rechint").textContent = "records the master mix";
+      return;
+    }
+    saveRecording(result);
+    $("rechint").textContent = `saved ${result.filename} · ${formatElapsed(result.seconds)}`;
+    return;
+  }
+
+  if (!recorder.supported) {
+    fail("Recording unavailable — this browser has no MediaRecorder that can encode audio.");
+    btn.disabled = true;
+    return;
+  }
+
+  const stream = eng.createRecordingTap();
+  if (!stream || !recorder.start(stream)) {
+    fail("Could not start recording" + (recorder.error ? ` — ${recorder.error.message}` : "."));
+    return;
+  }
+  btn.classList.add("on");
+  $("rechint").textContent = "recording the master mix";
+  updateRecLabel();
+  // A plain interval rather than the animation frame loop: recording must keep
+  // counting when the tab is in the background, which is exactly when rAF stops.
+  recTimer = setInterval(updateRecLabel, 500);
+});
+
+/*
+  A set that is still recording must not vanish because a tab was closed by
+  reflex. The browser only allows a generic prompt, but a generic prompt is
+  enough to stop the reflex.
+*/
+window.addEventListener("beforeunload", (event) => {
+  if (recorder.state !== "recording") return;
+  event.preventDefault();
+  event.returnValue = "";
+});
 
 for (const btn of document.querySelectorAll("[data-sync]")) {
   btn.addEventListener("click", () => {

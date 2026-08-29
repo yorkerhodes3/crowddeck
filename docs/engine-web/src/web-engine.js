@@ -493,6 +493,8 @@ export class WebEngine {
     this.keylockReady = false;
     /** The insert's delay, in seconds, once known. */
     this.keylockLatencySeconds = 0;
+    /** @type {MediaStreamAudioDestinationNode|null} */
+    this.recordingTap = null;
     this.refresh();
   }
 
@@ -554,6 +556,27 @@ export class WebEngine {
     this.keylockReady = true;
     this.keylockLatencySeconds = keylockLatencySamples() / this.ctx.sampleRate;
     return true;
+  }
+
+  /**
+   * A parallel tap of the master bus, for recording.
+   *
+   * Taken **downstream of the limiter**, so what is captured is what was
+   * actually heard rather than a pre-limiter mix that clips on playback.
+   *
+   * Connected in parallel rather than in series, deliberately: if the recorder
+   * were in the signal path, a recording failure would become an audio failure,
+   * and silence in front of people is far worse than a lost file.
+   *
+   * @returns {MediaStream|null} null where the browser cannot do it.
+   */
+  createRecordingTap() {
+    if (typeof this.ctx.createMediaStreamDestination !== "function") return null;
+    if (!this.recordingTap) {
+      this.recordingTap = this.ctx.createMediaStreamDestination();
+      this.analyser.connect(this.recordingTap);
+    }
+    return this.recordingTap.stream;
   }
 
   /** Push every control value into the audio graph. */

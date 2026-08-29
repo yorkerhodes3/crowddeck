@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 77 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 78 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>769 tests, 20 conformance checks</strong>,
+      <strong>788 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -791,6 +791,34 @@
       Corrected only while <em>playing</em>: a paused deck emits nothing, so its playhead should show where it
       will resume from, and subtracting there would make cueing appear to set the cue point early. Clamped at
       zero, because the first 59ms is the case where the correction exceeds the position itself.
+    </div>
+
+    <div class="callout hot">
+      <strong>DJX-16 — record the mix, and the arithmetic that chose the format.</strong> The last thing the
+      reference application did that this did not. A practice set you cannot keep is worth much less than one
+      you can — and recording is the only honest way to hear your own mixing, since in the moment you are
+      concentrating on the next track rather than on the blend you just made.
+      <br><br>
+      <strong>Verified by decoding it back, not by checking the file exists:</strong> a 3.84s stereo 48 kHz
+      recording came back with a fundamental of <strong>exactly 330.0 Hz</strong> — the tone that was playing.
+      A file of the right size can still be silence.
+      <br><br>
+      <strong>MediaRecorder rather than writing a WAV</strong>, and the arithmetic decides it. Stereo 48 kHz
+      float is about 11 MB per minute, so a two-hour set is <strong>1.3 GB held in a browser tab</strong>.
+      That does not degrade gracefully — it crashes the tab, and it crashes it at the <em>end</em> of a long
+      set, which is the worst possible moment to lose a recording. Compressed chunks cost tens of megabytes an
+      hour. <em>Lossy but it survives</em> is the right way round for something whose entire purpose is not to
+      lose your set.
+      <br><br>
+      <strong>It taps; it does not sit in the path.</strong> Connected in parallel with the speakers and
+      downstream of the limiter, so it captures what was actually heard. In series, a recording failure would
+      become an <em>audio</em> failure — and silence in front of people is far worse than a lost file.
+      <br><br>
+      Three smaller decisions, each guarding a silent failure. Chunks are requested every second rather than
+      only at the end, so a tab that dies mid-set leaves something recoverable. Empty chunks are discarded,
+      because some players stop at the first zero-length block rather than skipping it — turning a good
+      recording into a silent one. And filenames carry local time <em>to the second</em>, so two takes a
+      minute apart cannot quietly overwrite each other.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">
