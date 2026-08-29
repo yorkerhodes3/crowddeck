@@ -33,7 +33,7 @@
 </header>
 
 <div class="wrap hero">
-  <span class="eyebrow">Planning Complete · Build Started · SPIKE-1 Assumption Verified</span>
+  <span class="eyebrow">Planning Complete · Build Under Way · <strong>Audio Working in the Browser</strong></span>
   <h1>The DJ booth and the jukebox have never shared <em>one machine</em>.</h1>
   <p class="lede">
     CrowdDeck is a concept for an open-source venue runtime that runs a professional multi-deck DJ engine
@@ -316,6 +316,13 @@
         iPhone — and Chrome 124+ gates the whole API behind a permission prompt over HTTPS. Combined with
         20–30 ms desktop and 50–100 ms mobile Web Audio round-trip latency, the browser is a fine surface for
         patrons and for mapping UI, and an unacceptable one for the performance engine.</p>
+        <p><strong>Amended by M7 — the second half of that was too strong.</strong> The Web MIDI half stands:
+        Safari still has no Web MIDI, so the browser cannot be <em>the</em> interconnect path. But
+        "unacceptable for the performance engine" was an inference from mobile latency figures applied to
+        every case. On a desktop, Web Audio drives two decks, three-band EQ, loops and beatmatched sync well
+        enough to DJ with — <strong>measured, not assumed</strong>, and now the shipping engine for the
+        standalone deck. It remains unacceptable for scratching, and for a venue appliance that must run
+        headless.</p>
       </div>
     </div>
 
@@ -549,13 +556,13 @@
     <span class="status">✅</span>
     <div class="ph">Phase 2 · complete</div>
     <h4>SPECIFICATION.md</h4>
-    <p>120 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
+    <p>122 requirements and 18 acceptance criteria. Opens with the CDEP engine contract, because everything else is built against it.</p>
       </div>
   <div class="gate done">
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>11 epics, 61 stories across 7 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 70 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -578,7 +585,7 @@
 <section id="spec">
   <div class="wrap">
     <div class="sec-num">11 — SPECIFICATION</div>
-    <h2>120 requirements, traced to the research</h2>
+    <h2>122 requirements, traced to the research</h2>
     <p>
       Phase 2 converts the capability set into testable requirements against the six ratified decisions.
       The first section written was the <strong>engine IPC contract</strong>, because everything else is
@@ -644,13 +651,64 @@
     </div>
 
     <div class="callout" style="border-left-color: var(--accent);">
-      <strong>Build has started — and it runs.</strong> The CDEP contract, a conformant stub engine, the
-      conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API with
-      live push, working patron / DJ / display clients, and the <strong>MIDI interconnect</strong> —
-      identity-stable ports, soft-takeover, mappings that target CDEP, a 24 PPQN clock, and live
-      instruments as queueable sources. <strong>690 tests, 20 conformance checks</strong>, zero
-      dependencies, all green in CI. <span class="mono">engine/</span> stays deliberately empty until
-      <span class="mono">SPIKE-1</span>, so <strong>nothing is audible yet</strong>.
+      <strong>Build has started — and it makes sound.</strong> The CDEP contract, a conformant stub engine,
+      the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
+      with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
+      <strong>Web Audio engine with two real decks</strong>. <strong>690 tests, 20 conformance checks</strong>,
+      zero dependencies, all green in CI.
+      <br><br>
+      This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
+      that needs MSVC, Qt6 and CMake. <span class="mono">engine/</span> is still deliberately empty — but
+      audio is no longer waiting on it, because the browser turned out to be a perfectly good audio engine.
+      See <span class="mono">M7</span> below.
+    </div>
+
+    <div class="callout hot">
+      <strong>M7 — the goal changed, and the blocker evaporated.</strong> The brief became concrete: <em>walk
+      into the office on Monday and replace a commercial DJ application, in a browser, on a touchscreen
+      desktop that lies flat.</em> No venue, no MIDI hardware, no native toolchain.
+      <br><br>
+      Every remaining path to audio ran through <span class="mono">E7</span>, the Mixxx fork — MSVC, Qt6,
+      CMake, hours of first build, none of it available. Then the obvious thing:
+      <strong>Web Audio gives sample-accurate scheduling, per-deck gain, biquad filters and playback-rate
+      control. That is a mixer.</strong> The blocker was an assumption, not a fact.
+      <br><br>
+      It would have been quicker to write a one-off. Writing it against <strong>CDEP</strong> instead means
+      the scheduler, policy engine and queue drive it unchanged, and it becomes the
+      <strong>second independent implementation of the contract</strong> — the strongest evidence yet for
+      <span class="mono">REQ-LIC-5</span>, that the engine really is replaceable. It also removes the licence
+      question entirely for this path: there is no Mixxx in it, so <span class="mono">ADR-001</span>'s plane
+      boundary does not even arise.
+      <br><br>
+      <strong>Measured in a real browser, not asserted:</strong> 0.796 peak with the crossfader on deck A and
+      exactly 0.0 on deck B · a 60 Hz tone attenuated <strong>50.2 dB</strong> by the bass kill · a 128 BPM
+      track detected as 127.84 · 125 BPM synced to 127.84 leaving a tempo gap of <strong>0</strong> · a
+      4-beat loop at 119.7 BPM measuring 2.005 s with the source node genuinely looping.
+    </div>
+
+    <div class="callout" style="border-left-color: var(--warn);">
+      <strong>Five bugs that only appeared when the thing was played.</strong> Every one was invisible to
+      reading and to unit tests, and every one would otherwise have been found on stage.
+      <br><br>
+      <strong>A sine tone was detected as 150 BPM.</strong> Autocorrelation always has a maximum, so it
+      reports a confident tempo for material with no beat at all. Worse, the peak turns out to be
+      <em>inversely</em> related to whether a beat exists — measured, a pure tone scored <strong>1.00</strong>
+      and a real 128 BPM click track <strong>0.66</strong>, because a drone's onset envelope is tiny numerical
+      ripple that is itself highly periodic. Gating on it would have rejected every real beat and accepted
+      every drone. The discriminator is the onset envelope's <strong>crest factor</strong>: 29–55 for beats,
+      3–6 for tones and noise, so the threshold sits in an empty gap between two populations.
+      <br><br>
+      <strong>The whole display froze while the audio kept playing.</strong>
+      <span class="mono">requestAnimationFrame</span> does not fire in a page that is not being composited,
+      which stopped the playhead, the meters and the cue lights dead. A frozen playhead is worse than no
+      playhead, because it still looks live. A watchdog now drives the render when rAF goes quiet — and the
+      first version of that watchdog guarded on <span class="mono">document.hidden</span>, so it did nothing
+      in exactly the case it existed for.
+      <br><br>
+      Also: rapid EQ moves were being misread as double-tap-to-reset and snapping the band back to unity
+      mid-mix; a fixed 300 px mixer column pushed deck B's transport off the screen edge; and EQ unity sat at
+      25% of fader travel, so a neutral EQ <em>looked</em> cut — on hardware neutral is the centre detent, and
+      that is what a hand expects.
     </div>
 
     <div class="callout" style="border-left-color: var(--accent-2);">
@@ -1055,9 +1113,11 @@
 <footer>
   <div class="wrap">
     <p>
-      <strong>CrowdDeck — planning complete, build under way.</strong> Concept research, six ratified
-      decisions, 120 specified requirements, a 61-story sequenced backlog, and a working CDEP contract with
-      a conformant stub engine. The Mixxx fork comes after the de-risking spike, not before it.
+      <strong>CrowdDeck — planning complete, build under way, and now audible.</strong> Concept research, six
+      ratified decisions, 122 specified requirements, a 70-story sequenced backlog, a working CDEP contract
+      with a conformant stub engine — and a <strong>Web Audio engine with two real decks</strong> that speaks
+      the same contract. The Mixxx fork is no longer on the critical path for playing music; it is what a
+      headless venue appliance will need.
     </p>
     <p>
       Competitive and technical research gathered via the Tavily search API across 56 queries. Open-source

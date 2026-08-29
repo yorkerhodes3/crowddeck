@@ -6,7 +6,7 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 > ## 📊 [**View the project dashboard →**](https://yorkerhodes3.github.io/crowddeck/)
 >
 > The dashboard is the recommended way to read this project: an interactive capability matrix, a filterable
-> open-source triage table, the proposed architecture, and browsable views of all 120 requirements and 60
+> open-source triage table, the proposed architecture, and browsable views of all 122 requirements and 70
 > backlog stories.
 
 ---
@@ -17,8 +17,8 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 |---|---|---|
 | **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
-| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 120 requirements, 18 acceptance criteria |
-| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 11 epics, 61 stories, 120/120 traced |
+| **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 122 requirements, 18 acceptance criteria |
+| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 12 epics, 70 stories, 122/122 traced |
 | **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 55/70 stories** |
 
 ### Try it
@@ -31,9 +31,14 @@ Open the **patron** page on a phone, the **DJ console** in the booth, and the **
 Search a licence-tagged demo catalogue, queue a song, watch your position in line update live, vote tracks
 up — and in attended mode watch requests sit in the staging lane until the DJ cues them.
 
-> **Nothing is audible yet.** The engine is the stub, so deck state is real but no sound is produced.
-> Audio arrives with the Mixxx-derived engine (epic E7), and nothing above the engine adapter changes when
-> it does — that is the point of having written the contract first.
+> **Audio works — in the browser.** Open [`/deck/index.html`](clients/deck) for two real decks with
+> waveforms, hot cues, beat loops, three-band EQ, crossfader, pitch and sync. The
+> [`engine-web/`](engine-web) Web Audio engine speaks the same CDEP contract as the stub, so nothing above
+> the engine adapter changes between them — that is the point of having written the contract first, and it
+> is now demonstrated rather than claimed.
+>
+> The **venue** clients (patron / DJ console / display) still run on the stub engine, so deck state there is
+> real but no sound is produced. Wiring them to a real engine is `DJX-2`.
 
 ### What is built
 
@@ -170,8 +175,8 @@ Raw findings are preserved in [`research/`](research/).
 ```
 CONCEPT-IDEA.md          Phase 1 research and analysis  ← start here
 DECISIONS.md             Five ratified ADRs
-SPECIFICATION.md         120 requirements, 18 acceptance criteria (source of truth)
-BACKLOG.md               Generated — 11 epics, 61 stories
+SPECIFICATION.md         122 requirements, 18 acceptance criteria (source of truth)
+BACKLOG.md               Generated — 12 epics, 70 stories
 
 protocol/                Apache-2.0 — CDEP: the engine contract
   cdep-1.schema.json       Published wire-format schema
