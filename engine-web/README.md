@@ -96,10 +96,36 @@ to a wrong answer.
 
 ## What it does not do yet
 
-- **Loops and hot cues.** The CDEP surface declares them; this engine does not
-  implement them.
-- **Key detection and key lock.** Both need work this does not have.
+- **Key detection and key lock.** Both need work this does not have. `keylock` is
+  *refused* rather than accepted and ignored, so nobody mixes a set believing the
+  key is held.
 - **Recording the mix.**
 - **`DJX-2`, CDEP over WebSocket.** The browser currently runs the engine and the
   UI together, so nothing crosses a socket. That story is what connects the deck
   to the Node scheduler and the jukebox half of the product.
+
+## Loops and hot cues
+
+`src/cues.js`. Exposed through the CDEP names the surface already declares —
+`hotcue_N_activate`, `loop_in`, `loop_out`, `loop_enabled`.
+
+**Setting and jumping are separate operations.** A pad that is empty sets; a pad
+that is full jumps. A single control that does whichever seems appropriate will
+eventually overwrite a cue point because the deck was in a state the DJ had not
+noticed, and losing a cue point mid-performance is unrecoverable in the moment.
+Clearing is a long-press.
+
+Two failure modes here are silent rather than loud, which is why they are tested
+numerically:
+
+- **An inverted or vanishing loop makes Web Audio produce no sound at all, with
+  no error.** During a set that reads as the application dying. `makeLoop()`
+  refuses one instead.
+- **Web Audio wraps the *audio* inside a loop, but the elapsed clock keeps
+  rising.** Without folding the position back, the displayed playhead sails off
+  the end of the track while the sound is still looping eight bars in — the
+  display and the audio disagree, and the display is what the DJ is reading.
+
+Halving and doubling keep the loop's **start** fixed, because that is the musical
+anchor — the downbeat you looped from. Scaling around the centre would drift the
+loop off the beat a little more each time.

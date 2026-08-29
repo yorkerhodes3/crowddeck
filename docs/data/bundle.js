@@ -4291,6 +4291,28 @@ window.__CROWDDECK_DATA__ = {
             ],
             "status": "done",
             "detail": "A 28-inch screen lying flat, operated with fingers and no hover. Large hit targets, no hover-only affordances, pointer events rather than mouse events, and a layout that works at the Surface Studio's aspect ratio with the controls under your hands rather than at the top. DONE — every target is at least 56px, faders are 129px wide at Surface Studio scale, and the layout is bottom-weighted: waveforms (which you only look at) on top, mixer and faders at the bottom where your hands rest on a flat 28-inch screen. Pointer events throughout rather than mouse events, with setPointerCapture so a drag survives the finger sliding outside the control. Two bugs found by driving it: a fixed 300px mixer column pushed the layout 62px past a narrow viewport and cut deck B's transport off the edge; and the double-tap-to-reset gesture was misreading two quick EQ adjustments as a reset, snapping the band back to unity mid-mix. A double-tap now requires both taps in the same place with no drag between them."
+          },
+          {
+            "id": "DJX-8",
+            "name": "Hot cues and loops",
+            "size": "L",
+            "verdict": null,
+            "reqs": [
+              "REQ-CDEP-9"
+            ],
+            "status": "done",
+            "detail": "The largest remaining gap between this and a commercial DJ application: a deck without hot cues cannot be re-entered at a known point, and one without loops cannot hold a section while you find the next record. DONE — engine-web/src/cues.js plus four pads and beat-loop buttons per deck, exposed through the existing CDEP names (hotcue_N_activate, loop_in, loop_out, loop_enabled). Setting and jumping are deliberately separate: a pad that is empty sets, a pad that is full jumps, and an occupied slot is never silently overwritten — losing a cue point mid-set is unrecoverable in the moment. Clearing is a long-press. Two failure modes here are silent rather than loud. An inverted or vanishing loop makes Web Audio produce no sound at all with no error, which during a set reads as the application dying, so makeLoop() refuses one. And Web Audio wraps the AUDIO inside a loop while the elapsed clock keeps rising, so without folding the position back the displayed playhead sails off the end of the track while the sound is still looping eight bars in — the display and the audio disagree, and the display is what the DJ is reading. Verified in a real browser through the actual UI: tapping an empty pad set a cue at 0:06 and lit it; tapping again from 25s jumped back to 6.2s without overwriting; a 4-beat button produced a 2.005s loop at 119.7 BPM with the source node genuinely looping; long-press cleared. 22 unit tests."
+          },
+          {
+            "id": "DJX-9",
+            "name": "The display cannot silently freeze",
+            "size": "S",
+            "verdict": null,
+            "reqs": [
+              "REQ-NFR-9"
+            ],
+            "status": "done",
+            "detail": "requestAnimationFrame drives the playhead, meters and cue lights, and is a single point of failure for the whole display: when it stops, everything freezes while the audio keeps playing. A DJ reading a frozen playhead is worse off than one reading no playhead, because a frozen one still looks live. DONE — a watchdog notices rAF has gone quiet and drives the render itself at a lower rate. Found because rAF genuinely does not fire in a non-composited page, which froze the entire panel during verification. The first version of the watchdog guarded on document.hidden and therefore did nothing in exactly the case it existed for, since 'rAF is not running' and 'the page reports itself hidden' are the same situation — the guard was removed."
           }
         ]
       }

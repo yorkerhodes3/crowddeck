@@ -92,6 +92,18 @@
   button.sync.on { background:var(--b); color:#0d0725; border-color:var(--b); }
 
   .eqrow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:1; min-height:0; }
+
+  /* ---- cues and loops (DJX-8) ---- */
+  .pads { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+  .pad {
+    min-height:46px; font-size:13px; font-weight:700; border-radius:9px;
+    background:#0f1420; border:1px solid var(--line); color:var(--txt3);
+  }
+  .pad.set { background:rgba(255,180,84,.16); border-color:var(--warn); color:var(--warn); }
+  .loops { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
+  .loops button { min-height:46px; font-size:12.5px; }
+  .loops button.on { background:var(--b); color:#0d0725; border-color:var(--b); }
+  .rowlabel { font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--txt3); margin-bottom:5px; }
   .strip { display:flex; flex-direction:column; align-items:center; gap:7px; min-height:0; }
   .strip .lbl { font-family:var(--mono); font-size:10.5px; letter-spacing:.11em; color:var(--txt3); }
   .strip .val { font-family:var(--mono); font-size:11px; color:var(--txt2); }
@@ -158,6 +170,20 @@
       <div class="strip"><span class="lbl">LOW</span><div class="fader" data-ctl="a:eq_low" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
       <div class="strip"><span class="lbl">PITCH</span><div class="fader" data-ctl="a:rate" data-min="-1" data-max="1" data-def="0"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
     </div>
+    <div>
+      <div class="rowlabel">HOT CUES &mdash; tap to set, tap again to jump, hold-clear with X</div>
+      <div class="pads" data-pads="a"></div>
+    </div>
+    <div>
+      <div class="rowlabel">LOOP</div>
+      <div class="loops" data-loops="a">
+        <button data-loop="a:1">1</button>
+        <button data-loop="a:2">2</button>
+        <button data-loop="a:4">4</button>
+        <button data-loop="a:8">8</button>
+        <button data-loopoff="a">OFF</button>
+      </div>
+    </div>
     <button class="sync" data-sync="a">SYNC</button>
   </section>
 
@@ -195,6 +221,20 @@
       <div class="strip"><span class="lbl">MID</span><div class="fader" data-ctl="b:eq_mid" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
       <div class="strip"><span class="lbl">LOW</span><div class="fader" data-ctl="b:eq_low" data-min="0" data-max="4" data-def="1"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
       <div class="strip"><span class="lbl">PITCH</span><div class="fader" data-ctl="b:rate" data-min="-1" data-max="1" data-def="0"><div class="fill"></div><div class="cap"></div></div><span class="val">0.0</span></div>
+    </div>
+    <div>
+      <div class="rowlabel">HOT CUES</div>
+      <div class="pads" data-pads="b"></div>
+    </div>
+    <div>
+      <div class="rowlabel">LOOP</div>
+      <div class="loops" data-loops="b">
+        <button data-loop="b:1">1</button>
+        <button data-loop="b:2">2</button>
+        <button data-loop="b:4">4</button>
+        <button data-loop="b:8">8</button>
+        <button data-loopoff="b">OFF</button>
+      </div>
     </div>
     <button class="sync" data-sync="b">SYNC</button>
   </section>
@@ -306,6 +346,8 @@ async function loadBuffer(side, buffer, name) {
   $("artist" + S).textContent = dash.length > 1 ? dash[0] : "unknown artist";
   $("bpm" + S).textContent = folded ? folded.toFixed(1) : "—";
   $("none" + S).style.display = "none";
+  renderPads(side);
+  renderLoops(side);
   drawWave(side);
 }
 window.__loadBuffer = loadBuffer;
@@ -335,8 +377,33 @@ function drawWave(side) {
     g.fillRect(x, mid - top, Math.max(1, w / n), Math.max(1, top - bot));
   }
 
-  const pos = engine ? engine.deck(GROUP[side]).position : 0;
   const dur = a.duration || 1;
+  const deck = engine ? engine.deck(GROUP[side]) : null;
+
+  // The loop region, shaded. Without it an active loop is invisible and the
+  // playhead appears to be stuck for no reason.
+  if (deck && deck.loop && deck.loop.enabled) {
+    const x0 = (deck.loop.start / dur) * w;
+    const x1 = (deck.loop.end / dur) * w;
+    g.fillStyle = "rgba(124,108,255,.22)";
+    g.fillRect(x0, 0, Math.max(2, x1 - x0), h);
+    g.fillStyle = "#7c6cff";
+    g.fillRect(x0, 0, Math.max(1, dpr), h);
+    g.fillRect(x1 - Math.max(1, dpr), 0, Math.max(1, dpr), h);
+  }
+
+  // Cue markers, numbered, so a prepared track is readable at a glance.
+  if (deck) {
+    for (const m of deck.cues.markers()) {
+      const x = (m.at / dur) * w;
+      g.fillStyle = "#ffb454";
+      g.fillRect(x, 0, Math.max(2, dpr * 1.5), h);
+      g.font = (11 * dpr) + "px ui-monospace, monospace";
+      g.fillText(String(m.slot), x + 3 * dpr, 12 * dpr);
+    }
+  }
+
+  const pos = deck ? deck.position : 0;
   g.fillStyle = "#fff";
   g.fillRect((pos / dur) * w, 0, Math.max(2, dpr * 2), h);
 }
@@ -502,6 +569,102 @@ function syncFaderTo(side) {
   $("pitch" + side.toUpperCase()).textContent = (rate * 8).toFixed(1) + "%";
 }
 
+/* ------------------------------------------------- hot cues and loops (DJX-8) */
+
+/*
+  Four pads per deck. A pad that is empty *sets*; a pad that is full *jumps*.
+  Setting is destructive, so it only ever happens to an empty slot — an occupied
+  pad is never silently overwritten by a tap, because losing a cue point mid-set
+  is unrecoverable in the moment. Clearing is a separate long-press.
+*/
+for (const container of document.querySelectorAll("[data-pads]")) {
+  const side = container.dataset.pads;
+  for (let n = 1; n <= 4; n++) {
+    const b = document.createElement("button");
+    b.className = "pad";
+    b.textContent = String(n);
+    b.dataset.cueSlot = String(n);
+
+    let held = null;
+    const clearAfterHold = () => {
+      const eng = ensureAudio();
+      eng.deck(GROUP[side]).clearHotcue(n);
+      renderPads(side);
+    };
+
+    b.addEventListener("pointerdown", () => {
+      held = setTimeout(clearAfterHold, 600);
+    });
+    const cancelHold = () => { if (held) { clearTimeout(held); held = null; } };
+    b.addEventListener("pointerup", cancelHold);
+    b.addEventListener("pointercancel", cancelHold);
+    b.addEventListener("pointerleave", cancelHold);
+
+    b.addEventListener("click", () => {
+      const eng = ensureAudio();
+      const deck = eng.deck(GROUP[side]);
+      if (!deck.buffer) { fail("Load a track before setting cues."); return; }
+      if (deck.cues.get(n) === null) deck.setHotcue(n);
+      else deck.jumpHotcue(n);
+      renderPads(side);
+    });
+    container.appendChild(b);
+  }
+}
+
+function renderPads(side) {
+  if (!engine) return;
+  const deck = engine.deck(GROUP[side]);
+  for (const b of document.querySelectorAll('[data-pads="' + side + '"] .pad')) {
+    const n = Number(b.dataset.cueSlot);
+    const at = deck.cues.get(n);
+    const label = at === null ? String(n) : n + " · " + fmt(at);
+    // Guarded: this runs every frame, and writing an identical string 60 times a
+    // second is pointless work in the same loop that draws the waveforms.
+    if (b.textContent !== label) b.textContent = label;
+    b.classList.toggle("set", at !== null);
+  }
+}
+
+for (const b of document.querySelectorAll("[data-loop]")) {
+  b.addEventListener("click", () => {
+    const eng = ensureAudio();
+    const parts = b.dataset.loop.split(":");
+    const side = parts[0];
+    const beats = Number(parts[1]);
+    const deck = eng.deck(GROUP[side]);
+    if (!deck.buffer) { fail("Load a track before looping."); return; }
+    if (!deck.bpm) {
+      // A beat loop with no tempo would be a guess about musical length, and a
+      // loop that is not a whole number of beats is audibly wrong every lap.
+      fail("No tempo detected for this track, so a beat loop cannot be set.");
+      return;
+    }
+    deck.setBeatLoop(beats);
+    renderLoops(side);
+  });
+}
+
+for (const b of document.querySelectorAll("[data-loopoff]")) {
+  b.addEventListener("click", () => {
+    const side = b.dataset.loopoff;
+    ensureAudio().deck(GROUP[side]).clearLoop();
+    renderLoops(side);
+  });
+}
+
+function renderLoops(side) {
+  if (!engine) return;
+  const loop = engine.deck(GROUP[side]).loop;
+  const beats = loop && engine.deck(GROUP[side]).bpm
+    ? Math.round((loop.end - loop.start) / (60 / engine.deck(GROUP[side]).bpm))
+    : null;
+  for (const b of document.querySelectorAll('[data-loop^="' + side + ':"]')) {
+    const n = Number(b.dataset.loop.split(":")[1]);
+    b.classList.toggle("on", loop !== null && loop.enabled && beats === n);
+  }
+}
+
 /* --------------------------------------------------------- crossfader */
 
 const xf = $("xf");
@@ -550,7 +713,7 @@ function fmt(sec) {
   return m + ":" + (s < 10 ? "0" : "") + s;
 }
 
-function frame() {
+function render() {
   if (engine) {
     for (const side of ["a", "b"]) {
       const deck = engine.deck(GROUP[side]);
@@ -560,18 +723,52 @@ function frame() {
       $("deck" + S).classList.toggle("live", playing);
       const btn = document.querySelector('[data-play="' + side + '"]');
       btn.classList.toggle("on", playing);
-      btn.textContent = playing ? "PAUSE" : "PLAY";
+      const label = playing ? "PAUSE" : "PLAY";
+      if (btn.textContent !== label) btn.textContent = label;
 
       $("pos" + S).textContent = fmt(deck.position);
       if (deck.bpm) $("bpm" + S).textContent = (deck.bpm * deck.playbackRate).toFixed(1);
+      // Rendered from engine state, not only in response to our own clicks.
+      // Anything that changes a cue or a loop — a controller, sync, the
+      // scheduler — must show up, or the panel and the audio disagree.
+      renderPads(side);
+      renderLoops(side);
       if (analysis[side]) drawWave(side);
     }
     $("meter").style.width = Math.min(100, engine.masterLevel() * 100) + "%";
     $("ctxstate").textContent = "audio: " + ctx.state;
   }
-  requestAnimationFrame(frame);
+  lastRender = Date.now();
 }
-requestAnimationFrame(frame);
+
+/*
+  requestAnimationFrame is the right primary: it matches the display's refresh
+  and pauses when the tab is hidden, which is free CPU.
+
+  But it is a single point of failure for the whole display. If it stops — as it
+  does when a page is not being composited, and as it can under tab throttling —
+  the playhead, meters and cue lights all freeze while the audio keeps playing. A
+  DJ reading a frozen playhead is worse off than one reading no playhead, because
+  a frozen one still looks live.
+
+  So a watchdog notices rAF has gone quiet and drives the render itself at a lower
+  rate. It deliberately does NOT skip when the document reports itself hidden:
+  that guard was the first thing written here and it defeated the watchdog in
+  exactly the case it exists for, since "rAF is not running" and "the page is
+  hidden" are the same situation. Ten renders a second of cheap DOM writes is a
+  price worth paying to never show a stale playhead.
+*/
+let lastRender = 0;
+
+function rafLoop() {
+  render();
+  requestAnimationFrame(rafLoop);
+}
+requestAnimationFrame(rafLoop);
+
+setInterval(() => {
+  if (Date.now() - lastRender > 250) render();
+}, 100);
 
 window.addEventListener("resize", () => { drawWave("a"); drawWave("b"); });
 </script>

@@ -42,6 +42,7 @@ import {
   rateToPlaybackRate,
   syncRate
 } from "./mixer.js";
+import { HotCues, beatLoop, loopPosition, makeLoop, quantiseToBeat, scaleLoop, shiftLoop } from "./cues.js";
 
 /**
  * The floor used where the maths says "kill".
@@ -84,6 +85,12 @@ export class WebDeck {
     /** ctx.currentTime at which the current source started. */
     this.startedAt = 0;
     this.cuePoint = 0;
+
+    /** @type {{start: number, end: number, enabled: boolean}|null} */
+    this.loop = null;
+    this.cues = new HotCues();
+    /** Pending loop-in, set but not yet closed by a loop-out. */
+    this.loopIn = null;
 
     this.controls = {
       volume: 1,
@@ -136,7 +143,12 @@ export class WebDeck {
     if (!this.buffer) return 0;
     if (!this.playing) return this.offset;
     const elapsed = (this.ctx.currentTime - this.startedAt) * this.playbackRate;
-    return Math.min(this.buffer.duration, this.offset + elapsed);
+    const raw = this.offset + elapsed;
+    // Web Audio wraps the audio inside an active loop but the elapsed clock keeps
+    // rising, so the raw figure must be folded back or the displayed playhead
+    // sails off the end while the sound is still looping.
+    if (this.loop && this.loop.enabled) return loopPosition(raw, this.loop);
+    return Math.min(this.buffer.duration, raw);
   }
 
   /**
@@ -149,6 +161,10 @@ export class WebDeck {
     this.trackId = meta.id ?? null;
     this.bpm = Number.isFinite(meta.bpm) ? meta.bpm : null;
     this.cuePoint = meta.cuePoint ?? 0;
+    // Loops and cues belong to the previous track, not to the deck.
+    this.loop = null;
+    this.loopIn = null;
+    this.cues = meta.cues instanceof HotCues ? meta.cues : new HotCues();
     // Land on the first audible moment, not on the file's first sample. Two
     // seconds of digital silence at the head of a file means the mix starts late.
     this.offset = this.cuePoint;
@@ -164,6 +180,7 @@ export class WebDeck {
     src.buffer = this.buffer;
     src.playbackRate.value = this.playbackRate;
     src.connect(this.pregainNode);
+    this.#applyLoopTo(src);
     src.onended = () => {
       // `stop()` also fires onended, so only report a genuine end-of-track.
       if (this.source === src && this.playing) {
@@ -229,6 +246,122 @@ export class WebDeck {
   setCuePoint(seconds = null) {
     this.cuePoint = clamp(seconds ?? this.position, 0, this.duration);
     return this.cuePoint;
+  }
+
+  /* ------------------------------------------------------ loops — DJX-8 */
+
+  /**
+   * Push the current loop onto a live source node.
+   *
+   * Web Audio loops natively, so this is genuinely just three assignments — but
+   * they must be reapplied to every new source, because `play()` builds a fresh
+   * node each time and a new node defaults to not looping.
+   */
+  #applyLoopTo(src) {
+    if (!src) return;
+    if (this.loop && this.loop.enabled && this.loop.end > this.loop.start) {
+      src.loopStart = this.loop.start;
+      src.loopEnd = this.loop.end;
+      src.loop = true;
+    } else {
+      src.loop = false;
+    }
+  }
+
+  /** Mark the start of a loop. Quantised to the beat when a tempo is known. */
+  markLoopIn(seconds = null) {
+    this.loopIn = quantiseToBeat(seconds ?? this.position, this.bpm, this.cuePoint);
+    return this.loopIn;
+  }
+
+  /**
+   * Close the loop and enable it.
+   *
+   * Returns null and changes nothing if the region is unusable — an inverted or
+   * vanishing loop silences the deck in Web Audio with no error at all.
+   */
+  markLoopOut(seconds = null) {
+    if (this.loopIn === null) return null;
+    const out = quantiseToBeat(seconds ?? this.position, this.bpm, this.cuePoint);
+    const loop = makeLoop(this.loopIn, out, this.duration);
+    if (!loop) return null;
+    this.loop = loop;
+    this.loopIn = null;
+    this.#applyLoopTo(this.source);
+    return this.loop;
+  }
+
+  /** Loop `beats` beats from where the playhead is now. */
+  setBeatLoop(beats) {
+    const from = quantiseToBeat(this.position, this.bpm, this.cuePoint);
+    const loop = beatLoop(from, this.bpm, beats, this.duration);
+    if (!loop) return null;
+    this.loop = loop;
+    this.#applyLoopTo(this.source);
+    return this.loop;
+  }
+
+  /** @param {number} factor 0.5 to halve, 2 to double */
+  scaleLoop(factor) {
+    const next = scaleLoop(this.loop, factor, this.duration);
+    if (!next) return null;
+    this.loop = next;
+    this.#applyLoopTo(this.source);
+    return this.loop;
+  }
+
+  /** @param {number} direction */
+  shiftLoop(direction) {
+    const next = shiftLoop(this.loop, direction, this.duration);
+    if (!next) return null;
+    this.loop = next;
+    this.#applyLoopTo(this.source);
+    return this.loop;
+  }
+
+  /**
+   * Turn an existing loop on or off without forgetting it.
+   *
+   * Exiting a loop must keep the region, because "loop out, let it run, loop back
+   * in" is a normal move and re-marking the points by hand mid-mix is not
+   * realistic.
+   */
+  enableLoop(on) {
+    if (!this.loop) return false;
+    this.loop = { ...this.loop, enabled: Boolean(on) };
+    this.#applyLoopTo(this.source);
+    return true;
+  }
+
+  clearLoop() {
+    this.loop = null;
+    this.loopIn = null;
+    this.#applyLoopTo(this.source);
+  }
+
+  /* --------------------------------------------------- hot cues — DJX-8 */
+
+  /** @param {number} n @param {number} [seconds] */
+  setHotcue(n, seconds = null) {
+    return this.cues.set(n, seconds ?? this.position);
+  }
+
+  /**
+   * Jump to a hot cue.
+   *
+   * Playing decks keep playing and stopped decks stay stopped: a jump changes
+   * *where* you are, never *whether* you are running. A cue that started playback
+   * would make a deck audible at a moment the DJ was only auditioning.
+   */
+  jumpHotcue(n) {
+    const at = this.cues.get(n);
+    if (at === null) return false;
+    this.seek(at);
+    return true;
+  }
+
+  clearHotcue(n) {
+    return this.cues.clear(n);
   }
 
   /**
@@ -378,7 +511,16 @@ export class WebEngine {
       // phase vocoder; reporting keylock as on when it is not would have a DJ mix
       // a set believing the key is held.
       case "keylock": return 0;
-      default: return null;
+      case "loop_enabled": return deck.loop && deck.loop.enabled ? 1 : 0;
+      case "loop_in": return deck.loop ? deck.loop.start : (deck.loopIn ?? 0);
+      case "loop_out": return deck.loop ? deck.loop.end : 0;
+      default: {
+        // hotcue_N_activate reads as set (1) or empty (0), which is what a
+        // controller's LED needs to know.
+        const hot = /^hotcue_(\d+)_activate$/.exec(item);
+        if (hot) return deck.cues.get(Number(hot[1])) === null ? 0 : 1;
+        return null;
+      }
     }
   }
 
@@ -423,8 +565,36 @@ export class WebEngine {
       case "keylock":
         // Refused rather than stored. See `get`.
         return false;
-      default:
+      case "loop_in":
+        if (value >= 0.5) deck.markLoopIn();
+        break;
+      case "loop_out":
+        if (value >= 0.5) deck.markLoopOut();
+        break;
+      case "loop_enabled":
+        if (value >= 0.5) {
+          // Enabling with no region yet is a request for a sensible default
+          // rather than an error: four beats is the loop a DJ reaches for.
+          if (!deck.loop) deck.setBeatLoop(4);
+          else deck.enableLoop(true);
+        } else {
+          deck.enableLoop(false);
+        }
+        break;
+      default: {
+        const hot = /^hotcue_(\d+)_activate$/.exec(item);
+        if (hot) {
+          const n = Number(hot[1]);
+          if (value < 0.5) return false;
+          // Jump if it exists, set if it does not. Setting is destructive, so it
+          // only ever happens to an *empty* slot — an occupied one is never
+          // silently overwritten by the activate control.
+          if (deck.cues.get(n) === null) deck.setHotcue(n);
+          else deck.jumpHotcue(n);
+          break;
+        }
         return false;
+      }
     }
 
     this.refresh();
