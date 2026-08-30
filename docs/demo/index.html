@@ -201,6 +201,12 @@
   .tag { font-size:9.5px; padding:1px 6px; border-radius:99px; background:#141b2b;
          border:1px solid var(--line); color:var(--txt2); white-space:nowrap; }
   .lstat { font-family:var(--mono); font-size:9.5px; color:var(--txt3); white-space:nowrap; }
+  /* Attribution is a licence condition, not a footnote — it belongs on screen. */
+  .credits { display:flex; align-items:center; gap:10px; padding:6px 12px;
+             border-top:1px solid var(--line); background:var(--panel); }
+  .credits .cr { flex:1; min-width:0; font-size:11px; color:var(--txt2);
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .credits button { min-height:30px; font-size:10.5px; padding:0 10px; }
   .lbpm { font-family:var(--mono); font-size:11px; min-width:66px; text-align:right;
           color:var(--txt3); white-space:nowrap; }
   .lbpm.match { color:var(--a); }
@@ -344,6 +350,15 @@
 </main>
 
 <section class="library">
+  <!--
+    CC BY and CC BY-SA require attribution as a condition of the licence, and
+    cc-licence.js has always said where it belongs: on the screen while the
+    track plays. It was computed and discarded until DJX-26.
+  -->
+  <div class="credits">
+    <span class="cr" id="creditline">credits appear here as tracks load</span>
+    <button id="copycredits" title="Copy every required credit for this session">COPY CREDITS</button>
+  </div>
   <div class="libbar">
     <span class="src">LIBRARY · openly licensed</span>
     <input id="q" type="search" placeholder="Search freely-licensed music (Internet Archive netlabels)…" autocomplete="off">
@@ -373,6 +388,7 @@ import { formatTempoMatch, mapWithLimit, rankByTempo, tempoMatch } from "../engi
 import { buildSources } from "../engine-web/src/providers/registry.js";
 import { AutomixAction, chooseNext, detectManualMove, faderAt, nextAction } from "../engine-web/src/automix.js";
 import { RetuneSmoother, SCALES, correctionFor, detectPitch, isVoiced } from "../engine-web/src/autotune.js";
+import { CreditLog, nowPlayingCredit } from "../engine-web/src/credits.js";
 import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
 import { MixRecorder, formatElapsed } from "../engine-web/src/record.js";
 
@@ -607,7 +623,11 @@ async function loadBuffer(side, buffer, name, meta) {
   const peaks = waveformPeaks(mono, 1400);
   const key = detectKey(mono, buffer.sampleRate);
 
-  analysis[side] = { peaks, bpm: folded, duration: buffer.duration, cue, key };
+  analysis[side] = { peaks, bpm: folded, duration: buffer.duration, cue, key,
+    // The row this came from, so the credit can be shown and logged. A local
+    // file has none, which is correct: nothing is owed for music you hold.
+    track: (meta && meta.track) || null };
+  if (meta && meta.track) credits.add(meta.track);
   eng.deck(GROUP[side]).load(buffer, { id: name, bpm: folded, cuePoint: cue });
 
   const S = side.toUpperCase();
@@ -627,7 +647,49 @@ async function loadBuffer(side, buffer, name, meta) {
   renderLoops(side);
   drawWave(side);
   renderKeys();
+  renderCredits();
 }
+
+/* ------------------------------------------- attribution — DJX-26 */
+
+/*
+  A licence condition rather than a nicety. Both decks' credits are shown live,
+  and every track played this session accumulates into a list that can be pasted
+  under a published mix — which is the form the obligation takes once a set
+  leaves the room.
+*/
+const credits = new CreditLog();
+
+function renderCredits() {
+  const live = ["a", "b"]
+    .map((side) => analysis[side] && analysis[side].track)
+    .filter(Boolean)
+    .map(nowPlayingCredit)
+    .filter(Boolean);
+
+  const owed = credits.required().length;
+  const tail = owed ? `  ·  ${owed} credit${owed === 1 ? "" : "s"} this session` : "";
+  $("creditline").textContent = live.length
+    ? live.join("     ") + tail
+    : "credits appear here as tracks load";
+}
+
+$("copycredits").addEventListener("click", async () => {
+  const text = credits.toText({ includePublicDomain: true });
+  if (!text) {
+    fail("Nothing has been played yet, so there is nothing to credit.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    $("copycredits").textContent = "COPIED";
+    setTimeout(() => { $("copycredits").textContent = "COPY CREDITS"; }, 1600);
+  } catch {
+    // Clipboard access can be refused. Showing the text is better than losing
+    // it — the credits still have to reach wherever the mix is published.
+    fail("Clipboard blocked. Credits:\n\n" + text.slice(0, 400));
+  }
+});
 
 /**
  * Show each deck's key, and whether the two mix.
@@ -1126,7 +1188,8 @@ async function loadFromArchive(side, release, button) {
       // clean name back into a filename.
       title: release.provider === "openverse" ? release.title : prettyName(file.name),
       artist: release.artist,
-      art
+      art,
+      track: release
     });
   } catch (err) {
     fail('Could not load "' + release.title + '": ' + err.message);

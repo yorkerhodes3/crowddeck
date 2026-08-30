@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 87 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 88 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>910 tests, 20 conformance checks</strong>,
+      <strong>925 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -980,6 +980,17 @@
       whichever deck is playing. Two constraints are stated rather than hidden — ~90–110 ms of latency makes
       it fine in the mix and <em>unusable</em> as a headphone monitor, and a mic plus loudspeakers is a
       feedback loop no software can fix.
+      <br><br>
+      <strong>And two features that were built but not connected.</strong> The session cache was written,
+      unit-tested, instantiated in the deck — and the load path still called <span class="mono">fetch()</span>
+      directly, so the caching that was specifically asked for was a dead variable. Attribution was the same
+      shape of failure and a worse one: <span class="mono">cc-licence.js</span> has always built the credit
+      string and its own comment says it belongs <em>"on the screen while the track plays"</em>, and nothing
+      displayed it. <strong>CC BY requires attribution as a condition of the licence</strong>, so a deck
+      playing that music without crediting it was in breach of the very licence it depends on — with the
+      credit computed and thrown away. Both found by grepping for the feature rather than trusting that
+      building it meant using it. Now verified by counting audio requests (a second deck load =
+      <strong>zero</strong> extra downloads) and by reading the clipboard back after copying credits.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">
