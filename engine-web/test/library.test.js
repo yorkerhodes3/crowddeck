@@ -85,10 +85,17 @@ test("a search term cannot alter the structure of the query", () => {
 
   // The property that matters: every quote the user supplied is escaped, so the
   // injected text stays *inside* the quoted field values and cannot become a new
-  // clause. Counting unescaped quotes checks that — there must be exactly the
-  // eight this query's own structure opens and closes across four fields.
-  const unescaped = (q.match(/(^|[^\\])"/g) || []).length;
-  assert.equal(unescaped, 8, `expected 8 structural quotes, found ${unescaped} in ${q}`);
+  // clause. Comparing against a benign term states that directly and cannot go
+  // stale — a hard-coded count only described the query as it stood on the day,
+  // and had to be edited every time a clause was added, which is exactly when
+  // you least want a security guard being rewritten to fit the new output.
+  const unescaped = (s) => (s.match(/(^|[^\\])"/g) || []).length;
+  const benign = lib.buildQuery("drum");
+  assert.equal(
+    unescaped(q),
+    unescaped(benign),
+    `the term added structural quotes: ${q}`,
+  );
   assert.match(q, /drum\\"/, "the user's quote is escaped, not dropped");
   assert.match(q, /licenses\\\/by\\\//, "the licence restriction survives");
 });
@@ -404,4 +411,36 @@ test("detectTempo refuses nonsense arguments rather than throwing into a browse 
   assert.equal(await lib.detectTempo(null, { decode: decodeOk, analyse: () => 1 }), null);
   assert.equal(await lib.detectTempo({ id: "x" }, {}), null);
   assert.equal(await lib.detectTempo({ id: "x" }), null);
+});
+
+/* ------------------------------------------ only playable rows (DJX-28) */
+
+test("the search only asks for releases that contain playable audio", () => {
+  // Not a refinement. A netlabel release on the Archive is often published as a
+  // ZIP with cover art and no individual tracks; those are mediatype:audio and
+  // matched every other clause, so they appeared in results and could only ever
+  // produce "no playable audio in this release" when clicked.
+  const q = new ArchiveLibrary().buildQuery("techno");
+  assert.match(q, /format:"MP3"/);
+  assert.match(q, /format:"Ogg Vorbis"/);
+  assert.match(q, /format:"Flac"/);
+});
+
+test("the format filter applies to every collection, not just the default one", () => {
+  // LibriVox turns the licence filter off; it must not also lose this one.
+  const lv = new ArchiveLibrary({ collections: ["collection:librivoxaudio"], commercialOnly: false });
+  const q = lv.buildQuery("history");
+  assert.match(q, /format:"MP3"/);
+  assert.ok(!/licenseurl/.test(q), "the licence filter is still off for this collection");
+});
+
+test("the format clause is grouped, so it cannot break the surrounding query", () => {
+  // An un-parenthesised OR would bind loosely and silently widen the whole
+  // query — the Archive returns results rather than an error for that, so the
+  // failure would look like the filters simply not working.
+  const q = new ArchiveLibrary().buildQuery("x");
+  const clause = /(\(format:[^)]*\))/.exec(q);
+  assert.ok(clause, "the format clause should be parenthesised");
+  const inner = clause[1];
+  assert.equal((inner.match(/\(/g) || []).length, (inner.match(/\)/g) || []).length, "unbalanced brackets");
 });

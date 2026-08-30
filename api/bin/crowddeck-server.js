@@ -35,6 +35,7 @@ const repoRoot = path.resolve(here, "..", "..");
 const clientsDir = path.join(repoRoot, "clients");
 const engineWebDir = path.join(repoRoot, "engine-web");
 const providersDir = path.join(repoRoot, "providers");
+const coreDir = path.join(repoRoot, "core");
 
 function parseArgs(argv) {
   const args = {
@@ -139,10 +140,19 @@ const MIME = {
  * Serve the bundled clients, and the modules they import.
  *
  * The deck page imports the Web Audio engine as ES modules from `engine-web/`,
- * and that in turn imports the Creative Commons classifier from `providers/`.
- * Both live outside `clients/` because they are shared code, unit-tested in Node
- * — the browser reuses the *same* licence classifier the venue side runs, rather
- * than a second copy that could drift from it.
+ * and that in turn imports the Creative Commons classifier from `providers/`,
+ * which itself imports the licence policy from `core/`. All three live outside
+ * `clients/` because they are shared code, unit-tested in Node — the browser
+ * reuses the *same* licence classifier the venue side runs, rather than a second
+ * copy that could drift from it.
+ *
+ * `core/` is here because the import graph reaches it, not because the deck
+ * names it: `providers/src/provider.js` imports `core/src/policy.js`, so a
+ * missing mount 404s a module the page never mentions. That failure is silent in
+ * the worst way — the whole deck module fails to evaluate, so no event listener
+ * is ever attached and the page renders perfectly while every button does
+ * nothing. Only the console shows it. `clients/test/deck-imports.test.js` walks
+ * the real graph so this list cannot fall behind it again.
  *
  * Each root is confined to itself, and `SERVED_ROOTS` is an allow-list: a
  * directory not named here is not reachable, so adding a package does not
@@ -153,7 +163,8 @@ const MIME = {
  */
 const SERVED_ROOTS = [
   { prefix: "/engine-web/", dir: engineWebDir },
-  { prefix: "/providers/", dir: providersDir }
+  { prefix: "/providers/", dir: providersDir },
+  { prefix: "/core/", dir: coreDir }
 ];
 
 function staticHandler(pathname) {

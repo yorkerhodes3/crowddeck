@@ -23,8 +23,8 @@ jukebox on one scheduler, one library and one clock — wired together by MIDI.*
 | **1 — Concept** | [`CONCEPT-IDEA.md`](CONCEPT-IDEA.md) | ✅ Complete |
 | **1.5 — Decisions** | [`DECISIONS.md`](DECISIONS.md) | ✅ Ratified 2026-08-27 |
 | **2 — Specification** | [`SPECIFICATION.md`](SPECIFICATION.md) | ✅ Complete — 123 requirements, 18 acceptance criteria |
-| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 12 epics, 89 stories, 123/123 traced |
-| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 74/89 stories** |
+| **3 — Backlog** | [`BACKLOG.md`](BACKLOG.md) | ✅ Complete — 12 epics, 91 stories, 123/123 traced |
+| **4 — Build** | `protocol/` `core/` `data/` `api/` `interconnect/` `clients/` | 🚧 **In progress — M1–M3 + MIDI + persistence + content, 76/91 stories** |
 
 ### Try it
 
@@ -62,7 +62,7 @@ up — and in attended mode watch requests sit in the staging lane until the DJ 
 | [`tools/licence-lint.mjs`](tools/licence-lint.mjs) | Apache-2.0 | Enforces the ADR-001 licence boundary mechanically |
 | [`engine/`](engine) | GPL-2.0-or-later | Deliberately **empty** until `SPIKE-1` — see [why](engine/README.md) |
 
-**929 tests · 20 conformance checks · zero runtime dependencies.**
+**934 tests · 20 conformance checks · zero runtime dependencies.**
 
 > **One dependency footnote, stated rather than buried.** [`data/`](data) uses Node's built-in
 > `node:sqlite`, so there is still nothing to install — but that module is marked **experimental** by Node

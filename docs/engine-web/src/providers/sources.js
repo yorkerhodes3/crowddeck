@@ -198,7 +198,15 @@ export class OpenverseProvider extends BrowserProvider {
 
   async files(trackId) {
     const row = this.rows.get(trackId);
-    if (!row?.audioUrl) return [];
+    // Two different faults used to collapse into one message here. An id this
+    // provider has never seen means the caller reached the wrong provider — a
+    // wiring bug — whereas a known row with no audio URL is simply a result that
+    // cannot be played. Both returned `[]`, which the deck reports as "no
+    // playable audio in this release", so a routing bug was indistinguishable
+    // from ordinary bad luck with a search result. That ambiguity is what made
+    // the half-converted-provider bug hard to read, so the two are separated.
+    if (!row) throw new Error(`${this.id} was asked for an unknown track "${trackId}"`);
+    if (!row.audioUrl) return [];
     // An Openverse result IS a single track, so this costs no round trip.
     return [{
       url: row.audioUrl,

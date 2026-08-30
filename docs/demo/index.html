@@ -1160,7 +1160,28 @@ async function loadFromArchive(side, release, button) {
     show(cached ? "cached" : "…");
 
     const bytes = await audioCache.get(file.url, async () => {
-      const res = await fetch(file.url);
+      /*
+        One retry on a transient network failure — DJX-28.
+
+        Observed in a 30-load sweep: a track that had loaded a minute earlier
+        failed once with "Failed to fetch". These are large files from public
+        servers over a real connection, and a blip is normal. Retrying once is
+        the difference between a deck that occasionally refuses a record and one
+        that loads it; retrying forever would hide a genuinely dead source, which
+        is why it is exactly one attempt more, only for network-level failures.
+      */
+      let res;
+      try {
+        res = await fetch(file.url);
+      } catch (first) {
+        show("retry");
+        await new Promise((r) => setTimeout(r, 600));
+        try {
+          res = await fetch(file.url);
+        } catch {
+          throw first;
+        }
+      }
       if (!res.ok) throw new Error("HTTP " + res.status);
 
       // `content-length` is usually present but not guaranteed, so the reader
