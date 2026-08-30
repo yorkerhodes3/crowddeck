@@ -579,6 +579,30 @@ export class WebEngine {
     return this.recordingTap.stream;
   }
 
+  /**
+   * A standalone pitch shifter, for something that is not a deck — DJX-25.
+   *
+   * Autotune needs the same shifter the decks use, but inserted into a
+   * microphone path rather than a deck's chain. Built here because the worklet
+   * module is loaded once per AudioContext and this is what owns that.
+   *
+   * @returns {Promise<AudioWorkletNode|null>} null where the browser cannot.
+   */
+  async createPitchNode() {
+    const ok = await loadKeylockWorklet(this.ctx);
+    if (!ok) return null;
+    try {
+      return new AudioWorkletNode(this.ctx, KEYLOCK_PROCESSOR, {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [2],
+        processorOptions: { channels: 2 }
+      });
+    } catch {
+      return null;
+    }
+  }
+
   /** Push every control value into the audio graph. */
   refresh() {
     const xf = crossfaderGains(this.masterControls.crossfader, this.masterControls.curve);

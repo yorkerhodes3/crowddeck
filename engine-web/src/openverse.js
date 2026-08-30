@@ -93,12 +93,19 @@ const CATEGORY = "music";
  * status that says "authenticate" for what is really "that page is bigger than
  * your tier allows".
  *
+ * Later confirmed against Openverse's source
+ * (`api/api/constants/restricted_features.py`): anonymous callers are capped at
+ * 20, standard authenticated ones at 50, and only specifically privileged
+ * applications reach 240.
+ *
  * This cost real debugging time and would have shipped as "Openverse never
  * returns anything", because the app asked for 25 to match the Archive's page
- * while every hand-written probe used a smaller number and worked. Capping here
- * means a 401 that does reach the caller is genuinely about rate limits.
+ * while every hand-written probe used a smaller number and worked.
  */
 const ANON_MAX_PAGE_SIZE = 20;
+
+/** Cap once an OAuth2 token is supplied. From the same source file. */
+const AUTH_MAX_PAGE_SIZE = 50;
 
 /** Below this, it is a sample or a sting rather than something to mix. */
 const MIN_TRACK_SECONDS = 45;
@@ -122,12 +129,34 @@ export class OpenverseLibraryError extends Error {
 
 export class OpenverseLibrary {
   /**
-   * @param {{fetch?: typeof fetch, rows?: number, endpoint?: string}} [opts]
+   * @param {object} [opts]
+   * @param {typeof fetch} [opts.fetch]
+   * @param {number} [opts.rows]
+   * @param {string} [opts.endpoint]
+   * @param {string} [opts.apiToken] An OAuth2 bearer token, if one is available.
+   *
+   * ## On API keys, since it is the obvious next question
+   *
+   * A registered application raises the limits considerably — from 20/minute and
+   * 200/day to **100/minute and 10,000/day**, and the page cap from 20 to 50
+   * (verified against `api/api/constants/restricted_features.py`, not from
+   * documentation, which has claimed 500 elsewhere and is wrong).
+   *
+   * **But the token cannot be obtained in a browser.** Registration issues a
+   * *confidential* client, and `POST /v1/auth_tokens/token/` requires the
+   * `client_secret` in the request body. There is no PKCE or public-client flow.
+   * Putting the secret in a page would publish it to anyone who opens dev tools.
+   *
+   * So this accepts a token but never fetches one: a deployment that already has
+   * a server can mint tokens there and hand one over, and the browser-only demo
+   * stays anonymous. Anonymous is genuinely adequate for a DJ session — 200
+   * searches a day is far more than an evening needs.
    */
   constructor(opts = {}) {
     this.fetch = opts.fetch ?? ((...args) => globalThis.fetch(...args));
     this.rows = opts.rows ?? 25;
     this.endpoint = opts.endpoint ?? ENDPOINT;
+    this.apiToken = opts.apiToken ?? null;
     this.provider = "openverse";
     /** Track lists, keyed by result id. One result is one track. */
     this.cache = new Map();
@@ -144,8 +173,18 @@ export class OpenverseLibrary {
     p.set("q", (term || "").trim() || "music");
     p.set("license_type", LICENCE_FILTER);
     p.set("category", CATEGORY);
-    p.set("page_size", String(Math.min(rows ?? this.rows, ANON_MAX_PAGE_SIZE)));
+    p.set("page_size", String(Math.min(rows ?? this.rows, this.maxPageSize)));
     return `${this.endpoint}?${p.toString()}`;
+  }
+
+  /** The page cap this caller is entitled to. */
+  get maxPageSize() {
+    return this.apiToken ? AUTH_MAX_PAGE_SIZE : ANON_MAX_PAGE_SIZE;
+  }
+
+  /** Request headers, carrying the bearer token when one was supplied. */
+  get headers() {
+    return this.apiToken ? { Authorization: `Bearer ${this.apiToken}` } : undefined;
   }
 
   /**
@@ -157,7 +196,10 @@ export class OpenverseLibrary {
   async search(term = "", opts = {}) {
     let res;
     try {
-      res = await this.fetch(this.searchUrl(term, opts.rows), { signal: opts.signal });
+      res = await this.fetch(this.searchUrl(term, opts.rows), {
+        signal: opts.signal,
+        headers: this.headers
+      });
     } catch (cause) {
       throw new OpenverseLibraryError(
         "Openverse is unreachable. The Internet Archive and local files still work.",

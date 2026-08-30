@@ -144,6 +144,10 @@
   .keyval.clash { color:var(--hot); }
   .keyval.unknown { color:var(--txt3); }
   button.rec { color:var(--hot); }
+  button.automix { color:var(--warn); }
+  button.automix.on { background:rgba(255,180,84,.16); border-color:var(--warn); color:var(--warn); }
+  button.mic { color:#b9b0ff; font-size:12px; }
+  button.mic.on { background:rgba(124,108,255,.20); border-color:var(--b); color:#d8d3ff; }
   button.rec.on { background:rgba(255,92,122,.18); border-color:var(--hot); color:#ff8ea3; }
   button.rec[disabled] { opacity:.4; cursor:not-allowed; }
   .rechint { font-size:10.5px; color:var(--txt3); text-align:center; margin-top:4px; letter-spacing:.04em; }
@@ -284,6 +288,10 @@
       <div class="xf" id="xf"><div class="cap"></div></div>
     </div>
     <button id="center">CENTRE</button>
+    <button id="automix" class="automix">▶▶ AUTOMIX</button>
+    <div class="rechint" id="automixhint">hands over between decks</div>
+    <button id="mic" class="mic">🎤 MIC + AUTOTUNE</button>
+    <div class="rechint" id="michint">use headphones — mic + speakers feed back</div>
     <button id="rec" class="rec">● REC</button>
     <div class="rechint" id="rechint">records the master mix</div>
   </section>
@@ -362,6 +370,9 @@ import { eqKnobToDb } from "../engine-web/src/mixer.js";
 import { ArchiveLibrary, formatCount } from "../engine-web/src/library.js";
 import { OpenverseLibrary, detectConsumerService } from "../engine-web/src/openverse.js";
 import { formatTempoMatch, mapWithLimit, rankByTempo, tempoMatch } from "../engine-web/src/bpm-match.js";
+import { buildSources } from "../engine-web/src/providers/registry.js";
+import { AutomixAction, chooseNext, detectManualMove, faderAt, nextAction } from "../engine-web/src/automix.js";
+import { RetuneSmoother, SCALES, correctionFor, detectPitch, isVoiced } from "../engine-web/src/autotune.js";
 import { camelotCompatible, detectKey } from "../engine-web/src/key.js";
 import { MixRecorder, formatElapsed } from "../engine-web/src/record.js";
 
@@ -381,6 +392,14 @@ let keylockReady = null;
 const analysis = { a: null, b: null };
 const library = new ArchiveLibrary();
 const openverse = new OpenverseLibrary();
+/*
+  Every playable catalogue, behind the same `Provider` contract the venue-side
+  adapters use — DJX-22. Adding a source is one entry in `registry.js`; nothing
+  in this page changes.
+*/
+const sourceRegistry = buildSources();
+const librivox = sourceRegistry.router.get("librivox");
+const audioCache = sourceRegistry.cache;
 
 /*
   The AudioContext cannot start until a gesture. Browsers require it, and it is
@@ -686,7 +705,11 @@ async function runSearch(term) {
 
   const sources = [
     { name: "Internet Archive", lib: library },
-    { name: "Openverse", lib: openverse }
+    { name: "Openverse", lib: openverse },
+    // Public-domain spoken word — DJX-23. Asked for directly: story and history
+    // speeches are genuinely useful over a beat, and are the one category where
+    // public-domain material is abundant and unambiguous.
+    { name: "LibriVox", lib: librivox }
   ];
 
   const settled = await Promise.all(sources.map(async (s) => {
@@ -969,7 +992,9 @@ async function scanTempos() {
   await mapWithLimit(pending, 4, async (r) => {
     // Each result is scanned by its own source, or an Openverse row would look
     // up an Archive identifier and silently come back with no tempo.
-    const source = r.provider === "openverse" ? openverse : library;
+    const source = r.provider === "openverse" ? openverse
+      : r.provider === "librivox" ? librivox
+      : library;
     const bpm = await source.detectTempo(r, { decode, analyse });
     r.bpm = bpm;
     r.bpmScanned = true;
@@ -1031,7 +1056,9 @@ async function loadFromArchive(side, release, button) {
 
   // Each source resolves its own files. An Openverse result already knows its
   // audio URL, so this costs no extra round trip there.
-  const source = release.provider === "openverse" ? openverse : library;
+  const source = release.provider === "openverse" ? openverse
+    : release.provider === "librivox" ? librivox
+    : library;
 
   try {
     const files = await source.tracks(release.id);
@@ -1603,6 +1630,254 @@ $("center").addEventListener("click", () => {
   ensureAudio().set("[Master]", "crossfader", 0);
 });
 
+/* ============================================================ automix */
+
+/*
+  Hands the set over from one deck to the other — DJX-24.
+
+  The judgement lives in `automix.js` as a pure function; this is only the part
+  that touches audio. Driven from the render loop rather than a timer, so it
+  cannot run while the page is asleep and then apply a transition all at once.
+*/
+const automix = {
+  enabled: false,
+  prepared: false,
+  /** Where automix last put the fader, so its own moves are not read as manual. */
+  lastSet: null,
+  manualOverride: false,
+  played: new Set(),
+  note: ""
+};
+
+$("automix").addEventListener("click", () => {
+  ensureAudio();
+  automix.enabled = !automix.enabled;
+  automix.prepared = false;
+  automix.manualOverride = false;
+  automix.lastSet = null;
+  $("automix").classList.toggle("on", automix.enabled);
+  $("automixhint").textContent = automix.enabled
+    ? "will hand over near the end of the track"
+    : "hands over between decks";
+});
+
+/** Which deck is carrying the set right now. */
+function playingSide() {
+  for (const side of ["a", "b"]) {
+    const deck = engine.deck(GROUP[side]);
+    if (deck && deck.playing && deck.duration > 0) return side;
+  }
+  return null;
+}
+
+async function automixTick() {
+  if (!automix.enabled || !engine) return;
+
+  const side = playingSide();
+  if (!side) return;
+  const other = side === "a" ? "b" : "a";
+  const deck = engine.deck(GROUP[side]);
+  const otherDeck = engine.deck(GROUP[other]);
+  const fader = engine.masterControls.crossfader;
+
+  // A fader the DJ moved themselves ends automix's involvement in this
+  // transition. Compared against what automix last wrote, not against a
+  // remembered constant, or its own ramping would look like interference.
+  if (detectManualMove(fader, automix.lastSet)) automix.manualOverride = true;
+
+  const decision = nextAction({
+    enabled: true,
+    playingSide: side,
+    position: deck.position,
+    duration: deck.duration,
+    otherLoaded: Boolean(otherDeck && otherDeck.duration > 0),
+    otherPlaying: Boolean(otherDeck && otherDeck.playing),
+    crossfader: fader,
+    manualOverride: automix.manualOverride,
+    prepared: automix.prepared
+  });
+
+  automix.note = decision.reason;
+
+  if (decision.action === AutomixAction.PREPARE) {
+    automix.prepared = true;
+    // Beat-match while the incoming deck is still silent. Doing it during the
+    // fade would be an audible pitch slide.
+    engine.set(GROUP[other], "sync_enabled", 1);
+    syncFaderTo(other);
+  } else if (decision.action === AutomixAction.START_NEXT) {
+    engine.set(GROUP[other], "play", 1);
+  } else if (decision.action === AutomixAction.CROSSFADE) {
+    const v = faderAt(side, decision.progress);
+    automix.lastSet = v;
+    renderXf(v);
+    engine.set("[Master]", "crossfader", v);
+  } else if (decision.action === AutomixAction.FINISH) {
+    // Stop the deck that has been faded out, so it is free to load the next
+    // record rather than playing to nobody.
+    engine.set(GROUP[side], "play", 0);
+    automix.prepared = false;
+    automix.manualOverride = false;
+    automix.lastSet = null;
+    if (deck.trackId) automix.played.add(deck.trackId);
+    autoLoadNext(side);
+  }
+}
+
+/**
+ * Put something on the deck that has just finished.
+ *
+ * Chosen for how easily it mixes under what is now playing, from whatever the
+ * library last returned. Best-effort by design: a failure here means the next
+ * handover has nothing to go to, which automix already reports, rather than an
+ * error in the middle of a set.
+ */
+async function autoLoadNext(side) {
+  if (!automix.enabled || !results.length) return;
+  const nowPlaying = playingSide();
+  const leader = nowPlaying ? engine.deck(GROUP[nowPlaying]) : null;
+  const bpm = leader && leader.bpm ? leader.bpm * leader.playbackRate : null;
+
+  const pick = chooseNext(results, bpm, tempoMatch, automix.played);
+  if (!pick) {
+    automix.note = "nothing left to play — search for more music";
+    return;
+  }
+  const button = document.querySelector('[data-load="' + side + '"]') || document.createElement("button");
+  try {
+    await loadFromArchive(side, pick, button);
+    automix.played.add(pick.id);
+  } catch {
+    automix.note = "could not load the next track";
+  }
+}
+
+/* ============================================================ autotune */
+
+/*
+  A live microphone, pitch-corrected into the mix — DJX-25.
+
+  Reuses the pieces that already exist: `keylock.js` is the pitch shifter and
+  `autotune.js` decides what note the voice should be. What is new here is the
+  input path and two honest constraints.
+
+  FEEDBACK. A microphone and loudspeakers in one room is a feedback loop, and a
+  DJ application is guaranteed to have loudspeakers. Nothing in software makes
+  that safe, so the hint says headphones and the input starts off.
+
+  LATENCY. The shifter adds a constant 49 ms and the browser adds its own output
+  buffer — around 90–110 ms end to end. That is fine in the mix and unusable as
+  a monitor: 100 ms of delay on your own voice is past the point where speech
+  becomes hard to produce. So this feeds the master bus, not an earpiece.
+
+  The key is taken from whichever deck is playing, so the voice is tuned to the
+  record rather than to an arbitrary scale.
+*/
+const mic = { on: false, stream: null, node: null, shifter: null, smoother: null, raf: 0 };
+
+$("mic").addEventListener("click", async () => {
+  const eng = ensureAudio();
+  const btn = $("mic");
+
+  if (mic.on) {
+    for (const track of mic.stream?.getTracks() ?? []) track.stop();
+    if (mic.node) mic.node.disconnect();
+    cancelAnimationFrame(mic.raf);
+    mic.on = false;
+    mic.stream = null;
+    btn.classList.remove("on");
+    btn.textContent = "🎤 MIC + AUTOTUNE";
+    $("michint").textContent = "use headphones — mic + speakers feed back";
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    fail("This browser cannot open a microphone.");
+    return;
+  }
+
+  try {
+    // The browser's own processing is turned off: echo cancellation and noise
+    // suppression are tuned for speech intelligibility on a call and audibly
+    // mangle a sung note before autotune ever sees it.
+    mic.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+  } catch (err) {
+    fail("Microphone access was refused: " + err.message);
+    return;
+  }
+
+  const source = ctx.createMediaStreamSource(mic.stream);
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 4096;
+  const gain = ctx.createGain();
+  gain.gain.value = 0.9;
+
+  // The corrected voice joins the master bus, so it is heard in the room and
+  // captured by the recorder along with everything else.
+  source.connect(analyser);
+  let tail = analyser;
+  const worklet = await eng.createPitchNode?.().catch?.(() => null);
+  if (worklet) {
+    analyser.connect(worklet);
+    tail = worklet;
+    mic.node = worklet;
+  }
+  tail.connect(gain).connect(eng.master);
+  mic.node = mic.node ?? gain;
+
+  mic.smoother = new RetuneSmoother({ retuneMs: 45 });
+  mic.on = true;
+  btn.classList.add("on");
+  btn.textContent = "🎤 MIC ON";
+
+  const frame = new Float32Array(analyser.fftSize);
+  let last = performance.now();
+
+  const tick = () => {
+    if (!mic.on) return;
+    mic.raf = requestAnimationFrame(tick);
+    analyser.getFloatTimeDomainData(frame);
+
+    const voiced = isVoiced(frame);
+    if (!voiced.voiced) {
+      $("michint").textContent = "listening…";
+      return;
+    }
+
+    const { hz, clarity } = detectPitch(frame, ctx.sampleRate);
+    if (!hz) {
+      $("michint").textContent = "no clear pitch";
+      return;
+    }
+
+    // Tune to the key of whatever is playing, when it is known.
+    const side = playingSide();
+    const key = side && analysis[side] && analysis[side].key;
+    const scale = key && key.mode === "minor" ? SCALES.minor
+      : key && key.mode === "major" ? SCALES.major
+      : SCALES.chromatic;
+
+    const correction = correctionFor(hz, {
+      tonic: key ? key.tonic : 0,
+      scale,
+      strength: 0.85
+    });
+
+    const now = performance.now();
+    const ratio = mic.smoother.step(correction.ratio, now - last);
+    last = now;
+    if (worklet) worklet.port.postMessage({ ratio });
+
+    const note = key ? ` · ${key.key}` : "";
+    $("michint").textContent =
+      `${hz.toFixed(1)} Hz · ${correction.cents >= 0 ? "+" : ""}${correction.cents.toFixed(0)} cents` +
+      `${note} · clarity ${clarity.toFixed(2)}`;
+  };
+  tick();
+});
+
 /* ============================================================ render */
 
 function render() {
@@ -1628,6 +1903,10 @@ function render() {
     // The browse list's tempo column has to follow the decks, or it recommends
     // records that suited the record you were playing ten minutes ago.
     syncTempoColumn();
+    // Automix runs off the render loop rather than a timer, so it cannot sleep
+    // through a transition and then apply the whole thing in one frame.
+    automixTick();
+    if (automix.enabled) $("automixhint").textContent = automix.note || "armed";
     $("meter").style.width = Math.min(100, engine.masterLevel() * 100) + "%";
     $("ctxstate").textContent = "audio: " + ctx.state;
   }

@@ -1175,6 +1175,53 @@
           ],
           "status": "done",
           "detail": "Went looking for an intermittent test failure seen twice (787/1 and 839/1 out of ~840) and did not find it - eighteen consecutive full-suite runs stayed green across three conditions: idle, under four-way CPU load, under Chromium saturating network and CPU with real audio downloads, and immediately after build:data on the theory that a freshly rewritten docs/ was the trigger. Reported honestly as unreproduced rather than quietly dropped. THE SEARCH FOUND A DIFFERENT, REAL BUG. Of the three tree walkers in tools/, licence-lint.mjs and check-content-sources.mjs both tolerate a file disappearing between readdirSync and statSync, and both carry a comment explaining why - readdir returns a snapshot, and an editor saving or a build cleaning up can remove an entry before it is stat-ed. check-artifacts.mjs did not, which made it the only place a routine file-system race could take the build down. That matters here specifically because build-demo.mjs CLEARS AND REWRITES the docs/demo, docs/engine-web and docs/providers subtrees that check-artifacts walks, and declaredArtifacts checks existsSync and THEN walks - a textbook time-of-check race with a real writer. Fixed to match its siblings, deliberately narrow: only ENOENT is swallowed, so a permissions problem or a corrupt directory still fails loudly. Proven by restoring the original walk and watching the new test fail, then restoring the fix and watching it pass. Two further tests guard the other direction, because tolerance must not become blindness: a real tree must still walk completely, and walking a file as though it were a directory must never be reported as an empty artifact - which would silently pass the licence-plane check that REQ-LIC-8 depends on."
+        },
+        {
+          "verdict": null,
+          "status": "done",
+          "id": "DJX-22",
+          "name": "Browser sources use the real provider contract",
+          "size": "M",
+          "reqs": [
+            "REQ-CON-5",
+            "REQ-NFR-3"
+          ],
+          "detail": "Asked whether a multi-source provider model exists, assuming DJ decks have one. It did - providers/src/provider.js has defined search/resolve/streamUrl/licenceClass since M3 per REQ-CON-5, with a ProviderRouter that fans queries out, applies per-provider timeouts and reports failures instead of silently serving a smaller catalogue. THE DECK WAS NOT USING IT. It had grown ArchiveLibrary, then OpenverseLibrary, then a hand-rolled merge in the page: two source-selection mechanisms, one tested and one not, diverging. DONE - BrowserProvider EXTENDS Provider, so it is literally the same contract and the same validateTrack licence enforcement, adding only what exists solely in a browser: fetching and decoding through a shared cache. Verified in a browser that all three providers are instanceof Provider. Adding a source is now one adapter plus one registry line; the deck does not change. THE CONTRACT GAINED ONE THING: licenceBasis, because per-item licence metadata and a collection-wide policy are very different strengths of claim and a reader deserves to know which is in play. A provider claiming COLLECTION_POLICY must cite evidence or construction throws - a policy claim without a source is an assumption wearing a suit. SESSION CACHE, chosen by measurement rather than instinct. The obvious cache holds decoded AudioBuffers since they are what plays. Measured on real tracks that is a trap: decoded audio is 9 to 44 times larger than encoded (three tracks = 137 MB decoded vs 8.8 MB encoded), while fetching is the slow variable part at 1 to 3.7 seconds against roughly one second to decode. So it caches ENCODED bytes, LRU, bounded in bytes rather than entries - counting entries would give a hundred short samples and one 60 MB DJ mix equal weight, and it is the mix that fills the tab. THE BUG THIS DESIGN HAS: decodeAudioData DETACHES the buffer it is given, so a cache returning its own instance is left holding a zero-length husk and the second play of a track is silence, with nothing thrown. Guarded - and the guard initially tested nothing, because it detached the result of a cache MISS while the bug lives on the HIT path. Caught by deliberately reintroducing the bug and watching the test still pass."
+        },
+        {
+          "verdict": null,
+          "status": "done",
+          "id": "DJX-23",
+          "name": "Public-domain spoken word as a source",
+          "size": "S",
+          "reqs": [
+            "REQ-CON-5",
+            "REQ-DAT-8"
+          ],
+          "detail": "Asked for story and history speeches useful for mixing. Spoken word genuinely works over a beat - an intro, a breakdown, a bridge - and it is the one category where public-domain material is abundant and unambiguous. DONE - LibriVox, 21,761 items, verified live: a search for history returned 40 rows, all classified public domain, all tagged as speech. LibriVox OWN API IS CORS-BLOCKED (measured: TypeError: Failed to fetch), but the Archive mirrors the whole catalogue through an API that already works here, so ArchiveLibrary gained a configurable collection and LibriVox is a few lines rather than a second client. THE LICENCE BASIS IS DIFFERENT AND WEAKER AND IS STATED AS SUCH. LibriVox items on the Archive mostly carry NO licence URL, so the per-item classifier returns unknown. That is not evidence of restriction - it is the Archive not repeating what LibriVox policy already establishes, since every LibriVox recording is dedicated to the public domain as a condition of acceptance. So this provider declares COLLECTION_POLICY and cites the policy URL, which the contract now forces. TWO COLLECTIONS WERE DELIBERATELY REJECTED. The Great 78 Project - 187,031 digitised 78rpm recordings - is tempting and was checked rather than assumed: Universal and Sony sued the Internet Archive over it in 2023, it settled confidentially in September 2025, and contested works were removed. A catalogue whose copyright status was litigated and resolved on undisclosed terms does not belong in front of a venue, and its items carry no licence URL anyway. Old-time radio was rejected for a duller reason: sampled, it is overwhelmingly by-nc, which the policy engine blocks in a commercial venue, so it would look like a broken source."
+        },
+        {
+          "verdict": null,
+          "status": "done",
+          "id": "DJX-24",
+          "name": "Automix — hands the set over between decks",
+          "size": "M",
+          "reqs": [
+            "REQ-CLK-1",
+            "REQ-SCH-1"
+          ],
+          "detail": "A DJ App Pro feature that was missing, and practically useful rather than lazy: a DJ needs to leave the booth and a venue needs music at 11am with nobody standing there. DONE - verified in a browser: armed, the crossfade ran from 8.8 seconds remaining down to 0.5, the incoming deck started, and the fader arrived at 0.91 with zero console errors. THE JUDGEMENT IS A PURE FUNCTION. All of automix decision-making is nextAction(state), which touches no audio, so every rule is tested at hundreds of points across a transition without a device. A timer-based implementation would be a pile of setTimeouts whose interactions could only be found by listening. FOUR RULES, EACH EARNING ITS PLACE. Transitions start a fixed time before the end rather than at a fraction - a fraction gives a 30-second outro on a nine-minute mix and two seconds on a jingle. The incoming deck is beat-matched BEFORE it is audible, never during, because changing tempo while a track is heard is a pitch slide rather than a crossfade. A track with no detected tempo still mixes, just without beatmatching, or the deck would strand itself on a spoken-word intro forever. And MANUAL INPUT ALWAYS WINS: if the fader moves during a transition, automix stops touching it for the rest of that transition, because a control that fights the hand on it is worse than no automatic control - the DJ cannot tell whether the deck is broken or possessed. That required comparing the fader against what automix last wrote rather than a constant, or its own ramping reads as interference. THE SWEEP TEST INITIALLY TESTED NOTHING: it held prepared:true throughout, so the PREPARE branch could never fire. Rewritten to drive the real state machine, and it now also asserts the ORDER, since preparing after starting would mean beat-matching a track the room can already hear."
+        },
+        {
+          "verdict": null,
+          "status": "done",
+          "id": "DJX-25",
+          "name": "Autotune on a live microphone",
+          "size": "M",
+          "reqs": [
+            "REQ-NFR-1"
+          ],
+          "detail": "Asked for, and cheaper than it sounds because the hard parts existed: keylock.js is already a working pitch shifter and the repo already had validated pitch-detection technique. Autotune is the musical decision between them. DONE - proven end to end by applying the correction and RE-MEASURING, not by inspecting the ratio: a tone 40 cents sharp of A4 was detected at 450.0 Hz and came out at exactly 440.0 Hz (0 cents off); one flat of C5 detected at 515.1 came out at 523.2 (0 cents off). It tunes to the key of whichever deck is playing, using the key detection from DJX-14, so the voice is corrected to the record rather than to an arbitrary scale. TWO CONSTRAINTS STATED RATHER THAN HIDDEN. Latency: the shifter adds a constant 49 ms and the browser adds its output buffer, roughly 90 to 110 ms end to end. That is fine in the mix and UNUSABLE as a headphone monitor, since 100 ms of delay on your own voice is past the point where speech becomes hard to produce. So the corrected signal goes to the master bus, not to an earpiece. Feedback: a microphone and loudspeakers in one room is a feedback loop and a DJ application is guaranteed to have loudspeakers, so nothing in software makes it safe and the UI says headphones. THE DETECTOR TAKES THE EARLIEST STRONG PEAK, not the tallest, because autocorrelation peaks equally at every multiple of the period - the same octave error that once measured a 475 Hz tone as 237.6 Hz here. An octave error in autotune is worse than none: it drags a voice into the wrong register confidently. Corrections beyond a semitone are REFUSED rather than applied, because past that the singer is on a different note and fixing it rewrites the melody - and it is far more likely to be a detector octave error than a singer that far out. Browser echo cancellation and noise suppression are disabled: they are tuned for speech on a call and mangle a sung note before autotune sees it."
         }
       ]
     }

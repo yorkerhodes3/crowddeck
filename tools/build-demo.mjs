@@ -28,8 +28,15 @@
  */
 
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+// Reused rather than reimplemented. A naive scan matches import specifiers that
+// appear inside *comments* — `keylock-node.js` documents the AudioWorklet
+// import restriction by quoting `import { NUM } from "./mod.js"`, and the first
+// transitive version of this check duly failed the build over a file that was
+// never meant to exist. `stripComments` already knows that a `//` inside a
+// string is data, which it learned when a URL was mistaken for a comment.
+import { stripComments } from "./check-content-sources.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docs = join(root, "docs");
@@ -38,10 +45,18 @@ const docs = join(root, "docs");
 const COPY = [
   { from: "clients/deck/index.html", to: "demo/index.html" },
   { from: "engine-web/src", to: "engine-web/src" },
-  // Only the one module the browser actually imports. Copying all of
-  // `providers/` would publish server-side adapters that cannot run in a page
-  // and would imply they are part of the demo.
-  { from: "providers/src/cc-licence.js", to: "providers/src/cc-licence.js" }
+  // Named individually rather than copying `providers/` wholesale, which would
+  // publish server-side adapters that cannot run in a page and would imply they
+  // are part of the demo. Each of these is browser-safe:
+  //   cc-licence.js — pure functions, no imports
+  //   provider.js   — the adapter contract; imports only policy.js
+  //   router.js     — imports only provider.js; uses AbortController and
+  //                   setTimeout, both of which browsers have
+  //   policy.js     — the licence vocabulary; no imports at all
+  { from: "providers/src/cc-licence.js", to: "providers/src/cc-licence.js" },
+  { from: "providers/src/provider.js", to: "providers/src/provider.js" },
+  { from: "providers/src/router.js", to: "providers/src/router.js" },
+  { from: "core/src/policy.js", to: "core/src/policy.js" }
 ];
 
 function copyDir(from, to) {
@@ -85,19 +100,42 @@ for (const { from, to } of COPY) {
  * A silently broken demo is worse than none: the link still resolves, the page
  * still renders, and the first symptom is a blank deck for whoever opened it. So
  * every module the page imports is checked to exist on disk, here, at build time.
+ *
+ * Followed TRANSITIVELY, which it was not originally. Checking only the page's
+ * own imports let a module be present while something *it* imported was missing —
+ * exactly what happened when the provider registry arrived: `registry.js` was
+ * copied, satisfied the check, and imported a `router.js` that was not there. The
+ * build passed and the demo threw `Failed to fetch dynamically imported module`
+ * in the browser, which is precisely the failure this guard exists to prevent.
  */
-const html = readFileSync(join(docs, "demo/index.html"), "utf8");
-const imports = [...html.matchAll(/from\s+"([^"]+\.js)"/g)].map((m) => m[1]);
+const entryHtml = readFileSync(join(docs, "demo/index.html"), "utf8");
+const IMPORT_RE = /(?:from|import)\s*\(?\s*"([^"]+\.js)"/g;
+
 const missing = [];
-for (const spec of imports) {
-  if (!spec.startsWith(".")) continue;
-  const target = resolve(join(docs, "demo"), spec);
-  try {
-    statSync(target);
-  } catch {
-    missing.push(spec);
+const seen = new Set();
+let checked = 0;
+
+/** @param {string} fromDir @param {string} text */
+function follow(fromDir, text) {
+  for (const [, spec] of text.matchAll(IMPORT_RE)) {
+    if (!spec.startsWith(".")) continue;
+    const target = resolve(fromDir, spec);
+    if (seen.has(target)) continue;
+    seen.add(target);
+    checked++;
+    let source;
+    try {
+      source = readFileSync(target, "utf8");
+    } catch {
+      missing.push(`${spec}  (imported from ${relative(docs, fromDir) || "demo"}/)`);
+      continue;
+    }
+    follow(dirname(target), stripComments(source));
   }
 }
+
+follow(join(docs, "demo"), stripComments(entryHtml));
+
 if (missing.length) {
   console.error(
     "build-demo: the published demo would be broken — these imports have no file:\n" +
@@ -107,6 +145,6 @@ if (missing.length) {
 }
 
 console.log(
-  `build-demo: ${copied} files into docs/, ${imports.length} imports resolved.\n` +
+  `build-demo: ${copied} files into docs/, ${checked} imports resolved (transitively).\n` +
     "  Playable demo will be served at <pages-url>/demo/"
 );

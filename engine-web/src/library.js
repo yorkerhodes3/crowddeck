@@ -55,7 +55,16 @@ const METADATA_ENDPOINT = "https://archive.org/metadata/";
  */
 export const COLLECTIONS = Object.freeze({
   netlabels: "collection:netlabels",
-  audio: "mediatype:audio"
+  audio: "mediatype:audio",
+  /**
+   * LibriVox's public-domain spoken word, mirrored on the Archive — DJX-23.
+   *
+   * LibriVox's own API (`librivox.org/api/`) sends no CORS header and cannot be
+   * called from a page; measured, it fails with `TypeError: Failed to fetch`. The
+   * Archive mirror carries the same catalogue — 21,761 items — through an API
+   * that already works here.
+   */
+  librivox: "collection:librivoxaudio"
 });
 
 /**
@@ -103,12 +112,22 @@ export class ArchiveLibraryError extends Error {
 
 export class ArchiveLibrary {
   /**
-   * @param {{fetch?: typeof globalThis.fetch, rows?: number, commercialOnly?: boolean}} [opts]
+   * @param {object} [opts]
+   * @param {typeof globalThis.fetch} [opts.fetch]
+   * @param {number} [opts.rows]
+   * @param {boolean} [opts.commercialOnly]
+   * @param {string[]} [opts.collections] Lucene clauses selecting what to search.
+   *   Defaults to the netlabels music collection. Overridable because the Archive
+   *   is a *gateway* to several distinct catalogues — LibriVox's public-domain
+   *   spoken word is the same API and the same file layout, differing only in
+   *   which collection is asked for. Sharing the machinery rather than copying it
+   *   is what makes a second Archive-backed provider a few lines of config.
    */
   constructor(opts = {}) {
     this.fetch = opts.fetch ?? globalThis.fetch?.bind(globalThis);
     this.rows = opts.rows ?? 40;
     this.commercialOnly = opts.commercialOnly !== false;
+    this.collections = opts.collections ?? [COLLECTIONS.netlabels, COLLECTIONS.audio];
     /** Resolved file lists, so picking a track twice does not re-fetch. */
     this.cache = new Map();
     /** Resolved artwork URLs, including the null answers. */
@@ -137,7 +156,7 @@ export class ArchiveLibrary {
    * @param {string} term
    */
   buildQuery(term) {
-    const parts = [COLLECTIONS.netlabels, COLLECTIONS.audio];
+    const parts = [...this.collections];
     if (this.commercialOnly) parts.push(COMMERCIAL_LICENCE_QUERY);
     const clean = String(term ?? "").trim();
     if (clean) {
