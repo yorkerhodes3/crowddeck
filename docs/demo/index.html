@@ -418,7 +418,8 @@ function ensureAudio() {
       }
       return ok;
     });
-    window.__crowddeck = { ctx, engine, analysis, library, keylockReady };
+    window.__crowddeck = { ctx, engine, analysis, library, keylockReady,
+      openverse, librivox, sources: sourceRegistry, cacheStats: () => audioCache.stats() };
   }
   if (ctx.state === "suspended") ctx.resume();
   return engine;
@@ -1065,41 +1066,55 @@ async function loadFromArchive(side, release, button) {
     if (!files.length) throw new Error("no playable audio in this release");
 
     const file = files[0];
-    const res = await fetch(file.url);
-    if (!res.ok) throw new Error("HTTP " + res.status);
 
     /*
-      Progress, because these are real files over a real connection and some
-      Archive items are 30 MB or more. A button that says "…" for fifty seconds is
-      indistinguishable from one that is broken, and the first thing anyone does
-      with an unresponsive control is press it again.
+      Fetched through the session cache — DJX-22. Loading the same record onto
+      the other deck, or reloading after a mistake, is something a DJ does
+      constantly, and without this each one is a fresh multi-megabyte download
+      from a charity's servers and a two-to-four second dead deck.
 
-      `content-length` is usually present but not guaranteed, so the reader falls
-      back to counting bytes without a percentage rather than showing a wrong one.
+      Progress is reported from inside the loader, because these are real files
+      over a real connection and some Archive items are 30 MB or more. A button
+      that says "…" for fifty seconds is indistinguishable from a broken one, and
+      the first thing anyone does with an unresponsive control is press it again.
+      A cache hit skips all of that and says so.
     */
-    const total = Number(res.headers.get("content-length")) || file.bytes || 0;
-    let received = 0;
-    const chunks = [];
-    const reader = res.body && res.body.getReader ? res.body.getReader() : null;
+    const cached = audioCache.has(file.url);
+    show(cached ? "cached" : "…");
 
-    if (reader) {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        show(total ? Math.round((received / total) * 100) + "%" : Math.round(received / 1048576) + "MB");
+    const bytes = await audioCache.get(file.url, async () => {
+      const res = await fetch(file.url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      // `content-length` is usually present but not guaranteed, so the reader
+      // falls back to counting bytes rather than showing a wrong percentage.
+      const total = Number(res.headers.get("content-length")) || file.bytes || 0;
+      let received = 0;
+      const chunks = [];
+      const reader = res.body && res.body.getReader ? res.body.getReader() : null;
+
+      if (reader) {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          show(total ? Math.round((received / total) * 100) + "%" : Math.round(received / 1048576) + "MB");
+        }
+      } else {
+        chunks.push(new Uint8Array(await res.arrayBuffer()));
       }
-    } else {
-      chunks.push(new Uint8Array(await res.arrayBuffer()));
-    }
 
-    const bytes = new Uint8Array(received || chunks[0].length);
-    let off = 0;
-    for (const c of chunks) { bytes.set(c, off); off += c.length; }
+      const out = new Uint8Array(received || chunks[0].length);
+      let off = 0;
+      for (const c of chunks) { out.set(c, off); off += c.length; }
+      return out.buffer;
+    });
 
     show("decode");
-    const buffer = await ctx.decodeAudioData(bytes.buffer);
+    // `decodeAudioData` detaches what it is given; the cache hands out copies
+    // for exactly this reason, so the entry survives to be replayed.
+    const buffer = await ctx.decodeAudioData(bytes);
 
     show("analyse");
     // Artwork is fetched alongside, and its failure is ignored: a missing sleeve
@@ -1738,7 +1753,7 @@ async function autoLoadNext(side) {
   const leader = nowPlaying ? engine.deck(GROUP[nowPlaying]) : null;
   const bpm = leader && leader.bpm ? leader.bpm * leader.playbackRate : null;
 
-  const pick = chooseNext(results, bpm, tempoMatch, automix.played);
+  const pick = chooseNext(results, bpm, tempoMatch, automix.played, { recycle: true });
   if (!pick) {
     automix.note = "nothing left to play — search for more music";
     return;

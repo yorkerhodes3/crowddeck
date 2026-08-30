@@ -209,6 +209,37 @@ test("an empty or exhausted queue is null, not an exception", () => {
   assert.equal(chooseNext([{ id: "a", bpm: 128 }], 128, match, new Set(["a"])), null);
 });
 
+test("with recycling, an exhausted pool comes round again rather than going silent", () => {
+  // The difference between "play this list once" and "run the room unattended",
+  // which is what automix is actually for. A set that repeats after forty
+  // records is enormously better than a room that goes quiet at 2am.
+  const played = new Set(["a", "b"]);
+  const pick = chooseNext(
+    [{ id: "a", bpm: 128 }, { id: "b", bpm: 129 }],
+    128, match, played, { recycle: true }
+  );
+  assert.ok(pick, "should have come round again");
+  assert.ok(["a", "b"].includes(pick.id));
+  assert.ok(played.size < 2, "the played set should have been cleared to start the next pass");
+});
+
+test("recycling still cannot invent a track from an empty pool", () => {
+  assert.equal(chooseNext([], 128, match, new Set(), { recycle: true }), null);
+  assert.equal(chooseNext(null, 128, match, new Set(), { recycle: true }), null);
+});
+
+test("recycling does not fire while anything unplayed remains", () => {
+  // Otherwise a single exhausted-looking frame would wipe the history and start
+  // repeating tracks that had not been played yet.
+  const played = new Set(["a"]);
+  const pick = chooseNext(
+    [{ id: "a", bpm: 128 }, { id: "b", bpm: 128 }],
+    128, match, played, { recycle: true }
+  );
+  assert.equal(pick.id, "b");
+  assert.ok(played.has("a"), "history must survive while unplayed tracks remain");
+});
+
 test("the crossfade length is a real duration, not a fraction of the track", () => {
   // A fraction gives a 30-second outro on a nine-minute mix and two seconds on a
   // jingle. Pins the choice so it cannot quietly become a percentage.

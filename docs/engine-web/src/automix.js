@@ -185,11 +185,24 @@ export function detectManualMove(observed, expected, tolerance = 0.05) {
  * @param {number|null} currentBpm
  * @param {(a: number|null, b: number|null) => {mixable: boolean, percent: number|null}} tempoMatch
  * @param {Set<string>} [played] Ids already used this session.
+ * @param {{recycle?: boolean}} [opts]
  * @returns {object|null}
  */
-export function chooseNext(candidates, currentBpm, tempoMatch, played = new Set()) {
-  const fresh = (candidates ?? []).filter((c) => c && !played.has(c.id));
-  if (!fresh.length) return null;
+export function chooseNext(candidates, currentBpm, tempoMatch, played = new Set(), opts = {}) {
+  const pool = candidates ?? [];
+  let fresh = pool.filter((c) => c && !played.has(c.id));
+
+  if (!fresh.length) {
+    // Exhausted. Without recycling automix stops here — which is correct for a
+    // "play this list once" queue and wrong for the thing it is actually for,
+    // which is running a room unattended. A set that repeats after forty records
+    // is enormously better than a room that goes silent at 2am, so the caller
+    // may ask for the pool to come round again.
+    if (!opts.recycle) return null;
+    played.clear();
+    fresh = pool.filter(Boolean);
+    if (!fresh.length) return null;
+  }
 
   const mixable = fresh
     .map((c) => ({ c, m: tempoMatch(currentBpm, c.bpm) }))
