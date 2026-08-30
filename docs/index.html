@@ -572,7 +572,7 @@
     <span class="status">✅</span>
     <div class="ph">Phase 3 · complete</div>
     <h4>BACKLOG.md</h4>
-    <p>12 epics, 88 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
+    <p>12 epics, 89 stories across 8 milestones, every one traced to a requirement and a fork/adopt verdict. Traceability enforced in CI.</p>
   </div>
 </div>
 
@@ -665,7 +665,7 @@
       the conformance suite, the licence-lint gate, the <strong>Unified Scheduler</strong>, the venue API
       with live push, patron / DJ / display clients, the <strong>MIDI interconnect</strong> — and now a
       <strong>Web Audio engine with two real decks, with working key lock and key detection</strong>.
-      <strong>925 tests, 20 conformance checks</strong>,
+      <strong>929 tests, 20 conformance checks</strong>,
       zero dependencies, all green in CI.
       <br><br>
       This line used to read <em>"nothing is audible yet"</em>, because audio was gated behind a Mixxx fork
@@ -991,6 +991,22 @@
       credit computed and thrown away. Both found by grepping for the feature rather than trusting that
       building it meant using it. Now verified by counting audio requests (a second deck load =
       <strong>zero</strong> extra downloads) and by reading the clipboard back after copying credits.
+      <br><br>
+      <strong>And then a bug report proved the point.</strong> Pressing load on a spoken-word row failed with
+      <span class="mono">source.tracks is not a function</span> — because the conversion above was only
+      <em>half</em> done. LibriVox was wired through the provider contract; the Archive and Openverse kept
+      their <em>library</em> objects, which expose <span class="mono">tracks</span>/<span class="mono">coverArt</span>
+      where providers expose <span class="mono">files</span>/<span class="mono">art</span>. All three sat in
+      the same variable. <strong>Search worked, because both shapes happen to have <span class="mono">search</span></strong> —
+      so the mismatch stayed invisible until someone pressed load. Half-converting an abstraction is worse
+      than not converting it: it looks finished and fails only on the path nobody exercised.
+      <br><br>
+      <strong>The guard written for it did not work either.</strong> It checked
+      <span class="mono">typeof provider[method] === "function"</span> for everything the deck calls —
+      and reverting the bug left it <em>passing</em>, because the base class defines unimplemented methods as
+      stubs that throw. They are functions whether or not anyone wrote them. Rewritten to check the method was
+      actually <em>overridden</em>, then re-verified by reintroducing the bug and watching it fail. That is the
+      third hollow test this session caught by the same habit: break the thing the test guards, and watch.
     </div>
 
     <div class="callout" style="border-left-color: var(--warn);">

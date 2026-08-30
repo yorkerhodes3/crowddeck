@@ -108,6 +108,38 @@ export class BrowserProvider extends Provider {
   }
 
   /**
+   * The playable files behind a result.
+   *
+   * Part of the browser contract rather than the base one because it is where
+   * the two worlds genuinely differ: a venue engine is handed a single stream
+   * URL, while a browser needs the file's *name* to title the deck and its
+   * *size* to show download progress. `streamUrl` is derived from this rather
+   * than implemented separately, so the two can never disagree about which file
+   * is the one being played.
+   *
+   * @param {string} trackId
+   * @returns {Promise<Array<{url: string, name: string, bytes: number, durationSec: number}>>}
+   */
+  async files(trackId) {
+    void trackId;
+    throw new ProviderError(this.id, `${this.id} does not implement files()`);
+  }
+
+  /**
+   * Something the engine can load — the first playable file.
+   *
+   * Derived, never overridden: if a provider answered `streamUrl` from one place
+   * and `files` from another, the deck would show one track's name while playing
+   * another's audio.
+   *
+   * @param {string} trackId
+   */
+  async streamUrl(trackId) {
+    const list = await this.files(trackId);
+    return list[0]?.url ?? null;
+  }
+
+  /**
    * Fetch a track's bytes, through the session cache.
    *
    * The cache is keyed by the resolved URL rather than the track id, so two

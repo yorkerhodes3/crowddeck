@@ -382,8 +382,8 @@
 import { WebEngine } from "../engine-web/src/web-engine.js";
 import { detectBpm, firstAudible, foldTempo, toMono, waveformPeaks, advancePlatter, audiblePosition, seekFraction } from "../engine-web/src/analyse.js";
 import { eqKnobToDb } from "../engine-web/src/mixer.js";
-import { ArchiveLibrary, formatCount } from "../engine-web/src/library.js";
-import { OpenverseLibrary, detectConsumerService } from "../engine-web/src/openverse.js";
+import { formatCount } from "../engine-web/src/library.js";
+import { detectConsumerService } from "../engine-web/src/openverse.js";
 import { formatTempoMatch, mapWithLimit, rankByTempo, tempoMatch } from "../engine-web/src/bpm-match.js";
 import { buildSources } from "../engine-web/src/providers/registry.js";
 import { AutomixAction, chooseNext, detectManualMove, faderAt, nextAction } from "../engine-web/src/automix.js";
@@ -406,16 +406,29 @@ let engine = null;
  */
 let keylockReady = null;
 const analysis = { a: null, b: null };
-const library = new ArchiveLibrary();
-const openverse = new OpenverseLibrary();
 /*
   Every playable catalogue, behind the same `Provider` contract the venue-side
   adapters use — DJX-22. Adding a source is one entry in `registry.js`; nothing
   in this page changes.
 */
 const sourceRegistry = buildSources();
-const librivox = sourceRegistry.router.get("librivox");
 const audioCache = sourceRegistry.cache;
+
+/**
+ * The provider that owns a row.
+ *
+ * Everything goes through this — DJX-27. An earlier version kept the two
+ * Archive/Openverse *library* objects in the same variable slot as the LibriVox
+ * *provider*, and the two have different surfaces: libraries expose
+ * `tracks`/`coverArt`, providers expose `files`/`art`. Search worked because
+ * both have `search`, so the mismatch only appeared when someone pressed load —
+ * "source.tracks is not a function". Exactly the two-abstraction problem the
+ * provider work existed to remove, reintroduced by converting one source and
+ * not the others.
+ */
+function providerFor(row) {
+  return sourceRegistry.router.get(row && row.provider) ?? sourceRegistry.router.get("archive");
+}
 
 /*
   The AudioContext cannot start until a gesture. Browsers require it, and it is
@@ -434,8 +447,9 @@ function ensureAudio() {
       }
       return ok;
     });
-    window.__crowddeck = { ctx, engine, analysis, library, keylockReady,
-      openverse, librivox, sources: sourceRegistry, cacheStats: () => audioCache.stats() };
+    window.__crowddeck = { ctx, engine, analysis, keylockReady,
+      sources: sourceRegistry, provider: providerFor,
+      cacheStats: () => audioCache.stats() };
   }
   if (ctx.state === "suspended") ctx.resume();
   return engine;
@@ -767,12 +781,12 @@ async function runSearch(term) {
   list.innerHTML = '<div class="libmsg">Searching openly-licensed music…</div>';
 
   const sources = [
-    { name: "Internet Archive", lib: library },
-    { name: "Openverse", lib: openverse },
+    { name: "Internet Archive", lib: sourceRegistry.router.get("archive") },
+    { name: "Openverse", lib: sourceRegistry.router.get("openverse") },
     // Public-domain spoken word — DJX-23. Asked for directly: story and history
     // speeches are genuinely useful over a beat, and are the one category where
     // public-domain material is abundant and unambiguous.
-    { name: "LibriVox", lib: librivox }
+    { name: "LibriVox", lib: sourceRegistry.router.get("librivox") }
   ];
 
   const settled = await Promise.all(sources.map(async (s) => {
@@ -801,8 +815,13 @@ async function runSearch(term) {
   }
 
   // Openverse results carry their audio URL already, so the loader can skip a
-  // metadata round trip entirely.
-  for (const r of results) if (r.provider === "openverse") openverse.remember(r);
+  // metadata round trip entirely. Recorded on the provider that will be asked
+  // for them — an earlier version remembered them on a *different* instance of
+  // the same class, which did nothing at all.
+  for (const r of results) {
+    const p = providerFor(r);
+    if (p && typeof p.remember === "function") p.remember(r);
+  }
 
   renderResults();
   if (failures.length) {
@@ -1055,9 +1074,7 @@ async function scanTempos() {
   await mapWithLimit(pending, 4, async (r) => {
     // Each result is scanned by its own source, or an Openverse row would look
     // up an Archive identifier and silently come back with no tempo.
-    const source = r.provider === "openverse" ? openverse
-      : r.provider === "librivox" ? librivox
-      : library;
+    const source = providerFor(r);
     const bpm = await source.detectTempo(r, { decode, analyse });
     r.bpm = bpm;
     r.bpmScanned = true;
@@ -1119,12 +1136,10 @@ async function loadFromArchive(side, release, button) {
 
   // Each source resolves its own files. An Openverse result already knows its
   // audio URL, so this costs no extra round trip there.
-  const source = release.provider === "openverse" ? openverse
-    : release.provider === "librivox" ? librivox
-    : library;
+  const source = providerFor(release);
 
   try {
-    const files = await source.tracks(release.id);
+    const files = await source.files(release.id);
     if (!files.length) throw new Error("no playable audio in this release");
 
     const file = files[0];
@@ -1181,7 +1196,7 @@ async function loadFromArchive(side, release, button) {
     show("analyse");
     // Artwork is fetched alongside, and its failure is ignored: a missing sleeve
     // must never stop a track loading.
-    const art = await source.coverArt(release.id).catch(() => null);
+    const art = await source.art(release.id).catch(() => null);
     await loadBuffer(side, buffer, file.name, {
       // An Openverse result carries a real track title; an Archive filename has
       // to be tidied. Using the release title for Openverse avoids turning a

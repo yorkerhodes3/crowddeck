@@ -14,6 +14,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SessionCache } from "../../src/providers/session-cache.js";
 import { BrowserProvider, LicenceBasis } from "../../src/providers/browser-provider.js";
+import { buildSources } from "../../src/providers/registry.js";
 import { Provider } from "../../../providers/src/provider.js";
 
 const buf = (n, fill = 1) => {
@@ -128,7 +129,7 @@ class Stub extends BrowserProvider {
     });
     this.url = opts.url ?? "https://example.test/a.mp3";
   }
-  async streamUrl() { return this.url; }
+  async files() { return [{ url: this.url, name: "t", bytes: 0, durationSec: 0 }]; }
   async licenceClass() { return "cc_attribution"; }
 }
 
@@ -202,4 +203,82 @@ test("a 404 is not marked retryable", async () => {
     assert.equal(err.retryable, false);
     return true;
   });
+});
+
+test("streamUrl is derived from files, so the two cannot disagree", async () => {
+  // If a provider answered streamUrl from one place and files from another, the
+  // deck would show one track's name while playing another's audio.
+  class Two extends BrowserProvider {
+    constructor() { super({ id: "two", licenceBasis: LicenceBasis.PER_ITEM }); }
+    async files() {
+      return [
+        { url: "https://example.test/first.mp3", name: "First", bytes: 1, durationSec: 1 },
+        { url: "https://example.test/second.mp3", name: "Second", bytes: 1, durationSec: 1 }
+      ];
+    }
+    async licenceClass() { return "cc_attribution"; }
+  }
+  const p = new Two();
+  const [first] = await p.files("x");
+  assert.equal(await p.streamUrl("x"), first.url);
+});
+
+test("a provider with no files yields no stream url rather than undefined", async () => {
+  class Empty extends BrowserProvider {
+    constructor() { super({ id: "empty", licenceBasis: LicenceBasis.PER_ITEM }); }
+    async files() { return []; }
+    async licenceClass() { return "unknown"; }
+  }
+  assert.equal(await new Empty().streamUrl("x"), null);
+});
+
+/* --------------------------------------------- the surface the deck calls */
+
+test("every registered provider implements everything the deck calls — DJX-27", async () => {
+  // THE GUARD THAT WAS MISSING. The deck used to hold two different object
+  // shapes in the same slot: the Archive and Openverse *libraries*, which expose
+  // `tracks`/`coverArt`, alongside the LibriVox *provider*, which exposes
+  // `files`/`art`. Search worked, because both happen to have `search` — so the
+  // mismatch stayed invisible until someone pressed load and got
+  // "source.tracks is not a function".
+  //
+  // A `typeof === "function"` check is NOT enough, and the first version of this
+  // test proved it: the base class defines the unimplemented methods as stubs
+  // that throw, so they are functions whether or not anyone wrote them.
+  // Reverting LibriVox to the broken shape left this test passing. So it checks
+  // the method was actually OVERRIDDEN, by identity against the base prototype.
+  const { providers } = buildSources();
+  assert.ok(providers.length >= 3, "the registry should carry every shipped source");
+
+  // Inheriting these is a bug: the base versions throw "does not implement".
+  const MUST_OVERRIDE = ["search", "files", "licenceClass"];
+  // These are legitimately inherited — `streamUrl` is derived from `files` on
+  // purpose, `art` defaults to no artwork, and `fetchAudio`/`remember` are the
+  // shared implementations every provider is meant to use.
+  const MAY_INHERIT = ["streamUrl", "art", "fetchAudio", "remember"];
+
+  for (const provider of providers) {
+    for (const method of MUST_OVERRIDE) {
+      assert.equal(typeof provider[method], "function",
+        `provider "${provider.id}" has no ${method}()`);
+      assert.notEqual(provider[method], BrowserProvider.prototype[method],
+        `provider "${provider.id}" inherits the unimplemented ${method}() — it will throw when the deck calls it`);
+      assert.notEqual(provider[method], Provider.prototype[method],
+        `provider "${provider.id}" inherits the unimplemented ${method}() — it will throw when the deck calls it`);
+    }
+    for (const method of [...MAY_INHERIT, "detectTempo"]) {
+      assert.equal(typeof provider[method], "function",
+        `provider "${provider.id}" is missing ${method}() — the deck calls it on every source`);
+    }
+  }
+});
+
+test("every registered provider is reachable by the id its rows carry", async () => {
+  // The deck looks a provider up by `row.provider`. If a provider's search
+  // stamped a different id than the one it registered under, every load would
+  // silently fall through to the default source.
+  const { router, providers } = buildSources();
+  for (const provider of providers) {
+    assert.equal(router.get(provider.id), provider, `"${provider.id}" is not reachable by its own id`);
+  }
 });

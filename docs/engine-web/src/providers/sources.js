@@ -62,9 +62,8 @@ export class ArchiveProvider extends BrowserProvider {
     return releases.map((r) => this.remember({ ...r, provider: this.id, kind: "music" }));
   }
 
-  async streamUrl(trackId) {
-    const files = await this.library.tracks(trackId);
-    return files[0]?.url ?? null;
+  async files(trackId) {
+    return this.library.tracks(trackId);
   }
 
   async licenceClass(trackId) {
@@ -141,9 +140,19 @@ export class LibriVoxProvider extends BrowserProvider {
     );
   }
 
-  async streamUrl(trackId) {
-    const files = await this.library.tracks(trackId);
-    return files[0]?.url ?? null;
+  async files(trackId) {
+    const list = await this.library.tracks(trackId);
+    const row = this.rows.get(trackId);
+    if (!row?.title) return list;
+    // A LibriVox item is a BOOK and its files are CHAPTERS, whose names on the
+    // Archive are slugs — `prideandprejudice_30_austen_64kb`. Tidied, that still
+    // reads as a filename, which on a deck looks like a fault. The release title
+    // is what the recording actually is, so it is used instead.
+    //
+    // The chapter number is deliberately NOT parsed out of the slug: the files
+    // are ordered by size rather than by chapter, so any index shown beside the
+    // title would be confidently wrong.
+    return list.map((f) => ({ ...f, name: row.title }));
   }
 
   async licenceClass() {
@@ -187,8 +196,16 @@ export class OpenverseProvider extends BrowserProvider {
     });
   }
 
-  async streamUrl(trackId) {
-    return this.rows.get(trackId)?.audioUrl ?? null;
+  async files(trackId) {
+    const row = this.rows.get(trackId);
+    if (!row?.audioUrl) return [];
+    // An Openverse result IS a single track, so this costs no round trip.
+    return [{
+      url: row.audioUrl,
+      name: row.title,
+      bytes: row.bytes ?? 0,
+      durationSec: row.durationSec ?? 0
+    }];
   }
 
   async licenceClass(trackId) {
