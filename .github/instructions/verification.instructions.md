@@ -100,4 +100,24 @@ trace showed zero failing requests while the page logged two 404s.
   Use an absolute `file:///` URL, percent-encoding the spaces in the repo path.
 - Port 8080 is often taken by an unrelated service in this shared environment.
   Check what actually answers before concluding the server failed.
+- **Testing the same remote track from two origins can poison it for both.**
+  Jamendo's CDN reflects the request `Origin` into `Access-Control-Allow-Origin`
+  but caches without `Vary: Origin`, so after loading a track from `127.0.0.1`
+  the hosted demo got `ACAO: http://127.0.0.1:8099` and was blocked — then the
+  next attempt flipped, blocking localhost instead. A cache-busting parameter
+  does not help; the edge keys on the track id. **The failure was created by the
+  test, not found by it**: a different track played fine from both origins, and a
+  fresh six-load sweep of the hosted demo was clean. Before removing a provider
+  over a CORS error, check a track you have not already fetched from elsewhere.
+- **The dev server's mount list is not the import graph.** `npm start` served a
+  deck where every control silently did nothing, because `providers/` imports
+  `core/src/policy.js` and `core/` was not mounted — the 404 aborted the module
+  before any listener attached. No HTTP check catches this: the page and every
+  module it *names* return 200. The published demo was fine, which is why it went
+  unnoticed. Walk the graph in **URL space**, not on disk: the page is at
+  `/deck/` but lives in `clients/deck/`, so `../engine-web` resolves to a path
+  that does not exist on disk at all.
+- **Wait for a value to change, not to exist.** A probe that waited for a decoded
+  buffer returned instantly with the *previous* track's buffer, so six different
+  records all reported an identical 165.1 seconds and looked like a pass.
 - MSI/MSVC installs fail with exit 1602 (no admin). Portable ZIP tools work.

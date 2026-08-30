@@ -1228,11 +1228,43 @@ async function loadFromArchive(side, release, button) {
       track: release
     });
   } catch (err) {
-    fail('Could not load "' + release.title + '": ' + err.message);
+    fail('Could not load "' + release.title + '": ' + explainLoadFailure(err));
   } finally {
     button.textContent = original;
     button.disabled = false;
   }
+}
+
+/**
+ * "Failed to fetch" is what the browser says for every network-level refusal,
+ * and on this deck it almost always means one specific thing worth naming.
+ *
+ * Measured, not guessed. Jamendo's CDN reflects the requesting Origin into
+ * `Access-Control-Allow-Origin` but caches the response WITHOUT `Vary: Origin`,
+ * so an edge serves whichever origin asked first. Loading a track from
+ * `127.0.0.1` and then the same track from the hosted demo produced:
+ *
+ *   the 'Access-Control-Allow-Origin' header has a value 'http://127.0.0.1:8099'
+ *   that is not equal to the supplied origin
+ *
+ * — and the reverse on the next attempt, the cache having flipped. A
+ * cache-busting query parameter does not help, because the edge keys on the
+ * track id and ignores the extra parameter. Nothing on this side can fix it; the
+ * track recovers on its own when the entry expires, and another one plays now.
+ *
+ * Saying that is the whole point. A DJ who reads "Failed to fetch" concludes the
+ * deck is broken and stops trusting it. A DJ who reads that the host refused
+ * this one track picks another record and carries on, which is the correct
+ * action and the only one available.
+ */
+function explainLoadFailure(err) {
+  const msg = err && err.message ? err.message : String(err);
+  if (err instanceof TypeError && /fetch/i.test(msg)) {
+    return "the host refused the request for this track. This is usually a " +
+      "cross-origin cache on their side rather than a fault here — it clears by " +
+      "itself. Another track will play now.";
+  }
+  return msg;
 }
 
 /**
