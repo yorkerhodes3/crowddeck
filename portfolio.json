@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "crowddeck",
+  "title": "CrowdDeck",
+  "repo": "yorkerhodes3/crowddeck",
+  "summary": "An open-source venue runtime that runs a DJ deck engine and a TouchTunes-style crowd request jukebox on one scheduler, library and clock, for venues that are a jukebox by day and a DJ room by night.",
+  "kind": "application",
+  "methodTags": [
+    "open-source",
+    "edge-hardware"
+  ],
+  "domainTags": [
+    "creative-media"
+  ],
+  "contribution": {
+    "date": "2026-08-30",
+    "role": "built",
+    "credits": []
+  },
+  "narrative": {
+    "problem": "Every DJ application surveyed scores effectively zero on crowd participation, and every jukebox platform scores effectively zero on performance capability, yet real venues need both on a schedule. Existing open-source jukeboxes also depend on a host's consumer Spotify account, which conveys no public-performance rights.",
+    "decision": "Writes the engine contract (CDEP, NDJSON over a local socket) first and keeps the planned GPL-2.0-or-later Mixxx engine behind a hard process boundary from the Apache-2.0 core, proven replaceable by a conformant stub engine and a browser Web Audio engine.",
+    "tradeoff": "The project ships as two separate downloads and every engine call crosses an IPC boundary, so its latency budgets depend on measurements still outstanding; the split-licence position is accepted risk, with no legal review obtained or planned.",
+    "limitation": "The build is in progress at 76 of 91 stories. The venue clients (patron, DJ console, display) still run on the silent stub engine, the native Mixxx engine is not built, and latency is measured only on WASAPI; other platforms need real audio and MIDI hardware.",
+    "caveat": "The live deck plays openly licensed music entirely in the browser and uploads nothing; the venue clients still use a stub engine that produces no sound."
+  },
+  "evidence": {
+    "level": "evaluated-result",
+    "links": [
+      {
+        "label": "Latest commit",
+        "url": "https://github.com/yorkerhodes3/crowddeck/commit/68e207d77f6a7b73a366b9967e36ea1f8e02a91a",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "README",
+        "url": "https://github.com/yorkerhodes3/crowddeck#readme",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "Specification",
+        "url": "https://github.com/yorkerhodes3/crowddeck/blob/main/SPECIFICATION.md",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "Ratified decisions",
+        "url": "https://github.com/yorkerhodes3/crowddeck/blob/main/DECISIONS.md",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "Day-in-the-life acceptance test",
+        "url": "https://github.com/yorkerhodes3/crowddeck/blob/main/core/test/day-in-the-life.test.js",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "SPIKE-1 report",
+        "url": "https://github.com/yorkerhodes3/crowddeck/blob/main/spike/SPIKE-1-REPORT.md",
+        "date": "2026-08-30"
+      },
+      {
+        "label": "SPIKE-2 latency findings",
+        "url": "https://github.com/yorkerhodes3/crowddeck/blob/main/spike/spike-2/FINDINGS.md",
+        "date": "2026-08-30"
+      }
+    ]
+  },
+  "links": {
+    "source": "https://github.com/yorkerhodes3/crowddeck"
+  },
+  "images": [
+    {
+      "id": "dashboard",
+      "src": ".portfolio/dashboard.webp",
+      "alt": "CrowdDeck dashboard hero reading The DJ booth and the jukebox have never shared one machine, with a button to open the live deck, cards adding DJ app, TouchTunes and MIDI tiers into CrowdDeck, and counts of products, projects, requirements and stories.",
+      "caption": "The project dashboard states the thesis and the research behind it: 11 products analysed, 41 open-source projects triaged, 123 requirements and 91 stories.",
+      "credit": "Screenshot of the CrowdDeck site",
+      "source": "screenshot of docs/index.html"
+    },
+    {
+      "id": "live-deck",
+      "src": ".portfolio/live-deck.webp",
+      "alt": "Browser DJ deck with two decks, platters, three-band EQ and pitch faders, cue and play buttons, hot cues, beat loops, a central mixer with crossfader and automix, and a search bar for openly licensed music.",
+      "caption": "The live deck runs two decks with EQ, hot cues, loops, crossfader and sync entirely in the browser, speaking the same engine contract as the stub.",
+      "credit": "Screenshot of the CrowdDeck site",
+      "source": "screenshot of docs/demo/index.html"
+    },
+    {
+      "id": "staging-lane",
+      "src": ".portfolio/staging-lane.webp",
+      "alt": "Document excerpt card headed The idea in one paragraph, quoting the README on one runtime for a daytime jukebox and a night-time DJ room, with crowd requests landing in the DJ's staging lane.",
+      "caption": "The core idea: crowd requests go to the DJ's staging lane, not straight to the output.",
+      "credit": "Excerpt from the CrowdDeck README",
+      "source": "README excerpt"
+    }
+  ],
+  "defaultImageId": "dashboard"
+}
